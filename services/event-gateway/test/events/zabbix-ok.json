@@ -1,0 +1,22 @@
+{
+  "tenant": "sd2",
+  "source": "zabbix",
+  "sourceEventId": "123456789",
+  "resource": "BNTNETIMP01",
+  "resourceType": "server",
+  "ipAddress": "192.168.100.25",
+  "alertGroup": "filesystem",
+  "alertKey": "filesystem-usage-/opt",
+  "summary": "Filesystem /opt usage returned to normal",
+  "severity": 0,
+  "status": "OK",
+  "sourceCreatedAt": "2026-07-30T20:50:00-06:00",
+  "customerCode": "sd2",
+  "attributes": {
+    "filesystem": "/opt",
+    "usage": 70,
+    "threshold": 90,
+    "hostGroup": "Netcool",
+    "triggerId": "77881"
+  }
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<routes xmlns="http://camel.apache.org/schema/spring">
+
+    <route id="integration-results-state-route">
+
+        <from uri="kafka:{{kafka.topic.integration.results}}?brokers={{kafka.bootstrap.servers}}&amp;groupId={{kafka.consumer.group.id}}&amp;autoOffsetReset={{kafka.consumer.auto.offset.reset}}&amp;autoCommitEnable=false&amp;breakOnFirstError=true"/>
+
+	<log
+    loggingLevel="INFO"
+    message="Mensaje recibido desde integration.results"/>
+
+        <process ref="integrationResultStateProcessor"/>
+
+	<log
+    loggingLevel="INFO"
+    message="Estado consolidado correctamente"/>
+    </route>
+
+</routes>

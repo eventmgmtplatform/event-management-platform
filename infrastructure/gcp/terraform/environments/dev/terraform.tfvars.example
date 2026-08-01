@@ -1,0 +1,6 @@
+project_id     = "replace-with-project-id"
+project_number = "replace-with-project-number"
+environment    = "dev"
+region         = "us-central1"
+zone           = "us-central1-a"
+platform_name  = "event-management"

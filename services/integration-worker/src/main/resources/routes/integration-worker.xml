@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<routes xmlns="http://camel.apache.org/schema/spring">
+
+    <!-- =====================================================
+         INTEGRATION COMMAND CONSUMER
+         ===================================================== -->
+
+    <route id="integration-command-consumer">
+
+        <from uri="kafka:{{kafka.topic.integration.commands}}?brokers={{kafka.bootstrap.servers}}&amp;groupId={{kafka.consumer.group.id}}&amp;autoOffsetReset={{kafka.consumer.auto.offset.reset}}"/>
+
+        <log loggingLevel="INFO"
+             message="Comando recibido desde integration.commands"/>
+
+        <doTry>
+
+            <!--
+                Valida el comando y genera el cuerpo HTTP
+                para ServiceNow.
+            -->
+            <process ref="integrationCommandProcessor"/>
+
+            <!--
+                Eliminamos los headers heredados de Kafka antes
+                de realizar la petición HTTP.
+            -->
+            <removeHeaders pattern="*"/>
+
+            <setHeader name="Content-Type">
+                <constant>application/json</constant>
+            </setHeader>
+
+            <setHeader name="CamelHttpMethod">
+                <constant>POST</constant>
+            </setHeader>
+
+            <log loggingLevel="INFO"
+                 message="Invocando ServiceNow Mock para eventId=${exchangeProperty.eventId}"/>
+
+            <to uri="{{integration.servicenow.base-url}}{{integration.servicenow.create-ticket-path}}?throwExceptionOnFailure=true&amp;connectTimeout={{integration.servicenow.timeout-ms}}&amp;responseTimeout={{integration.servicenow.timeout-ms}}"/>
+
+            <process ref="integrationResultProcessor"/>
+
+            <doCatch>
+
+                <exception>java.lang.Exception</exception>
+
+                <process ref="integrationFailureProcessor"/>
+
+            </doCatch>
+
+        </doTry>
+
+        <!--
+            Tanto SUCCESS como FAILED se publican
+            en integration.results.
+        -->
+        <removeHeaders pattern="*"/>
+
+        <setHeader name="kafka.KEY">
+            <simple>${exchangeProperty.eventKey}</simple>
+        </setHeader>
+
+	<to uri="kafka:{{kafka.topic.integration.results}}?brokers={{kafka.bootstrap.servers}}"/>
+
+        <log loggingLevel="INFO"
+             message="Resultado publicado: commandId=${exchangeProperty.commandId}, eventId=${exchangeProperty.eventId}"/>
+
+    </route>
+
+</routes>

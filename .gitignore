@@ -1,0 +1,109 @@
+# ============================================================
+# Event Management Platform
+# ============================================================
+
+# ------------------------------------------------------------
+# Secretos y configuración local
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+credentials.json
+service-account*.json
+
+# ------------------------------------------------------------
+# Terraform
+# ------------------------------------------------------------
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Los archivos de variables pueden contener secretos
+*.auto.tfvars
+*.auto.tfvars.json
+terraform.tfvars
+terraform.tfvars.json
+
+# Se permitirá versionar únicamente archivos de ejemplo
+!terraform.tfvars.example
+
+# ------------------------------------------------------------
+# Java / Maven / Quarkus
+# ------------------------------------------------------------
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/timing.properties
+dependency-reduced-pom.xml
+
+# ------------------------------------------------------------
+# IDE y editores
+# ------------------------------------------------------------
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ------------------------------------------------------------
+# Sistema operativo
+# ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------------------------------------------
+# Logs y temporales
+# ------------------------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+
+# ------------------------------------------------------------
+# Docker y datos persistentes locales
+# ------------------------------------------------------------
+docker-data/
+data/
+volumes/
+**/postgres-data/
+**/kafka-data/
+**/opensearch-data/
+
+# ------------------------------------------------------------
+# Pruebas y cobertura
+# ------------------------------------------------------------
+coverage/
+reports/
+surefire-reports/
+
+# ------------------------------------------------------------
+# Archivos comprimidos y respaldos
+# ------------------------------------------------------------
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.backup
+*.old
