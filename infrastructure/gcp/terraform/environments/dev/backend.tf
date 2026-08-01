@@ -1,5 +1,6 @@
 terraform {
-  backend "local" {
-    path = "terraform.tfstate"
+  backend "gcs" {
+    bucket = "corded-key-504121-v7-terraform-state"
+    prefix = "environments/dev"
   }
 }
