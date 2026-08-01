@@ -27,3 +27,18 @@ output "platform_name" {
   description = "Nombre lógico de la plataforma."
   value       = var.platform_name
 }
+
+output "terraform_deployer_member" {
+  description = "Identificador IAM de terraform-deployer."
+  value       = module.iam.terraform_deployer_member
+}
+
+output "terraform_deployer_project_roles" {
+  description = "Roles de proyecto administrados para terraform-deployer."
+  value       = module.iam.terraform_deployer_project_roles
+}
+
+output "terraform_deployer_role_bindings" {
+  description = "Bindings IAM administrados para terraform-deployer."
+  value       = module.iam.terraform_deployer_role_bindings
+}

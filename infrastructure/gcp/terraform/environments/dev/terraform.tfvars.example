@@ -4,3 +4,11 @@ environment    = "dev"
 region         = "us-central1"
 zone           = "us-central1-a"
 platform_name  = "event-management"
+
+terraform_deployer_email = "terraform-deployer@PROJECT_ID.iam.gserviceaccount.com"
+
+terraform_deployer_project_roles = [
+  "roles/compute.networkAdmin",
+  "roles/compute.securityAdmin"
+]
+
