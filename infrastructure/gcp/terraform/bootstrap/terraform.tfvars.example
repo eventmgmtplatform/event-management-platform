@@ -1,0 +1,6 @@
+project_id                   = "replace-with-project-id"
+project_number               = "replace-with-project-number"
+region                       = "us-central1"
+environment                  = "dev"
+state_bucket_name            = "replace-with-globally-unique-bucket-name"
+terraform_service_account_id = "terraform-deployer"
