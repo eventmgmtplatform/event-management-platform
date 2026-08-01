@@ -54,3 +54,13 @@ variable "terraform_service_account_id" {
   type        = string
   default     = "terraform-deployer"
 }
+
+variable "terraform_operator_email" {
+  description = "Correo del usuario autorizado para suplantar la cuenta Terraform Deployer."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.terraform_operator_email))
+    error_message = "terraform_operator_email debe ser una dirección de correo válida."
+  }
+}

@@ -2,6 +2,7 @@ resource "google_project_service" "required_apis" {
   for_each = toset([
     "cloudresourcemanager.googleapis.com",
     "iam.googleapis.com",
+    "iamcredentials.googleapis.com",
     "serviceusage.googleapis.com",
     "storage.googleapis.com"
   ])
@@ -61,4 +62,10 @@ resource "google_storage_bucket_iam_member" "terraform_state_admin" {
   bucket = google_storage_bucket.terraform_state.name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.terraform_deployer.email}"
+}
+
+resource "google_service_account_iam_member" "terraform_operator_token_creator" {
+  service_account_id = google_service_account.terraform_deployer.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "user:${var.terraform_operator_email}"
 }

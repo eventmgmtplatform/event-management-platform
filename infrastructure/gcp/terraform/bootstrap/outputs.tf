@@ -17,3 +17,8 @@ output "enabled_services" {
   description = "APIs administradas por el bootstrap."
   value       = sort(keys(google_project_service.required_apis))
 }
+
+output "terraform_operator_email" {
+  description = "Usuario autorizado para suplantar Terraform Deployer."
+  value       = var.terraform_operator_email
+}
