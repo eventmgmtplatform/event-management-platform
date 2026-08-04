@@ -10,7 +10,8 @@ terraform_deployer_email = "terraform-deployer@PROJECT_ID.iam.gserviceaccount.co
 terraform_deployer_project_roles = [
   "roles/artifactregistry.admin",
   "roles/compute.networkAdmin",
-  "roles/compute.securityAdmin"
+  "roles/compute.securityAdmin",
+  "roles/storage.admin",
 ]
 
 

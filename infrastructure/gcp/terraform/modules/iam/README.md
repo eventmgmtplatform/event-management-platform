@@ -45,3 +45,22 @@ El módulo no crea llaves de cuenta de servicio.
 El módulo no administra la política IAM completa del proyecto.
 La cuenta terraform-deployer pertenece al Bootstrap.
 Este módulo sólo administra sus permisos operativos.
+
+## Storage remediation
+
+Para permitir que Terraform inventarie y administre los recursos de Cloud
+Storage declarados por los ambientes consumidores, la cuenta
+`terraform-deployer` puede recibir:
+
+- `roles/storage.admin`
+
+La asignación se administra mediante la variable
+`terraform_deployer_project_roles` y recursos individuales
+`google_project_iam_member`.
+
+El rol se concede exclusivamente a la identidad de despliegue de Terraform.
+No se concede a identidades runtime, operadores ni Cloud Build.
+
+La amplitud del rol se acepta porque el deployer debe administrar el ciclo de
+vida completo de buckets y sus configuraciones mediante Terraform. El acceso
+se realiza por impersonación y no mediante llaves permanentes.
