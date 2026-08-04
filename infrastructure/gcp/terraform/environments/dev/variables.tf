@@ -129,3 +129,34 @@ variable "enable_management_ssh" {
   type        = bool
   default     = true
 }
+
+variable "artifact_registry_location" {
+  description = "Ubicación regional del repositorio Artifact Registry."
+  type        = string
+  default     = "us-central1"
+}
+
+variable "artifact_registry_repository_id" {
+  description = "Identificador del repositorio Docker Artifact Registry."
+  type        = string
+
+  validation {
+    condition = can(regex(
+      "^[a-z][a-z0-9-]{2,61}[a-z0-9]$",
+      var.artifact_registry_repository_id
+    ))
+    error_message = "artifact_registry_repository_id debe usar minúsculas, números y guiones."
+  }
+}
+
+variable "artifact_registry_description" {
+  description = "Descripción del repositorio Docker."
+  type        = string
+  default     = "Container images for Event Management."
+}
+
+variable "artifact_registry_immutable_tags" {
+  description = "Controla si las etiquetas Docker son inmutables."
+  type        = bool
+  default     = false
+}

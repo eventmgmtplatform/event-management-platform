@@ -72,3 +72,28 @@ output "subnet_cidr_ranges" {
   description = "Subnet CIDR ranges keyed by logical subnet name."
   value       = module.networking.subnet_cidr_ranges
 }
+
+output "artifact_registry_repository_id" {
+  description = "Identificador del repositorio Artifact Registry."
+  value       = module.artifact_registry.repository_id
+}
+
+output "artifact_registry_repository_name" {
+  description = "Nombre completo del repositorio Artifact Registry."
+  value       = module.artifact_registry.repository_name
+}
+
+output "artifact_registry_repository_location" {
+  description = "Ubicación del repositorio Artifact Registry."
+  value       = module.artifact_registry.repository_location
+}
+
+output "artifact_registry_repository_format" {
+  description = "Formato del repositorio Artifact Registry."
+  value       = module.artifact_registry.repository_format
+}
+
+output "artifact_registry_repository_uri" {
+  description = "URI base del repositorio Docker."
+  value       = module.artifact_registry.repository_uri
+}
