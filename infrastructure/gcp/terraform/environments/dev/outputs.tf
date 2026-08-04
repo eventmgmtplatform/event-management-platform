@@ -42,3 +42,33 @@ output "terraform_deployer_role_bindings" {
   description = "Bindings IAM administrados para terraform-deployer."
   value       = module.iam.terraform_deployer_role_bindings
 }
+
+output "network_id" {
+  description = "ID of the Event Management VPC."
+  value       = module.networking.network_id
+}
+
+output "network_name" {
+  description = "Name of the Event Management VPC."
+  value       = module.networking.network_name
+}
+
+output "network_self_link" {
+  description = "Self-link of the Event Management VPC."
+  value       = module.networking.network_self_link
+}
+
+output "subnet_ids" {
+  description = "Subnet IDs keyed by logical subnet name."
+  value       = module.networking.subnet_ids
+}
+
+output "subnet_names" {
+  description = "Subnet names keyed by logical subnet name."
+  value       = module.networking.subnet_names
+}
+
+output "subnet_cidr_ranges" {
+  description = "Subnet CIDR ranges keyed by logical subnet name."
+  value       = module.networking.subnet_cidr_ranges
+}

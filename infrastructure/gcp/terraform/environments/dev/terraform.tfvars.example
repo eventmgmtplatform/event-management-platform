@@ -12,3 +12,39 @@ terraform_deployer_project_roles = [
   "roles/compute.securityAdmin"
 ]
 
+
+# Networking
+network_name         = "event-management-dev-vpc"
+network_routing_mode = "REGIONAL"
+
+network_subnets = {
+  management = {
+    name                  = "event-management-dev-management"
+    description           = "Management subnet for Event Management DEV"
+    ip_cidr_range         = "10.10.0.0/24"
+    region                = "us-central1"
+    private_google_access = true
+    stack_type            = "IPV4_ONLY"
+  }
+
+  workloads = {
+    name                  = "event-management-dev-workloads"
+    description           = "Application workloads subnet for Event Management DEV"
+    ip_cidr_range         = "10.20.0.0/24"
+    region                = "us-central1"
+    private_google_access = true
+    stack_type            = "IPV4_ONLY"
+  }
+
+  data = {
+    name                  = "event-management-dev-data"
+    description           = "Data services subnet for Event Management DEV"
+    ip_cidr_range         = "10.30.0.0/24"
+    region                = "us-central1"
+    private_google_access = true
+    stack_type            = "IPV4_ONLY"
+  }
+}
+
+enable_internal_firewall = true
+enable_management_ssh    = true

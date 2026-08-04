@@ -83,3 +83,49 @@ variable "terraform_deployer_project_roles" {
   }
 }
 
+
+variable "network_name" {
+  description = "Name of the Event Management custom VPC."
+  type        = string
+}
+
+variable "network_routing_mode" {
+  description = "Dynamic routing mode for the Event Management VPC."
+  type        = string
+  default     = "REGIONAL"
+
+  validation {
+    condition     = contains(["REGIONAL", "GLOBAL"], var.network_routing_mode)
+    error_message = "The network routing mode must be REGIONAL or GLOBAL."
+  }
+}
+
+variable "network_subnets" {
+  description = "Subnet definitions for the Event Management VPC."
+
+  type = map(object({
+    name                  = string
+    ip_cidr_range         = string
+    region                = string
+    private_google_access = optional(bool, true)
+    description           = optional(string)
+    stack_type            = optional(string, "IPV4_ONLY")
+  }))
+
+  validation {
+    condition     = length(var.network_subnets) > 0
+    error_message = "At least one network subnet must be defined."
+  }
+}
+
+variable "enable_internal_firewall" {
+  description = "Enable the internal Event Management firewall rule."
+  type        = bool
+  default     = true
+}
+
+variable "enable_management_ssh" {
+  description = "Enable SSH from the management subnet to tagged instances."
+  type        = bool
+  default     = true
+}
