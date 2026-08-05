@@ -132,3 +132,36 @@ output "cloud_storage_bucket_labels" {
   description = "Labels efectivos de los buckets funcionales Cloud Storage por clave lógica."
   value       = module.cloud_storage.bucket_labels
 }
+
+
+# OS_08_11_SECRET_MANAGER_OUTPUTS
+output "secret_manager_secret_ids" {
+  description = "IDs de Secret Manager por clave lógica."
+  value       = module.secret_manager.secret_ids
+}
+
+output "secret_manager_secret_names" {
+  description = "Nombres completos de Secret Manager por clave lógica."
+  value       = module.secret_manager.secret_names
+}
+
+output "secret_manager_secret_labels" {
+  description = "Labels efectivos de los secretos."
+  value       = module.secret_manager.secret_labels
+}
+
+output "secret_manager_replication_types" {
+  description = "Tipos de replicación de los secretos."
+  value       = module.secret_manager.replication_types
+}
+
+output "secret_manager_replication_locations" {
+  description = "Ubicaciones configuradas para replicación USER_MANAGED."
+  value       = module.secret_manager.replication_locations
+}
+
+output "secret_manager_iam_member_bindings" {
+  description = "Bindings IAM administrados a nivel de secreto."
+  value       = module.secret_manager.iam_member_bindings
+}
+# END_OS_08_11_SECRET_MANAGER_OUTPUTS

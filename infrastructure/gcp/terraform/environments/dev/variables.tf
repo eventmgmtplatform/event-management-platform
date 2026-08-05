@@ -203,3 +203,33 @@ variable "cloud_storage_buckets" {
     error_message = "Cada bucket debe definir un purpose no vacío."
   }
 }
+
+
+# OS_08_11_SECRET_MANAGER_VARIABLES
+variable "secret_manager_secrets" {
+  description = "Definiciones de contenedores de secretos administrados para Event Management."
+
+  type = map(object({
+    secret_id             = string
+    purpose               = string
+    replication_type      = optional(string, "AUTOMATIC")
+    replication_locations = optional(set(string), [])
+    labels                = optional(map(string), {})
+    deletion_protection   = optional(bool, true)
+    iam                   = optional(map(set(string)), {})
+  }))
+
+  validation {
+    condition     = length(var.secret_manager_secrets) > 0
+    error_message = "Debe definirse al menos un secreto de Secret Manager."
+  }
+
+  validation {
+    condition = alltrue([
+      for secret in values(var.secret_manager_secrets) :
+      contains(["AUTOMATIC", "USER_MANAGED"], upper(secret.replication_type))
+    ])
+    error_message = "replication_type debe ser AUTOMATIC o USER_MANAGED."
+  }
+}
+# END_OS_08_11_SECRET_MANAGER_VARIABLES

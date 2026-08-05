@@ -81,3 +81,61 @@ cloud_storage_buckets = {
     purpose = "shared"
   }
 }
+
+
+# OS_08_11_SECRET_MANAGER_TFVARS
+# Terraform administra contenedores y metadatos, no payloads.
+secret_manager_secrets = {
+  database_credentials = {
+    secret_id        = "event-management-dev-database-credentials"
+    purpose          = "database-credentials"
+    replication_type    = "AUTOMATIC"
+    deletion_protection = true
+
+    labels = {
+      component = "postgresql"
+    }
+
+    iam = {}
+  }
+
+  servicenow_credentials = {
+    secret_id        = "event-management-dev-servicenow-credentials"
+    purpose          = "servicenow-integration"
+    replication_type    = "AUTOMATIC"
+    deletion_protection = true
+
+    labels = {
+      component = "integration-worker"
+    }
+
+    iam = {}
+  }
+
+  notification_credentials = {
+    secret_id        = "event-management-dev-notification-credentials"
+    purpose          = "notification-integration"
+    replication_type    = "AUTOMATIC"
+    deletion_protection = true
+
+    labels = {
+      component = "integration-worker"
+    }
+
+    iam = {}
+  }
+
+  automation_credentials = {
+    secret_id        = "event-management-dev-automation-credentials"
+    purpose          = "automation-integration"
+    replication_type    = "AUTOMATIC"
+    deletion_protection = true
+
+    labels = {
+      component = "automation-engine"
+    }
+
+    iam = {}
+  }
+}
+# END_OS_08_11_SECRET_MANAGER_TFVARS
