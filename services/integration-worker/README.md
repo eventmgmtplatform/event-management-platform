@@ -1,6 +1,6 @@
-# event-gateway
+# integration-worker
 
-HTTP event ingestion gateway for the Event Management platform.
+Integration worker responsible for consuming integration commands and invoking external systems.
 
 ## Build standard
 
@@ -39,7 +39,7 @@ java -jar target/quarkus-app/quarkus-run.jar
 No previous Maven build is required.
 
 ```bash
-docker build -t event-management/event-gateway:local .
+docker build -t event-management/integration-worker:local .
 ```
 
 The Dockerfile compiles the service in its build stage and copies only the
@@ -49,9 +49,9 @@ Quarkus runtime layout into the final image.
 
 ```bash
 docker run --rm \
-  --name event-gateway \
-  -p 8081:8081 \
-  event-management/event-gateway:local
+  --name integration-worker \
+  -p 8083:8083 \
+  event-management/integration-worker:local
 ```
 
 Runtime characteristics:
@@ -60,7 +60,7 @@ Runtime characteristics:
 - Container user: `eventmanagement`
 - UID/GID: `1001`
 - Working directory: `/deployments`
-- Application port: `8081`
+- Application port: `8083`
 - Entrypoint: `java ${JAVA_OPTS} -jar /deployments/quarkus-run.jar`
 
 Additional JVM options can be supplied with:
@@ -68,8 +68,8 @@ Additional JVM options can be supplied with:
 ```bash
 docker run --rm \
   -e JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -Dexample=value" \
-  -p 8081:8081 \
-  event-management/event-gateway:local
+  -p 8083:8083 \
+  event-management/integration-worker:local
 ```
 
 ## Runtime verification
@@ -77,13 +77,13 @@ docker run --rm \
 Primary verification endpoint:
 
 ```text
-http://localhost:8081/api/v1/gateway
+http://localhost:8083/health/live
 ```
 
 Example:
 
 ```bash
-curl --fail --show-error http://localhost:8081/api/v1/gateway
+curl --fail --show-error http://localhost:8083/health/live
 ```
 
 ## Configuration
