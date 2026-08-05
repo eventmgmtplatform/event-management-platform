@@ -1,14 +1,66 @@
+# ============================================================
+# BUILD STAGE
+# ============================================================
+
+FROM maven:3.9.11-eclipse-temurin-21 AS build
+
+WORKDIR /workspace
+
+COPY pom.xml .
+
+RUN mvn \
+    -B \
+    -ntp \
+    dependency:go-offline
+
+COPY src ./src
+
+RUN mvn \
+    -B \
+    -ntp \
+    clean package \
+    -DskipTests
+
+
+# ============================================================
+# RUNTIME STAGE
+# ============================================================
+
 FROM eclipse-temurin:21-jre
 
-WORKDIR /opt/integration-worker
+WORKDIR /deployments
 
-COPY target/quarkus-app/lib/ ./lib/
-COPY target/quarkus-app/*.jar ./
-COPY target/quarkus-app/app/ ./app/
-COPY target/quarkus-app/quarkus/ ./quarkus/
+RUN groupadd \
+        --gid 1001 \
+        eventmanagement \
+    && useradd \
+        --uid 1001 \
+        --gid eventmanagement \
+        --shell /sbin/nologin \
+        eventmanagement
+
+COPY --from=build \
+    /workspace/target/quarkus-app/lib/ \
+    /deployments/lib/
+
+COPY --from=build \
+    /workspace/target/quarkus-app/*.jar \
+    /deployments/
+
+COPY --from=build \
+    /workspace/target/quarkus-app/app/ \
+    /deployments/app/
+
+COPY --from=build \
+    /workspace/target/quarkus-app/quarkus/ \
+    /deployments/quarkus/
+
+RUN chown -R eventmanagement:eventmanagement /deployments
+
+USER eventmanagement
 
 EXPOSE 8083
 
-USER 1001
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
 
-ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /deployments/quarkus-run.jar"]
