@@ -144,3 +144,26 @@ secret_manager_secrets = {
   }
 }
 # END_OS_08_11_SECRET_MANAGER_TFVARS
+
+
+# OS_08_12_CLOUD_BUILD_TFVARS
+cloud_build_execution_service_account = {
+  account_id      = "cloud-build-executor"
+  display_name    = "Cloud Build Executor"
+  description     = "Dedicated Cloud Build execution identity for Event Management."
+  deletion_policy = "PREVENT"
+}
+
+cloud_build_execution_project_roles = [
+  "roles/logging.logWriter",
+]
+
+cloud_build_secret_access = []
+
+cloud_build_repository_connection = {
+  enabled = false
+}
+
+cloud_build_repositories = {}
+cloud_build_triggers     = {}
+# END_OS_08_12_CLOUD_BUILD_TFVARS

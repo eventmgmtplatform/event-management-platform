@@ -233,3 +233,75 @@ variable "secret_manager_secrets" {
   }
 }
 # END_OS_08_11_SECRET_MANAGER_VARIABLES
+
+
+# OS_08_12_CLOUD_BUILD_VARIABLES
+variable "cloud_build_execution_service_account" {
+  description = "Cuenta dedicada para ejecutar builds Cloud Build."
+
+  type = object({
+    account_id      = string
+    display_name    = string
+    description     = string
+    deletion_policy = optional(string, "PREVENT")
+  })
+}
+
+variable "cloud_build_execution_project_roles" {
+  description = "Roles de proyecto para la cuenta ejecutora Cloud Build."
+  type        = set(string)
+  default     = ["roles/logging.logWriter"]
+}
+
+variable "cloud_build_secret_access" {
+  description = "IDs de secretos accesibles por la cuenta ejecutora."
+  type        = set(string)
+  default     = []
+}
+
+variable "cloud_build_repository_connection" {
+  description = "Conexión opcional GitHub Cloud Build v2."
+
+  type = object({
+    enabled              = optional(bool, false)
+    name                 = optional(string)
+    app_installation_id  = optional(number)
+    oauth_secret_version = optional(string)
+  })
+
+  default = {
+    enabled = false
+  }
+}
+
+variable "cloud_build_repositories" {
+  description = "Repositorios Cloud Build v2."
+
+  type = map(object({
+    name       = string
+    remote_uri = string
+  }))
+
+  default = {}
+}
+
+variable "cloud_build_triggers" {
+  description = "Triggers Cloud Build."
+
+  type = map(object({
+    name              = string
+    repository_key    = string
+    filename          = string
+    event_type        = string
+    branch_regex      = optional(string)
+    tag_regex         = optional(string)
+    included_files    = optional(list(string), [])
+    ignored_files     = optional(list(string), [])
+    substitutions     = optional(map(string), {})
+    disabled          = optional(bool, false)
+    approval_required = optional(bool, false)
+  }))
+
+  default = {}
+}
+# END_OS_08_12_CLOUD_BUILD_VARIABLES

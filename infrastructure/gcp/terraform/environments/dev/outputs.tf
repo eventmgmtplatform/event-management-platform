@@ -165,3 +165,46 @@ output "secret_manager_iam_member_bindings" {
   value       = module.secret_manager.iam_member_bindings
 }
 # END_OS_08_11_SECRET_MANAGER_OUTPUTS
+
+
+# OS_08_12_CLOUD_BUILD_OUTPUTS
+output "cloud_build_execution_service_account_email" {
+  description = "Correo de la cuenta ejecutora Cloud Build."
+  value       = module.cloud_build.execution_service_account_email
+}
+
+output "cloud_build_execution_service_account_name" {
+  description = "Nombre completo de la cuenta ejecutora Cloud Build."
+  value       = module.cloud_build.execution_service_account_name
+}
+
+output "cloud_build_execution_project_roles" {
+  description = "Roles de proyecto de la cuenta ejecutora."
+  value       = module.cloud_build.execution_project_roles
+}
+
+output "cloud_build_artifact_registry_writer_binding" {
+  description = "Binding Artifact Registry Writer de Cloud Build."
+  value       = module.cloud_build.artifact_registry_writer_binding
+}
+
+output "cloud_build_secret_accessor_bindings" {
+  description = "Bindings Secret Manager de Cloud Build."
+  value       = module.cloud_build.secret_accessor_bindings
+}
+
+output "cloud_build_connection_id" {
+  description = "ID de conexión GitHub Cloud Build v2."
+  value       = module.cloud_build.connection_id
+}
+
+output "cloud_build_repository_ids" {
+  description = "IDs de repositorios Cloud Build v2."
+  value       = module.cloud_build.repository_ids
+}
+
+output "cloud_build_trigger_ids" {
+  description = "IDs de triggers Cloud Build."
+  value       = module.cloud_build.trigger_ids
+}
+# END_OS_08_12_CLOUD_BUILD_OUTPUTS
