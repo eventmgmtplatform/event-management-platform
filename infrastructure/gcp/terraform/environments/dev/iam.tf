@@ -11,9 +11,6 @@ module "iam" {
 
       roles = [
         "roles/cloudbuild.serviceAgent",
-        # TEMPORARY: required only for interactive GitHub connection creation.
-        # Remove immediately after installationState reaches COMPLETE.
-        "roles/secretmanager.admin",
       ]
     }
   }
