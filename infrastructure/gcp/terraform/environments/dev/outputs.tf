@@ -97,3 +97,38 @@ output "artifact_registry_repository_uri" {
   description = "URI base del repositorio Docker."
   value       = module.artifact_registry.repository_uri
 }
+
+output "cloud_storage_bucket_ids" {
+  description = "IDs de los buckets funcionales Cloud Storage por clave lógica."
+  value       = module.cloud_storage.bucket_ids
+}
+
+output "cloud_storage_bucket_names" {
+  description = "Nombres de los buckets funcionales Cloud Storage por clave lógica."
+  value       = module.cloud_storage.bucket_names
+}
+
+output "cloud_storage_bucket_urls" {
+  description = "URLs gs:// de los buckets funcionales Cloud Storage por clave lógica."
+  value       = module.cloud_storage.bucket_urls
+}
+
+output "cloud_storage_bucket_self_links" {
+  description = "Self-links de los buckets funcionales Cloud Storage por clave lógica."
+  value       = module.cloud_storage.bucket_self_links
+}
+
+output "cloud_storage_bucket_locations" {
+  description = "Ubicaciones de los buckets funcionales Cloud Storage por clave lógica."
+  value       = module.cloud_storage.bucket_locations
+}
+
+output "cloud_storage_bucket_storage_classes" {
+  description = "Clases de almacenamiento de los buckets funcionales Cloud Storage por clave lógica."
+  value       = module.cloud_storage.bucket_storage_classes
+}
+
+output "cloud_storage_bucket_labels" {
+  description = "Labels efectivos de los buckets funcionales Cloud Storage por clave lógica."
+  value       = module.cloud_storage.bucket_labels
+}

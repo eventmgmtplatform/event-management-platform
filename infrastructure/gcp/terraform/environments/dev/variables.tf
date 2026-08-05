@@ -160,3 +160,46 @@ variable "artifact_registry_immutable_tags" {
   type        = bool
   default     = false
 }
+
+variable "cloud_storage_buckets" {
+  description = "Definiciones de buckets funcionales Cloud Storage para el ambiente DEV."
+
+  type = map(object({
+    name                          = string
+    purpose                       = string
+    location                      = optional(string)
+    storage_class                 = optional(string, "STANDARD")
+    force_destroy                 = optional(bool, false)
+    uniform_bucket_level_access   = optional(bool, true)
+    public_access_prevention      = optional(string, "enforced")
+    versioning_enabled            = optional(bool, true)
+    soft_delete_retention_seconds = optional(number, 604800)
+    labels                        = optional(map(string), {})
+  }))
+
+  validation {
+    condition     = length(var.cloud_storage_buckets) > 0
+    error_message = "Debe definirse al menos un bucket funcional para Cloud Storage."
+  }
+
+  validation {
+    condition = alltrue([
+      for bucket in values(var.cloud_storage_buckets) :
+      can(regex(
+        "^[a-z0-9][a-z0-9._-]{1,61}[a-z0-9]$",
+        bucket.name
+      ))
+    ])
+
+    error_message = "Los nombres de bucket deben contener entre 3 y 63 caracteres y usar minúsculas, números, puntos, guiones o guiones bajos."
+  }
+
+  validation {
+    condition = alltrue([
+      for bucket in values(var.cloud_storage_buckets) :
+      length(trimspace(bucket.purpose)) > 0
+    ])
+
+    error_message = "Cada bucket debe definir un purpose no vacío."
+  }
+}

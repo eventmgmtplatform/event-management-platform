@@ -56,3 +56,27 @@ artifact_registry_location       = "us-central1"
 artifact_registry_repository_id  = "event-management-dev-containers"
 artifact_registry_description    = "Docker images for Event Management dev."
 artifact_registry_immutable_tags = false
+
+# Cloud Storage
+cloud_storage_buckets = {
+  application = {
+    name    = "PROJECT_ID-event-management-dev-application"
+    purpose = "application"
+  }
+
+  logs = {
+    name               = "PROJECT_ID-event-management-dev-logs"
+    purpose            = "logs"
+    versioning_enabled = false
+  }
+
+  backups = {
+    name    = "PROJECT_ID-event-management-dev-backups"
+    purpose = "backups"
+  }
+
+  shared = {
+    name    = "PROJECT_ID-event-management-dev-shared"
+    purpose = "shared"
+  }
+}
