@@ -15,3 +15,15 @@ output "terraform_deployer_role_bindings" {
     role => binding.id
   }
 }
+
+
+# OS_08_08_4_SERVICE_AGENT_OUTPUTS
+output "service_agent_role_bindings" {
+  description = "Project IAM bindings assigned to Google-managed service agents."
+
+  value = {
+    for key, binding in google_project_iam_member.service_agent_roles :
+    key => binding.id
+  }
+}
+# END_OS_08_08_4_SERVICE_AGENT_OUTPUTS

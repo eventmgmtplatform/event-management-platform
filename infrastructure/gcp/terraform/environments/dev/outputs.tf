@@ -208,3 +208,11 @@ output "cloud_build_trigger_ids" {
   value       = module.cloud_build.trigger_ids
 }
 # END_OS_08_12_CLOUD_BUILD_OUTPUTS
+
+
+# OS_08_08_4_CLOUD_BUILD_SERVICE_AGENT_OUTPUT
+output "iam_service_agent_role_bindings" {
+  description = "Project IAM bindings assigned to Google-managed service agents."
+  value       = module.iam.service_agent_role_bindings
+}
+# END_OS_08_08_4_CLOUD_BUILD_SERVICE_AGENT_OUTPUT

@@ -44,3 +44,35 @@ variable "terraform_deployer_project_roles" {
     error_message = "No está permitido asignar roles/owner ni roles/editor a terraform-deployer."
   }
 }
+
+
+# OS_08_08_4_SERVICE_AGENT_ROLES
+variable "service_agent_project_roles" {
+  description = "Project-level IAM roles assigned to Google-managed service agents."
+
+  type = map(object({
+    member = string
+    roles  = set(string)
+  }))
+
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for agent in values(var.service_agent_project_roles) :
+      startswith(agent.member, "serviceAccount:service-")
+    ])
+    error_message = "Every service-agent member must begin with serviceAccount:service-."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for agent in values(var.service_agent_project_roles) : [
+        for role in agent.roles :
+        startswith(role, "roles/")
+      ]
+    ]))
+    error_message = "Every service-agent role must use the roles/name format."
+  }
+}
+# END_OS_08_08_4_SERVICE_AGENT_ROLES
