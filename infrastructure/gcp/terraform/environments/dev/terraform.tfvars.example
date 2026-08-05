@@ -161,9 +161,17 @@ cloud_build_execution_project_roles = [
 cloud_build_secret_access = []
 
 cloud_build_repository_connection = {
-  enabled = false
+  enabled              = false
+  name                 = "event-management-ENV-github"
+  app_installation_id  = 123456789
+  oauth_secret_version = "projects/PROJECT_ID/secrets/GITHUB_OAUTH_SECRET/versions/latest"
 }
 
-cloud_build_repositories = {}
+cloud_build_repositories = {
+  platform = {
+    name       = "event-management-platform"
+    remote_uri = "https://github.com/OWNER/event-management-platform.git"
+  }
+}
 cloud_build_triggers     = {}
 # END_OS_08_12_CLOUD_BUILD_TFVARS
