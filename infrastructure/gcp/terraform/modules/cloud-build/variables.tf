@@ -186,3 +186,35 @@ variable "triggers" {
     error_message = "event_type debe ser PUSH_BRANCH, PUSH_TAG o PULL_REQUEST."
   }
 }
+
+variable "source_bucket" {
+  description = "Bucket opcional que almacena archivos fuente para builds manuales."
+
+  type = object({
+    name        = string
+    reader_role = optional(string, "roles/storage.objectViewer")
+  })
+
+  default = {
+    name = ""
+  }
+
+  validation {
+    condition = (
+      length(trimspace(var.source_bucket.name)) == 0 ||
+      can(regex(
+        "^[a-z0-9][a-z0-9._-]{1,220}[a-z0-9]$",
+        var.source_bucket.name
+      ))
+    )
+    error_message = "source_bucket.name debe estar vacío o contener un nombre válido de bucket."
+  }
+
+  validation {
+    condition = (
+      length(trimspace(var.source_bucket.name)) == 0 ||
+      var.source_bucket.reader_role == "roles/storage.objectViewer"
+    )
+    error_message = "El único rol admitido para source_bucket es roles/storage.objectViewer."
+  }
+}

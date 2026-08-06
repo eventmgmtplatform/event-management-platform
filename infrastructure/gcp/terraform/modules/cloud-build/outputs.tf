@@ -51,3 +51,8 @@ output "trigger_ids" {
     key => trigger.trigger_id
   }
 }
+
+output "source_bucket_reader_binding" {
+  description = "Binding de lectura sobre el bucket fuente de Cloud Build."
+  value       = try(google_storage_bucket_iam_member.source_reader[0].id, null)
+}

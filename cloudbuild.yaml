@@ -1,0 +1,347 @@
+# =============================================================================
+# EventManagement OpenSource
+# OS_08_12.2 — Reusable Cloud Build pipeline
+#
+# Architecture-ready environments:
+#   - dev
+#   - qa
+#   - prod
+#
+# Active environment during OS_08_12.2:
+#   - dev
+#
+# Required custom substitutions:
+#   _ENVIRONMENT
+#   _REGION
+#   _ARTIFACT_REPOSITORY
+#   _SERVICE_NAME
+# =============================================================================
+
+steps:
+  - id: validate-build-contract
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - -euo
+      - pipefail
+      - -c
+      - |
+        ENVIRONMENT='${_ENVIRONMENT}'
+        REGION='${_REGION}'
+        ARTIFACT_REPOSITORY='${_ARTIFACT_REPOSITORY}'
+        SERVICE_NAME='${_SERVICE_NAME}'
+
+        PROJECT_VALUE='${PROJECT_ID}'
+        BUILD_VALUE='${BUILD_ID}'
+        BRANCH_VALUE='${BRANCH_NAME}'
+        COMMIT_VALUE='${COMMIT_SHA}'
+        SHORT_COMMIT_VALUE='${SHORT_SHA}'
+
+        fail() {
+          printf 'ERROR: %s\n' "$$*" >&2
+          exit 1
+        }
+
+        case "$$ENVIRONMENT" in
+          dev)
+            ;;
+          qa|prod)
+            fail "Environment '$$ENVIRONMENT' is architecture-ready but inactive during OS_08_12.2."
+            ;;
+          *)
+            fail "Unsupported environment '$$ENVIRONMENT'. Allowed design values: dev, qa, prod."
+            ;;
+        esac
+
+        test -n "$$REGION" \
+          || fail "_REGION is required."
+
+        test -n "$$ARTIFACT_REPOSITORY" \
+          || fail "_ARTIFACT_REPOSITORY is required."
+
+        test -n "$$SERVICE_NAME" \
+          || fail "_SERVICE_NAME is required."
+
+        case "$$SERVICE_NAME" in
+          event-gateway|integration-worker|event-state-service)
+            ;;
+          *)
+            fail "Unsupported service '$$SERVICE_NAME'."
+            ;;
+        esac
+
+        case "$$SERVICE_NAME" in
+          *..*|*/*|*\\*)
+            fail "Unsafe service name '$$SERVICE_NAME'."
+            ;;
+        esac
+
+        SERVICE_DIR="services/$$SERVICE_NAME"
+
+        test -d "$$SERVICE_DIR" \
+          || fail "Service directory not found: $$SERVICE_DIR"
+
+        for required_file in \
+          Dockerfile \
+          pom.xml \
+          .dockerignore \
+          README.md
+        do
+          test -f "$$SERVICE_DIR/$$required_file" \
+            || fail "Missing required build file: $$SERVICE_DIR/$$required_file"
+        done
+
+        test -n "$$PROJECT_VALUE" \
+          || fail "PROJECT_ID is empty."
+
+        test -n "$$BUILD_VALUE" \
+          || fail "BUILD_ID is empty."
+
+        IMAGE_BASE="$${REGION}-docker.pkg.dev/$${PROJECT_VALUE}/$${ARTIFACT_REPOSITORY}/$${SERVICE_NAME}"
+
+        printf '%s\n' \
+          "ENVIRONMENT=$$ENVIRONMENT" \
+          "REGION=$$REGION" \
+          "ARTIFACT_REPOSITORY=$$ARTIFACT_REPOSITORY" \
+          "SERVICE_NAME=$$SERVICE_NAME" \
+          "SERVICE_DIR=$$SERVICE_DIR" \
+          "PROJECT_VALUE=$$PROJECT_VALUE" \
+          "BUILD_VALUE=$$BUILD_VALUE" \
+          "BRANCH_VALUE=$$BRANCH_VALUE" \
+          "COMMIT_VALUE=$$COMMIT_VALUE" \
+          "SHORT_COMMIT_VALUE=$$SHORT_COMMIT_VALUE" \
+          "IMAGE_BASE=$$IMAGE_BASE" \
+          > /workspace/.os-08-12-2-build-inputs
+
+        echo "Build contract validated."
+        cat /workspace/.os-08-12-2-build-inputs
+
+  - id: resolve-build-metadata
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    waitFor:
+      - validate-build-contract
+    args:
+      - -euo
+      - pipefail
+      - -c
+      - |
+        source /workspace/.os-08-12-2-build-inputs
+
+        normalize_tag() {
+          printf '%s' "$$1" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E \
+                -e 's|[^a-z0-9_.-]+|-|g' \
+                -e 's|[-._]{2,}|-|g' \
+                -e 's|^[.-]+||' \
+                -e 's|[.-]+$$||' \
+            | cut -c1-120
+        }
+
+        BRANCH_TAG="$$(normalize_tag "$$BRANCH_VALUE")"
+
+        if test -z "$$BRANCH_TAG"; then
+          BRANCH_TAG="manual"
+        fi
+
+        COMMIT_TAG="$$(normalize_tag "$$COMMIT_VALUE")"
+
+        if test -z "$$COMMIT_TAG"; then
+          COMMIT_TAG="manual-$$(printf '%s' "$$BUILD_VALUE" | cut -c1-24)"
+        fi
+
+        SHORT_COMMIT_TAG="$$(normalize_tag "$$SHORT_COMMIT_VALUE")"
+
+        if test -z "$$SHORT_COMMIT_TAG"; then
+          SHORT_COMMIT_TAG="$$(printf '%s' "$$COMMIT_TAG" | cut -c1-12)"
+        fi
+
+        BUILD_TIMESTAMP="$$(date -u +%Y%m%dT%H%M%SZ)"
+        OCI_CREATED="$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        BUILD_TAG="build-$$(normalize_tag "$$BUILD_VALUE")"
+
+        for value_name in \
+          BRANCH_TAG \
+          COMMIT_TAG \
+          SHORT_COMMIT_TAG \
+          BUILD_TIMESTAMP \
+          OCI_CREATED \
+          BUILD_TAG
+        do
+          value="$${!value_name}"
+          test -n "$$value" || {
+            echo "ERROR: Resolved metadata '$$value_name' is empty." >&2
+            exit 1
+          }
+        done
+
+        printf '%s\n' \
+          "ENVIRONMENT=$$ENVIRONMENT" \
+          "REGION=$$REGION" \
+          "ARTIFACT_REPOSITORY=$$ARTIFACT_REPOSITORY" \
+          "SERVICE_NAME=$$SERVICE_NAME" \
+          "SERVICE_DIR=$$SERVICE_DIR" \
+          "PROJECT_VALUE=$$PROJECT_VALUE" \
+          "BUILD_VALUE=$$BUILD_VALUE" \
+          "IMAGE_BASE=$$IMAGE_BASE" \
+          "BRANCH_TAG=$$BRANCH_TAG" \
+          "COMMIT_TAG=$$COMMIT_TAG" \
+          "SHORT_COMMIT_TAG=$$SHORT_COMMIT_TAG" \
+          "BUILD_TIMESTAMP=$$BUILD_TIMESTAMP" \
+          "OCI_CREATED=$$OCI_CREATED" \
+          "BUILD_TAG=$$BUILD_TAG" \
+          > /workspace/.os-08-12-2-build-metadata
+
+        echo "Build metadata resolved."
+        cat /workspace/.os-08-12-2-build-metadata
+
+  - id: pull-registry-cache
+    name: gcr.io/cloud-builders/docker
+    waitFor:
+      - resolve-build-metadata
+    entrypoint: bash
+    args:
+      - -euo
+      - pipefail
+      - -c
+      - |
+        source /workspace/.os-08-12-2-build-metadata
+
+        if docker pull "$${IMAGE_BASE}:latest"; then
+          echo "Registry cache loaded from $${IMAGE_BASE}:latest"
+          printf '%s\n' "HIT" > /workspace/.os-08-12-2-cache-status
+        else
+          echo "No previous latest image exists; continuing without registry cache."
+          printf '%s\n' "MISS" > /workspace/.os-08-12-2-cache-status
+        fi
+
+  - id: build-container-image
+    name: gcr.io/cloud-builders/docker
+    waitFor:
+      - pull-registry-cache
+    entrypoint: bash
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - -euo
+      - pipefail
+      - -c
+      - |
+        source /workspace/.os-08-12-2-build-metadata
+
+        docker build \
+          --cache-from "$${IMAGE_BASE}:latest" \
+          --label "org.opencontainers.image.revision=$${COMMIT_TAG}" \
+          --label "org.opencontainers.image.version=$${SHORT_COMMIT_TAG}" \
+          --label "org.opencontainers.image.created=$${OCI_CREATED}" \
+          --label "io.eventmanagement.environment=$${ENVIRONMENT}" \
+          --label "io.eventmanagement.service=$${SERVICE_NAME}" \
+          --label "io.eventmanagement.build-id=$${BUILD_VALUE}" \
+          --tag "$${IMAGE_BASE}:$${BUILD_TAG}" \
+          "$${SERVICE_DIR}"
+
+  - id: apply-image-tags
+    name: gcr.io/cloud-builders/docker
+    waitFor:
+      - build-container-image
+    entrypoint: bash
+    args:
+      - -euo
+      - pipefail
+      - -c
+      - |
+        source /workspace/.os-08-12-2-build-metadata
+
+        SOURCE_IMAGE="$${IMAGE_BASE}:$${BUILD_TAG}"
+
+        for target_tag in \
+          latest \
+          "$${BRANCH_TAG}" \
+          "$${SHORT_COMMIT_TAG}" \
+          "$${COMMIT_TAG}" \
+          "$${BUILD_TIMESTAMP}"
+        do
+          docker tag \
+            "$${SOURCE_IMAGE}" \
+            "$${IMAGE_BASE}:$${target_tag}"
+        done
+
+        docker image inspect \
+          "$${SOURCE_IMAGE}" \
+          > /workspace/os-08-12-2-image-inspect.json
+
+  - id: push-image-tags
+    name: gcr.io/cloud-builders/docker
+    waitFor:
+      - apply-image-tags
+    entrypoint: bash
+    args:
+      - -euo
+      - pipefail
+      - -c
+      - |
+        source /workspace/.os-08-12-2-build-metadata
+
+        for target_tag in \
+          "$${BUILD_TAG}" \
+          latest \
+          "$${BRANCH_TAG}" \
+          "$${SHORT_COMMIT_TAG}" \
+          "$${COMMIT_TAG}" \
+          "$${BUILD_TIMESTAMP}"
+        do
+          echo "Pushing $${IMAGE_BASE}:$${target_tag}"
+          docker push "$${IMAGE_BASE}:$${target_tag}"
+        done
+
+  - id: emit-build-evidence
+    name: gcr.io/cloud-builders/docker
+    waitFor:
+      - push-image-tags
+    entrypoint: bash
+    args:
+      - -euo
+      - pipefail
+      - -c
+      - |
+        source /workspace/.os-08-12-2-build-metadata
+
+        CACHE_STATUS="$$(cat /workspace/.os-08-12-2-cache-status)"
+
+        cat > /workspace/os-08-12-2-build-metadata.txt <<EOF
+        OS_08_12.2 Cloud Build metadata
+
+        environment=$${ENVIRONMENT}
+        region=$${REGION}
+        artifact_repository=$${ARTIFACT_REPOSITORY}
+        service_name=$${SERVICE_NAME}
+        service_dir=$${SERVICE_DIR}
+        project_id=$${PROJECT_VALUE}
+        build_id=$${BUILD_VALUE}
+        image_base=$${IMAGE_BASE}
+        cache_status=$${CACHE_STATUS}
+        branch_tag=$${BRANCH_TAG}
+        short_commit_tag=$${SHORT_COMMIT_TAG}
+        commit_tag=$${COMMIT_TAG}
+        timestamp_tag=$${BUILD_TIMESTAMP}
+        oci_created=$${OCI_CREATED}
+        build_tag=$${BUILD_TAG}
+        EOF
+
+        cat /workspace/os-08-12-2-build-metadata.txt
+
+        sha256sum \
+          /workspace/os-08-12-2-build-metadata.txt \
+          /workspace/os-08-12-2-image-inspect.json
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:latest
+
+options:
+  dynamicSubstitutions: true
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1200s

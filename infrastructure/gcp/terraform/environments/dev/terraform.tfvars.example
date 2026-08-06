@@ -158,6 +158,11 @@ cloud_build_execution_project_roles = [
   "roles/logging.logWriter",
 ]
 
+cloud_build_source_bucket = {
+  name        = "PROJECT_ID_cloudbuild"
+  reader_role = "roles/storage.objectViewer"
+}
+
 cloud_build_secret_access = []
 
 cloud_build_repository_connection = {

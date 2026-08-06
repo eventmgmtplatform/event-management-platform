@@ -23,6 +23,14 @@ resource "google_artifact_registry_repository_iam_member" "execution_writer" {
   member     = local.execution_member
 }
 
+resource "google_storage_bucket_iam_member" "source_reader" {
+  count = length(trimspace(var.source_bucket.name)) > 0 ? 1 : 0
+
+  bucket = var.source_bucket.name
+  role   = var.source_bucket.reader_role
+  member = local.execution_member
+}
+
 resource "google_secret_manager_secret_iam_member" "execution_accessor" {
   for_each = local.secret_access_bindings
 

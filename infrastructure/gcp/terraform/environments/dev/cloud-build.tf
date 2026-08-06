@@ -15,6 +15,7 @@ module "cloud_build" {
     writer_role   = "roles/artifactregistry.writer"
   }
 
+  source_bucket = var.cloud_build_source_bucket
   secret_access = var.cloud_build_secret_access
 
   repository_connection = var.cloud_build_repository_connection

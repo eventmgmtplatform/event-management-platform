@@ -253,6 +253,19 @@ variable "cloud_build_execution_project_roles" {
   default     = ["roles/logging.logWriter"]
 }
 
+variable "cloud_build_source_bucket" {
+  description = "Bucket fuente utilizado por builds manuales de Cloud Build."
+
+  type = object({
+    name        = string
+    reader_role = optional(string, "roles/storage.objectViewer")
+  })
+
+  default = {
+    name = ""
+  }
+}
+
 variable "cloud_build_secret_access" {
   description = "IDs de secretos accesibles por la cuenta ejecutora."
   type        = set(string)

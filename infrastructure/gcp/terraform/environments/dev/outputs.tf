@@ -188,6 +188,11 @@ output "cloud_build_artifact_registry_writer_binding" {
   value       = module.cloud_build.artifact_registry_writer_binding
 }
 
+output "cloud_build_source_bucket_reader_binding" {
+  description = "Binding Object Viewer del bucket fuente Cloud Build."
+  value       = module.cloud_build.source_bucket_reader_binding
+}
+
 output "cloud_build_secret_accessor_bindings" {
   description = "Bindings Secret Manager de Cloud Build."
   value       = module.cloud_build.secret_accessor_bindings
