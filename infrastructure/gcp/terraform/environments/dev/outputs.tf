@@ -221,3 +221,46 @@ output "iam_service_agent_role_bindings" {
   value       = module.iam.service_agent_role_bindings
 }
 # END_OS_08_08_4_CLOUD_BUILD_SERVICE_AGENT_OUTPUT
+
+
+# OS_08_13_CONTINUOUS_DELIVERY_OUTPUTS
+output "continuous_delivery_service_account_id" {
+  description = "Identificador de la cuenta de servicio de Continuous Delivery."
+  value       = module.continuous_delivery.service_account_id
+}
+
+output "continuous_delivery_service_account_name" {
+  description = "Nombre canónico de la cuenta de servicio de Continuous Delivery."
+  value       = module.continuous_delivery.service_account_name
+}
+
+output "continuous_delivery_service_account_email" {
+  description = "Correo de la cuenta de servicio de Continuous Delivery."
+  value       = module.continuous_delivery.service_account_email
+}
+
+output "continuous_delivery_service_account_member" {
+  description = "Principal IAM de la cuenta de servicio de Continuous Delivery."
+  value       = module.continuous_delivery.service_account_member
+}
+
+output "continuous_delivery_artifact_registry_reader_binding" {
+  description = "Binding de lectura de Artifact Registry para Continuous Delivery."
+  value       = module.continuous_delivery.artifact_registry_reader_binding_id
+}
+
+output "continuous_delivery_artifact_repository_path" {
+  description = "Ruta Docker base utilizada por Continuous Delivery."
+  value       = module.continuous_delivery.artifact_repository_path
+}
+
+output "continuous_delivery_services" {
+  description = "Contratos normalizados de servicios desplegables."
+  value       = module.continuous_delivery.services
+}
+
+output "continuous_delivery_release_contract" {
+  description = "Contrato declarativo reusable de Continuous Delivery."
+  value       = module.continuous_delivery.release_contract
+}
+# END_OS_08_13_CONTINUOUS_DELIVERY_OUTPUTS

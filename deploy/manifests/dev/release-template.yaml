@@ -1,0 +1,93 @@
+schemaVersion: '1.0'
+kind: EventManagementRelease
+metadata:
+  releaseId: os-08-13-dev-baseline-001
+  platform: event-management
+  environment: dev
+  createdAt: '2026-08-07T15:25:37Z'
+  sourceBranch: feature/os-08-13-continuous-delivery-foundation
+  managedBy: continuous-delivery
+  description: Initial immutable release baseline produced by OS_08_13. This manifest defines artifacts and runtime contracts but does not execute a deployment.
+artifactRegistry:
+  projectId: corded-key-504121-v7
+  region: us-central1
+  repositoryId: event-management-dev-containers
+  repository: us-central1-docker.pkg.dev/corded-key-504121-v7/event-management-dev-containers
+services:
+  event-gateway:
+    serviceName: event-gateway
+    image:
+      repository: us-central1-docker.pkg.dev/corded-key-504121-v7/event-management-dev-containers/event-gateway
+      digest: sha256:9cb2dbd4a06c0cc76b4cf64beee52581c93b33a851e7a4dfdcfd3067b235cac5
+      reference: us-central1-docker.pkg.dev/corded-key-504121-v7/event-management-dev-containers/event-gateway@sha256:9cb2dbd4a06c0cc76b4cf64beee52581c93b33a851e7a4dfdcfd3067b235cac5
+    runtime:
+      containerName: event-gateway
+      containerPort: 8081
+    health:
+      type: functional
+      path: /api/v1/gateway
+    dependencies:
+    - kafka
+    secretRefs: []
+    provenance:
+      buildSystem: cloud-build
+      buildId: 1a1a8ba8-10f4-4b89-a9f6-ece5f44a9da3
+      sourceBranch: feature/os-08-12-2-cloud-build-pipelines
+      sourceCommit: 0814802073d0c3fa026400c1db82ee47b885d84e
+      shortCommit: 0814802073d0
+  integration-worker:
+    serviceName: integration-worker
+    image:
+      repository: us-central1-docker.pkg.dev/corded-key-504121-v7/event-management-dev-containers/integration-worker
+      digest: sha256:86119fd14561e325939bcc310dcdb1213c19991328483cae08bebc7fdfc0d97d
+      reference: us-central1-docker.pkg.dev/corded-key-504121-v7/event-management-dev-containers/integration-worker@sha256:86119fd14561e325939bcc310dcdb1213c19991328483cae08bebc7fdfc0d97d
+    runtime:
+      containerName: event-integration-worker
+      containerPort: 8083
+    health:
+      type: smallrye
+      path: /health
+      livePath: /health/live
+      readyPath: /health/ready
+    dependencies:
+    - kafka
+    - servicenow
+    secretRefs:
+    - servicenow_credentials
+    provenance:
+      buildSystem: cloud-build
+      buildId: 8d5c35b7-cec2-48c2-8708-27d1c00a3d6a
+      sourceBranch: feature/os-08-12-2-cloud-build-pipelines
+      sourceCommit: 1e13b6103547272a70e34f4c51c617036cd03ec4
+      shortCommit: 1e13b61
+  event-state-service:
+    serviceName: event-state-service
+    image:
+      repository: us-central1-docker.pkg.dev/corded-key-504121-v7/event-management-dev-containers/event-state-service
+      digest: sha256:018ec20152f4d8f9afff9467fa21792d69fc802ae4bab8df9d5151b83b024885
+      reference: us-central1-docker.pkg.dev/corded-key-504121-v7/event-management-dev-containers/event-state-service@sha256:018ec20152f4d8f9afff9467fa21792d69fc802ae4bab8df9d5151b83b024885
+    runtime:
+      containerName: event-state-service
+      containerPort: 8084
+    health:
+      type: smallrye
+      path: /health
+      livePath: /health/live
+      readyPath: /health/ready
+    dependencies:
+    - kafka
+    - opensearch
+    - postgres
+    secretRefs:
+    - database_credentials
+    provenance:
+      buildSystem: cloud-build
+      buildId: 1c9b07a0-e2cd-4306-adb9-a948d6785236
+      sourceBranch: feature/os-08-12-2-cloud-build-pipelines
+      sourceCommit: 1e13b6103547272a70e34f4c51c617036cd03ec4
+      shortCommit: 1e13b61
+rollback:
+  strategy: previous-manifest
+  rebuildAllowed: false
+  mutableTagsAllowed: false
+  previousReleaseRequired: true

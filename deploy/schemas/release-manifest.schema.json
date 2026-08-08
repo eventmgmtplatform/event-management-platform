@@ -1,0 +1,320 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eventmanagementopensource.local/schemas/release-manifest.schema.json",
+  "title": "Event Management Release Manifest",
+  "description": "Runtime-independent release contract for Event Management OpenSource.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "metadata",
+    "artifactRegistry",
+    "services",
+    "rollback"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "kind": {
+      "type": "string",
+      "const": "EventManagementRelease"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "releaseId",
+        "platform",
+        "environment",
+        "createdAt",
+        "sourceBranch",
+        "managedBy"
+      ],
+      "properties": {
+        "releaseId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128,
+          "pattern": "^[a-z0-9][a-z0-9._-]*[a-z0-9]$"
+        },
+        "platform": {
+          "type": "string",
+          "const": "event-management"
+        },
+        "environment": {
+          "type": "string",
+          "enum": [
+            "dev",
+            "qa",
+            "prod"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sourceBranch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "managedBy": {
+          "type": "string",
+          "const": "continuous-delivery"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 512
+        }
+      }
+    },
+    "artifactRegistry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "projectId",
+        "region",
+        "repositoryId",
+        "repository"
+      ],
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{4,28}[a-z0-9]$"
+        },
+        "region": {
+          "type": "string",
+          "pattern": "^[a-z]+-[a-z0-9]+[0-9]$"
+        },
+        "repositoryId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+-docker\\.pkg\\.dev/[a-z][a-z0-9-]+/[a-z][a-z0-9-]*[a-z0-9]$"
+        }
+      }
+    },
+    "services": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/service"
+      },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy",
+        "rebuildAllowed",
+        "mutableTagsAllowed",
+        "previousReleaseRequired"
+      ],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "const": "previous-manifest"
+        },
+        "rebuildAllowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "mutableTagsAllowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "previousReleaseRequired": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "serviceName",
+        "image",
+        "provenance",
+        "runtime",
+        "health",
+        "dependencies",
+        "secretRefs"
+      ],
+      "properties": {
+        "serviceName": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+        },
+        "image": {
+          "$ref": "#/$defs/image"
+        },
+        "runtime": {
+          "$ref": "#/$defs/runtime"
+        },
+        "health": {
+          "$ref": "#/$defs/health"
+        },
+        "dependencies": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*[a-z0-9]$"
+          }
+        },
+        "secretRefs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"
+          }
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "digest",
+        "reference"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+-docker\\.pkg\\.dev/.+"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "reference": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+-docker\\.pkg\\.dev/.+@sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "containerName",
+        "containerPort"
+      ],
+      "properties": {
+        "containerName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
+        },
+        "containerPort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "health": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/functionalHealth"
+        },
+        {
+          "$ref": "#/$defs/smallryeHealth"
+        }
+      ]
+    },
+    "functionalHealth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "path"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "functional"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        }
+      }
+    },
+    "smallryeHealth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "path",
+        "livePath",
+        "readyPath"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "smallrye"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "livePath": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "readyPath": {
+          "type": "string",
+          "pattern": "^/"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "buildSystem",
+        "buildId",
+        "sourceBranch",
+        "sourceCommit",
+        "shortCommit"
+      ],
+      "properties": {
+        "buildSystem": {
+          "type": "string",
+          "const": "cloud-build"
+        },
+        "buildId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sourceBranch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceCommit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "shortCommit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{7,12}$"
+        }
+      }
+    }
+  }
+}
