@@ -1,0 +1,20 @@
+{
+  "source": "Zabbix",
+  "InstanceSituation": "sdc_portconn_rlzc_ncomni_itm",
+  "AlertKey": "sdc_portconn_rlzc_ncomni_itm",
+  "InstanceValue": "1",
+  "hostname": "sdcgdcimpro01",
+  "ClassName": "Zabbix",
+  "Type": "0",
+  "origin": "158.98.48.163",
+  "msg": "Connection LOST from SHARED JUMPSERVER to PROXY on port 8080",
+  "severity": "5",
+  "Component": "NCOMNI",
+  "InstanceId": "net.tcp.port[158.98.59.35,8080]",
+  "Node": "sdcgdcimpro01",
+  "NodeAlias": "158.98.48.163",
+  "ApplId": "NCOMNI",
+  "CustomerCode": "SDC",
+  "SubComponent": "SDC Linux Servers, SDC Socks Servers",
+  "ExpireTime": 900
+}

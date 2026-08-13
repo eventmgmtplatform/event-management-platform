@@ -23,10 +23,15 @@ public class EventValidationProcessor implements Processor {
             Logger.getLogger(EventValidationProcessor.class);
 
     private final ObjectMapper objectMapper;
+    private final ZabbixMessageBusNormalizer zabbixNormalizer;
 
     @Inject
-    public EventValidationProcessor(ObjectMapper objectMapper) {
+    public EventValidationProcessor(
+            ObjectMapper objectMapper,
+            ZabbixMessageBusNormalizer zabbixNormalizer
+    ) {
         this.objectMapper = objectMapper;
+        this.zabbixNormalizer = zabbixNormalizer;
     }
 
     @Override
@@ -58,6 +63,83 @@ public class EventValidationProcessor implements Processor {
             );
         }
 
+        String receivedAt =
+                OffsetDateTime.now(ZoneOffset.UTC).toString();
+
+        String eventId =
+                UUID.randomUUID().toString();
+
+        /*
+         * Contrato nativo Zabbix Message Bus v1.
+         * Se procesa antes del contrato legacy para no exigir
+         * resource, summary, severity y status en su forma anterior.
+         */
+        if (zabbixNormalizer.supports(inputEvent)) {
+
+            ObjectNode normalizedEvent =
+                    zabbixNormalizer.normalize(
+                            inputEvent,
+                            eventId,
+                            receivedAt
+                    );
+
+            String eventKey =
+                    normalizedEvent.path("eventKey").asText();
+
+            String source =
+                    normalizedEvent.path("source")
+                            .path("system")
+                            .asText();
+
+            String lifecycleAction =
+                    normalizedEvent.path("lifecycleAction")
+                            .asText();
+
+            exchange.getMessage().setHeader(
+                    "eventId",
+                    eventId
+            );
+
+            exchange.getMessage().setHeader(
+                    "eventKey",
+                    eventKey
+            );
+
+            exchange.getMessage().setHeader(
+                    "eventSource",
+                    source
+            );
+
+            exchange.getMessage().setHeader(
+                    "eventStatus",
+                    lifecycleAction
+            );
+
+            exchange.getMessage().setHeader(
+                    "eventSchemaVersion",
+                    "1.1"
+            );
+
+            exchange.getMessage().setBody(
+                    objectMapper.writeValueAsString(
+                            normalizedEvent
+                    )
+            );
+
+            LOG.infov(
+                    "Evento Zabbix Message Bus normalizado. " +
+                    "eventId={0}, eventKey={1}, lifecycle={2}",
+                    eventId,
+                    eventKey,
+                    lifecycleAction
+            );
+
+            return;
+        }
+
+        /*
+         * Contrato legacy v1.0.
+         */
         validateRequiredField(inputEvent, "resource");
         validateRequiredField(inputEvent, "summary");
         validateRequiredField(inputEvent, "severity");
@@ -84,12 +166,6 @@ public class EventValidationProcessor implements Processor {
                     "status debe ser PROBLEM, OK o RESOLVED"
             );
         }
-
-        String receivedAt =
-                OffsetDateTime.now(ZoneOffset.UTC).toString();
-
-        String eventId =
-                UUID.randomUUID().toString();
 
         String source = inputEvent.path("source")
                 .asText("zabbix")
@@ -144,6 +220,21 @@ public class EventValidationProcessor implements Processor {
         exchange.getMessage().setHeader(
                 "eventId",
                 eventId
+        );
+
+        /*
+         * El contrato legacy todavía no posee identidad canónica.
+         * Conservamos eventId como clave para evitar una deduplicación
+         * incorrecta.
+         */
+        exchange.getMessage().setHeader(
+                "eventKey",
+                eventId
+        );
+
+        exchange.getMessage().setHeader(
+                "eventSchemaVersion",
+                "1.0"
         );
 
         exchange.getMessage().setHeader(

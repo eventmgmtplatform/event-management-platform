@@ -90,18 +90,20 @@ public class EventGatewayRoute extends RouteBuilder {
             )
 
             /*
-             * La clave Kafka será inicialmente el eventId.
-             * Más adelante la sustituiremos por eventKey para deduplicación.
+             * Zabbix Message Bus v1.1 utiliza eventKey para garantizar
+             * orden por identidad lógica. El contrato legacy establece
+             * eventKey=eventId para conservar su comportamiento.
              */
             .setHeader(
                 KafkaConstants.KEY,
-                header("eventId")
+                header("eventKey")
             )
 
             .log(
                 "Publicando evento en Kafka. "
                 + "topic={{event.gateway.kafka.topic}}, "
-                + "eventId=${header.eventId}"
+                + "eventId=${header.eventId}, "
+                + "eventKey=${header.eventKey}"
             )
 
             /*

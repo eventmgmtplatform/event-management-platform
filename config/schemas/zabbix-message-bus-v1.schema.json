@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eventmanagement.local/schemas/zabbix-message-bus-v1.schema.json",
+  "title": "Zabbix Message Bus Event v1",
+  "description": "Contrato nativo de 18 campos recibido desde Zabbix Message Bus.",
+  "type": "object",
+  "required": [
+    "source",
+    "InstanceSituation",
+    "AlertKey",
+    "InstanceValue",
+    "hostname",
+    "ClassName",
+    "Type",
+    "origin",
+    "msg",
+    "severity",
+    "Component",
+    "InstanceId",
+    "Node",
+    "NodeAlias",
+    "ApplId",
+    "CustomerCode",
+    "SubComponent",
+    "ExpireTime"
+  ],
+  "properties": {
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "InstanceSituation": {
+      "type": "string",
+      "minLength": 1
+    },
+    "AlertKey": {
+      "type": "string",
+      "minLength": 1
+    },
+    "InstanceValue": {
+      "type": "string",
+      "enum": ["0", "1"]
+    },
+    "hostname": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ClassName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Type": {
+      "type": "string",
+      "enum": ["0", "1"]
+    },
+    "origin": {
+      "type": "string",
+      "minLength": 1
+    },
+    "msg": {
+      "type": "string",
+      "minLength": 1
+    },
+    "severity": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-5]$"
+        }
+      ]
+    },
+    "Component": {
+      "type": "string",
+      "minLength": 1
+    },
+    "InstanceId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Node": {
+      "type": "string",
+      "minLength": 1
+    },
+    "NodeAlias": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ApplId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "CustomerCode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "SubComponent": {
+      "type": "string"
+    },
+    "ExpireTime": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9]+$"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "Type": {
+            "const": "1"
+          }
+        },
+        "required": ["Type"]
+      },
+      "then": {
+        "properties": {
+          "InstanceValue": {
+            "const": "0"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "Type": {
+            "const": "0"
+          }
+        },
+        "required": ["Type"]
+      },
+      "then": {
+        "properties": {
+          "InstanceValue": {
+            "const": "1"
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}
