@@ -4,7 +4,7 @@
 
     <route id="integration-results-state-route">
 
-        <from uri="kafka:{{kafka.topic.integration.results}}?brokers={{kafka.bootstrap.servers}}&amp;groupId={{kafka.consumer.group.id}}&amp;autoOffsetReset={{kafka.consumer.auto.offset.reset}}&amp;autoCommitEnable=false&amp;breakOnFirstError=true"/>
+        <from uri="kafka:{{kafka.topic.integration.results}}?brokers={{kafka.bootstrap.servers}}&amp;groupId={{kafka.consumer.group.id}}&amp;autoOffsetReset={{kafka.consumer.auto.offset.reset}}&amp;autoCommitEnable=false&amp;allowManualCommit=true&amp;breakOnFirstError=true"/>
 
 	<log
     loggingLevel="INFO"

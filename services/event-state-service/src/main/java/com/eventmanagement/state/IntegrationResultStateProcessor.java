@@ -7,6 +7,8 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.apache.camel.component.kafka.KafkaConstants;
+import org.apache.camel.component.kafka.consumer.KafkaManualCommit;
 import org.jboss.logging.Logger;
 
 @Named("integrationResultStateProcessor")
@@ -45,6 +47,18 @@ public class IntegrationResultStateProcessor implements Processor {
             );
         }
 
+        KafkaManualCommit manualCommit =
+                exchange.getMessage().getHeader(
+                        KafkaConstants.MANUAL_COMMIT,
+                        KafkaManualCommit.class
+                );
+
+        if (manualCommit == null) {
+            throw new IllegalStateException(
+                    "Kafka manual commit no está disponible"
+            );
+        }
+
         JsonNode result =
                 objectMapper.readTree(body);
 
@@ -79,6 +93,17 @@ public class IntegrationResultStateProcessor implements Processor {
                 repository.consolidate(result);
 
         openSearchClient.index(state);
+
+        /*
+         * Confirmar Kafka únicamente después de que PostgreSQL y
+         * OpenSearch hayan finalizado correctamente.
+         */
+        manualCommit.commit();
+
+        LOG.infov(
+                "Offset Kafka confirmado: resultId={0}",
+                resultId
+        );
 
         exchange.setProperty(
                 "resultId",
