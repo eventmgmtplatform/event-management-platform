@@ -25,6 +25,34 @@ COMPOSE=(
     -f "${COMPOSE_FILE}"
 )
 
+readonly -a START_ORDER=(
+    postgres
+    opensearch
+    kafka
+    kafka-init
+    servicenow-mock
+    event-gateway
+    enrichment-engine
+    integration-worker
+    event-state-service
+    kafka-ui
+    opensearch-dashboards
+)
+
+readonly -a STOP_ORDER=(
+    opensearch-dashboards
+    kafka-ui
+    event-state-service
+    integration-worker
+    enrichment-engine
+    event-gateway
+    servicenow-mock
+    kafka-init
+    kafka
+    opensearch
+    postgres
+)
+
 usage() {
     cat <<EOF
 Uso:
@@ -116,11 +144,12 @@ start_all() {
     local service failed=0
 
     echo "Iniciando Event Management desde ${PROJECT_ROOT}..."
-    "${COMPOSE[@]}" up -d --build
 
-    while IFS= read -r service; do
+    for service in "${START_ORDER[@]}"; do
+        echo "Fase de inicio: ${service}"
+        "${COMPOSE[@]}" up -d --build "${service}"
         wait_for_service "${service}" || failed=1
-    done < <("${COMPOSE[@]}" config --services)
+    done
 
     "${COMPOSE[@]}" ps -a
     (( failed == 0 )) || return 1
@@ -133,8 +162,11 @@ stop_service() {
 }
 
 stop_all() {
-    echo "Deteniendo Event Management sin eliminar contenedores ni volúmenes..."
-    "${COMPOSE[@]}" stop --timeout 30
+    local service
+    echo "Deteniendo Event Management en orden inverso sin eliminar datos..."
+    for service in "${STOP_ORDER[@]}"; do
+        "${COMPOSE[@]}" stop --timeout 30 "${service}"
+    done
     "${COMPOSE[@]}" ps -a
 }
 
