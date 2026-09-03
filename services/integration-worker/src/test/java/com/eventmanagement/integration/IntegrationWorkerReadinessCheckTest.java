@@ -2,6 +2,7 @@ package com.eventmanagement.integration;
 
 import org.apache.kafka.clients.admin.MemberAssignment;
 import org.apache.kafka.clients.admin.MemberDescription;
+import org.apache.kafka.common.GroupState;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +55,77 @@ class IntegrationWorkerReadinessCheckTest {
                         .hasTopicAssignment(
                                 List.of(),
                                 "integration.commands"
+                        )
+        );
+    }
+
+    @Test
+    void shouldRemainUnreadyDuringStabilization() {
+
+        assertFalse(
+                IntegrationWorkerReadinessCheck
+                        .hasStabilized(
+                                java.util.concurrent.TimeUnit
+                                        .SECONDS
+                                        .toNanos(14),
+                                15000
+                        )
+        );
+    }
+
+    @Test
+    void shouldBecomeReadyAfterStabilization() {
+
+        assertTrue(
+                IntegrationWorkerReadinessCheck
+                        .hasStabilized(
+                                java.util.concurrent.TimeUnit
+                                        .SECONDS
+                                        .toNanos(15),
+                                15000
+                        )
+        );
+    }
+
+    @Test
+    void shouldAcceptStableConsumerGroup() {
+
+        assertTrue(
+                IntegrationWorkerReadinessCheck
+                        .isConsumerGroupStable(
+                                GroupState.STABLE
+                        )
+        );
+    }
+
+    @Test
+    void shouldRejectRebalancingConsumerGroup() {
+
+        assertFalse(
+                IntegrationWorkerReadinessCheck
+                        .isConsumerGroupStable(
+                                GroupState.PREPARING_REBALANCE
+                        )
+        );
+
+        assertFalse(
+                IntegrationWorkerReadinessCheck
+                        .isConsumerGroupStable(
+                                GroupState.COMPLETING_REBALANCE
+                        )
+        );
+
+        assertFalse(
+                IntegrationWorkerReadinessCheck
+                        .isConsumerGroupStable(
+                                GroupState.RECONCILING
+                        )
+        );
+
+        assertFalse(
+                IntegrationWorkerReadinessCheck
+                        .isConsumerGroupStable(
+                                null
                         )
         );
     }

@@ -8,7 +8,7 @@
 
     <route id="integration-command-consumer">
 
-        <from uri="kafka:{{kafka.topic.integration.commands}}?brokers={{kafka.bootstrap.servers}}&amp;groupId={{kafka.consumer.group.id}}&amp;autoOffsetReset={{kafka.consumer.auto.offset.reset}}"/>
+        <from uri="kafka:{{kafka.topic.integration.commands}}?brokers={{kafka.bootstrap.servers}}&amp;groupId={{kafka.consumer.group.id}}&amp;autoOffsetReset={{kafka.consumer.auto.offset.reset}}&amp;sessionTimeoutMs={{kafka.consumer.session-timeout-ms}}&amp;heartbeatIntervalMs={{kafka.consumer.heartbeat-interval-ms}}"/>
 
         <log loggingLevel="INFO"
              message="Comando recibido desde integration.commands"/>
@@ -22,29 +22,70 @@
             <process ref="integrationCommandProcessor"/>
 
             <!--
-                Eliminamos los headers heredados de Kafka antes
-                de realizar la petición HTTP.
+                Reserve commandId before any external side effect.
             -->
-            <removeHeaders pattern="*"/>
+            <process ref="integrationCommandClaimProcessor"/>
 
-            <setHeader name="Content-Type">
-                <constant>application/json</constant>
-            </setHeader>
+            <choice>
 
-            <setHeader name="CamelHttpMethod">
-                <constant>POST</constant>
-            </setHeader>
+                <!--
+                    Another execution already owns this command.
+                    Stop without invoking ServiceNow or publishing
+                    a competing terminal result.
+                -->
+                <when>
+                    <simple>${exchangeProperty.integrationIdempotencyDecision} == 'IN_PROGRESS'</simple>
 
-            <log loggingLevel="INFO"
-                 message="Invocando ServiceNow Mock para eventId=${exchangeProperty.eventId}"/>
+                    <log loggingLevel="INFO"
+                         message="Comando duplicado en progreso suprimido: commandId=${exchangeProperty.commandId}"/>
 
-            <!--
-                Executes the ServiceNow request with classified,
-                bounded retries. Only the final outcome continues.
-            -->
-            <process ref="serviceNowRetryExecutor"/>
+                    <stop/>
+                </when>
 
-            <process ref="integrationResultProcessor"/>
+                <!--
+                    The command already completed. The claim processor
+                    placed its stored terminal result in the message body.
+                -->
+                <when>
+                    <simple>${exchangeProperty.integrationIdempotencyDecision} == 'REPLAY'</simple>
+
+                    <log loggingLevel="INFO"
+                         message="Reutilizando resultado idempotente: commandId=${exchangeProperty.commandId}"/>
+                </when>
+
+                <!--
+                    This execution acquired the durable command claim.
+                -->
+                <otherwise>
+
+                    <!--
+                        Remove inherited Kafka headers before invoking
+                        the external ServiceNow endpoint.
+                    -->
+                    <removeHeaders pattern="*"/>
+
+                    <setHeader name="Content-Type">
+                        <constant>application/json</constant>
+                    </setHeader>
+
+                    <setHeader name="CamelHttpMethod">
+                        <constant>POST</constant>
+                    </setHeader>
+
+                    <log loggingLevel="INFO"
+                         message="Invocando ServiceNow Mock para eventId=${exchangeProperty.eventId}"/>
+
+                    <!--
+                        Executes the ServiceNow request with classified,
+                        bounded retries. Only the final outcome continues.
+                    -->
+                    <process ref="serviceNowRetryExecutor"/>
+
+                    <process ref="integrationResultProcessor"/>
+
+                </otherwise>
+
+            </choice>
 
             <doCatch>
 
@@ -55,6 +96,12 @@
             </doCatch>
 
         </doTry>
+
+        <!--
+            Persist the owned terminal result before Kafka publication.
+            REPLAY and unresolved claims are intentionally ignored.
+        -->
+        <process ref="integrationCommandCompletionProcessor"/>
 
         <!--
             Tanto SUCCESS como FAILED se publican
