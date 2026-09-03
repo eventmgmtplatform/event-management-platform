@@ -38,7 +38,11 @@
             <log loggingLevel="INFO"
                  message="Invocando ServiceNow Mock para eventId=${exchangeProperty.eventId}"/>
 
-            <to uri="{{integration.servicenow.base-url}}{{integration.servicenow.create-ticket-path}}?throwExceptionOnFailure=true&amp;connectTimeout={{integration.servicenow.timeout-ms}}&amp;responseTimeout={{integration.servicenow.timeout-ms}}"/>
+            <!--
+                Executes the ServiceNow request with classified,
+                bounded retries. Only the final outcome continues.
+            -->
+            <process ref="serviceNowRetryExecutor"/>
 
             <process ref="integrationResultProcessor"/>
 

@@ -46,6 +46,7 @@ class IntegrationResultProcessorTest {
         assertEquals("SERVICENOW", result.path("integrationType").asText());
         assertEquals("CREATE_TICKET", result.path("operation").asText());
         assertEquals("SUCCESS", result.path("status").asText());
+        assertEquals(1, result.path("attempt").asInt());
 
         /*
          * Legacy field retained for event-state-service compatibility.

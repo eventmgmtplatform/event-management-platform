@@ -37,6 +37,7 @@ class IntegrationFailureProcessorTest {
 
         assertEquals("1.1", result.path("schemaVersion").asText());
         assertEquals("FAILED", result.path("status").asText());
+        assertEquals(1, result.path("attempt").asInt());
         assertEquals(
                 "corr-failure-001",
                 result.path("correlationId").asText()
@@ -68,6 +69,8 @@ class IntegrationFailureProcessorTest {
                 new ConnectException("Connection refused"),
                 2
         );
+
+        assertEquals(2, result.path("attempt").asInt());
 
         JsonNode error = result.path("error");
 

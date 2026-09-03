@@ -155,6 +155,11 @@ public class IntegrationFailureProcessor implements Processor {
                 "FAILED"
         );
 
+        failureResult.put(
+                "attempt",
+                attempt
+        );
+
         failureResult.putNull(
                 "externalId"
         );

@@ -92,6 +92,16 @@ public class IntegrationResultProcessor implements Processor {
         String operation =
                 exchange.getProperty("operation", String.class);
 
+        Integer attempt =
+                exchange.getProperty(
+                        "integrationAttempt",
+                        Integer.class
+                );
+
+        if (attempt == null || attempt < 1) {
+            attempt = 1;
+        }
+
         ObjectNode integrationResult =
                 objectMapper.createObjectNode();
 
@@ -143,6 +153,11 @@ public class IntegrationResultProcessor implements Processor {
         integrationResult.put(
                 "status",
                 "SUCCESS"
+        );
+
+        integrationResult.put(
+                "attempt",
+                attempt
         );
 
         integrationResult.put(
