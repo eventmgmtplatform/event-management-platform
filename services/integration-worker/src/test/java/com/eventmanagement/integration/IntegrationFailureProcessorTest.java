@@ -111,6 +111,47 @@ class IntegrationFailureProcessorTest {
         assertEquals(1, error.path("attempt").asInt());
     }
 
+    @Test
+    void shouldProducePermanentCommandIdCollisionFailure()
+            throws Exception {
+
+        JsonNode result = processFailure(
+                new CommandIdCollisionException(
+                        "cmd-failure-001"
+                ),
+                null
+        );
+
+        assertEquals(
+                "FAILED",
+                result.path("status").asText()
+        );
+        assertEquals(1, result.path("attempt").asInt());
+        assertTrue(result.path("httpStatus").isNull());
+
+        JsonNode error = result.path("error");
+
+        assertEquals(
+                "COMMAND_ID_COLLISION",
+                error.path("code").asText()
+        );
+        assertEquals(
+                "IDEMPOTENCY",
+                error.path("category").asText()
+        );
+        assertFalse(error.path("retryable").asBoolean());
+        assertEquals(1, error.path("attempt").asInt());
+        assertEquals(
+                "CommandIdCollisionException",
+                error.path("type").asText()
+        );
+        assertEquals(
+                "commandId collision with different payload: " +
+                        "cmd-failure-001",
+                error.path("message").asText()
+        );
+    }
+
     private JsonNode processFailure(
             Exception exception,
             Integer attempt

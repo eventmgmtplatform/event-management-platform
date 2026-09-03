@@ -14,6 +14,27 @@ class ServiceNowErrorClassifierTest {
             new ServiceNowErrorClassifier();
 
     @Test
+    void shouldClassifyCommandIdCollisionAsPermanent() {
+
+        var result = classifier.classify(
+                new CommandIdCollisionException(
+                        "cmd-collision-001"
+                )
+        );
+
+        assertEquals(
+                "COMMAND_ID_COLLISION",
+                result.code()
+        );
+        assertEquals(
+                "IDEMPOTENCY",
+                result.category()
+        );
+        assertFalse(result.retryable());
+        assertEquals(null, result.httpStatus());
+    }
+
+    @Test
     void shouldClassifyValidationErrorAsPermanent() {
 
         var result = classifier.classify(

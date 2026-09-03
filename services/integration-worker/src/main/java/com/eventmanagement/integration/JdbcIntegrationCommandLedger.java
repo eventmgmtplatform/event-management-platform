@@ -243,8 +243,7 @@ public class JdbcIntegrationCommandLedger
                 if (!payloadHash.equals(storedHash) ||
                         !command.equals(storedCommand)) {
 
-                    throw new IllegalStateException(
-                            "commandId collision with different payload: " +
+                    throw new CommandIdCollisionException(
                             commandId
                     );
                 }

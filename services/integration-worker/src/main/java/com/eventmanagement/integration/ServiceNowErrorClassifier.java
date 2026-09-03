@@ -18,6 +18,15 @@ public class ServiceNowErrorClassifier {
 
         Throwable cause = mostRelevantCause(throwable);
 
+        if (cause instanceof CommandIdCollisionException) {
+            return new Classification(
+                    "COMMAND_ID_COLLISION",
+                    "IDEMPOTENCY",
+                    false,
+                    null
+            );
+        }
+
         if (cause instanceof IllegalArgumentException) {
             return new Classification(
                     "INVALID_INTEGRATION_COMMAND",
