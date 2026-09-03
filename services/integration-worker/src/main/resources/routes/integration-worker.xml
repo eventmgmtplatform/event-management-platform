@@ -58,11 +58,13 @@
         -->
         <removeHeaders pattern="*"/>
 
-        <setHeader name="kafka.KEY">
-            <simple>${exchangeProperty.eventKey}</simple>
-        </setHeader>
+        <!--
+            KafkaConstants.KEY is assigned through Java after header cleanup.
+            This preserves ordering by the logical event identity.
+        -->
+        <process ref="integrationKafkaKeyProcessor"/>
 
-	<to uri="kafka:{{kafka.topic.integration.results}}?brokers={{kafka.bootstrap.servers}}"/>
+        <to uri="kafka:{{kafka.topic.integration.results}}?brokers={{kafka.bootstrap.servers}}"/>
 
         <log loggingLevel="INFO"
              message="Resultado publicado: commandId=${exchangeProperty.commandId}, eventId=${exchangeProperty.eventId}"/>
