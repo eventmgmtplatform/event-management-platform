@@ -22,10 +22,15 @@ public class IntegrationFailureProcessor implements Processor {
             Logger.getLogger(IntegrationFailureProcessor.class);
 
     private final ObjectMapper objectMapper;
+    private final ServiceNowErrorClassifier errorClassifier;
 
     @Inject
-    public IntegrationFailureProcessor(ObjectMapper objectMapper) {
+    public IntegrationFailureProcessor(
+            ObjectMapper objectMapper,
+            ServiceNowErrorClassifier errorClassifier
+    ) {
         this.objectMapper = objectMapper;
+        this.errorClassifier = errorClassifier;
     }
 
     @Override
@@ -78,6 +83,24 @@ public class IntegrationFailureProcessor implements Processor {
                 Exchange.HTTP_RESPONSE_CODE,
                 Integer.class
         );
+
+        ServiceNowErrorClassifier.Classification classification =
+                errorClassifier.classify(exception);
+
+        Integer resolvedHttpStatus =
+                httpStatus != null
+                        ? httpStatus
+                        : classification.httpStatus();
+
+        Integer attempt =
+                exchange.getProperty(
+                        "integrationAttempt",
+                        Integer.class
+                );
+
+        if (attempt == null || attempt < 1) {
+            attempt = 1;
+        }
 
         ObjectNode failureResult =
                 objectMapper.createObjectNode();
@@ -149,14 +172,37 @@ public class IntegrationFailureProcessor implements Processor {
                 OffsetDateTime.now(ZoneOffset.UTC).toString()
         );
 
-        if (httpStatus != null) {
-            failureResult.put("httpStatus", httpStatus);
+        if (resolvedHttpStatus != null) {
+            failureResult.put(
+                    "httpStatus",
+                    resolvedHttpStatus
+            );
         } else {
             failureResult.putNull("httpStatus");
         }
 
         ObjectNode error =
                 failureResult.putObject("error");
+
+        error.put(
+                "code",
+                classification.code()
+        );
+
+        error.put(
+                "category",
+                classification.category()
+        );
+
+        error.put(
+                "retryable",
+                classification.retryable()
+        );
+
+        error.put(
+                "attempt",
+                attempt
+        );
 
         error.put(
                 "type",
