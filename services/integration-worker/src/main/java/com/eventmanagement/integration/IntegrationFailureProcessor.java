@@ -39,6 +39,13 @@ public class IntegrationFailureProcessor implements Processor {
         String commandId =
                 propertyOrDefault(exchange, "commandId", "UNKNOWN");
 
+        String correlationId =
+                propertyOrDefault(
+                        exchange,
+                        "correlationId",
+                        commandId
+                );
+
         String eventId =
                 propertyOrDefault(exchange, "eventId", "UNKNOWN");
 
@@ -77,7 +84,7 @@ public class IntegrationFailureProcessor implements Processor {
 
         failureResult.put(
                 "schemaVersion",
-                "1.0"
+                "1.1"
         );
 
         failureResult.put(
@@ -88,6 +95,11 @@ public class IntegrationFailureProcessor implements Processor {
         failureResult.put(
                 "commandId",
                 commandId
+        );
+
+        failureResult.put(
+                "correlationId",
+                correlationId
         );
 
         failureResult.put(
@@ -122,6 +134,14 @@ public class IntegrationFailureProcessor implements Processor {
 
         failureResult.putNull(
                 "externalId"
+        );
+
+        failureResult.putNull(
+                "externalReference"
+        );
+
+        failureResult.putNull(
+                "externalSystemId"
         );
 
         failureResult.put(

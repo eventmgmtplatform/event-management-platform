@@ -65,8 +65,17 @@ public class IntegrationResultProcessor implements Processor {
             );
         }
 
+        if (sysId.isBlank()) {
+            throw new IllegalStateException(
+                    "ServiceNow no devolvió result.sys_id"
+            );
+        }
+
         String commandId =
                 exchange.getProperty("commandId", String.class);
+
+        String correlationId =
+                exchange.getProperty("correlationId", String.class);
 
         String eventId =
                 exchange.getProperty("eventId", String.class);
@@ -77,12 +86,18 @@ public class IntegrationResultProcessor implements Processor {
         String tenant =
                 exchange.getProperty("tenant", String.class);
 
+        String integrationType =
+                exchange.getProperty("integrationType", String.class);
+
+        String operation =
+                exchange.getProperty("operation", String.class);
+
         ObjectNode integrationResult =
                 objectMapper.createObjectNode();
 
         integrationResult.put(
                 "schemaVersion",
-                "1.0"
+                "1.1"
         );
 
         integrationResult.put(
@@ -93,6 +108,11 @@ public class IntegrationResultProcessor implements Processor {
         integrationResult.put(
                 "commandId",
                 commandId
+        );
+
+        integrationResult.put(
+                "correlationId",
+                correlationId
         );
 
         integrationResult.put(
@@ -112,12 +132,12 @@ public class IntegrationResultProcessor implements Processor {
 
         integrationResult.put(
                 "integrationType",
-                "SERVICENOW"
+                integrationType
         );
 
         integrationResult.put(
                 "operation",
-                "CREATE_TICKET"
+                operation
         );
 
         integrationResult.put(
@@ -128,6 +148,16 @@ public class IntegrationResultProcessor implements Processor {
         integrationResult.put(
                 "externalId",
                 ticketNumber
+        );
+
+        integrationResult.put(
+                "externalReference",
+                ticketNumber
+        );
+
+        integrationResult.put(
+                "externalSystemId",
+                sysId
         );
 
         integrationResult.put(

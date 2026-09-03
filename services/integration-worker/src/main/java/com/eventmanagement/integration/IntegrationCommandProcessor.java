@@ -39,6 +39,8 @@ public class IntegrationCommandProcessor implements Processor {
         JsonNode command = objectMapper.readTree(commandJson);
 
         String commandId = requiredText(command, "commandId");
+        String correlationId =
+                optionalText(command, "correlationId", commandId);
         String eventId = requiredText(command, "eventId");
         String eventKey = requiredText(command, "eventKey");
         String tenant = requiredText(command, "tenant");
@@ -89,6 +91,7 @@ public class IntegrationCommandProcessor implements Processor {
         );
 
         exchange.setProperty("commandId", commandId);
+        exchange.setProperty("correlationId", correlationId);
         exchange.setProperty("eventId", eventId);
         exchange.setProperty("eventKey", eventKey);
         exchange.setProperty("tenant", tenant);
@@ -175,6 +178,24 @@ public class IntegrationCommandProcessor implements Processor {
             throw new IllegalArgumentException(
                     "Campo obligatorio ausente: " + fieldName
             );
+        }
+
+        return value.asText().trim();
+    }
+
+    private String optionalText(
+            JsonNode node,
+            String fieldName,
+            String defaultValue
+    ) {
+
+        JsonNode value = node.get(fieldName);
+
+        if (value == null ||
+                value.isNull() ||
+                value.asText().isBlank()) {
+
+            return defaultValue;
         }
 
         return value.asText().trim();
