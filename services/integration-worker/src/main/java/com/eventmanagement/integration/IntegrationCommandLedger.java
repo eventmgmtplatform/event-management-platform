@@ -7,12 +7,14 @@ public interface IntegrationCommandLedger {
     enum Decision {
         EXECUTE,
         REPLAY,
-        IN_PROGRESS
+        IN_PROGRESS,
+        RECONCILE
     }
 
     record Claim(
             Decision decision,
-            String resultPayload
+            String resultPayload,
+            String claimOwner
     ) {
     }
 
@@ -20,6 +22,7 @@ public interface IntegrationCommandLedger {
 
     void complete(
             String commandId,
+            String claimOwner,
             String resultPayload
     ) throws Exception;
 }

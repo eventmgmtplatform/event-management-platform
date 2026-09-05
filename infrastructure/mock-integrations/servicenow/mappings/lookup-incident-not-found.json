@@ -1,0 +1,24 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/now/table/incident",
+    "queryParameters": {
+      "sysparm_query": {
+        "matches": "u_event_id=.*"
+      },
+      "sysparm_limit": {
+        "equalTo": "2"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "result": []
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

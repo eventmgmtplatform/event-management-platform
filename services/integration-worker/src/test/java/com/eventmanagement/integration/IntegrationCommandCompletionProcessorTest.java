@@ -77,6 +77,11 @@ class IntegrationCommandCompletionProcessorTest {
                 decision.name()
         );
 
+        exchange.setProperty(
+                IntegrationCommandClaimProcessor.CLAIM_OWNER_PROPERTY,
+                "owner-completion"
+        );
+
         exchange.getMessage().setBody(
                 """
                 {"commandId":"cmd-idempotency-001","status":"SUCCESS"}"""
@@ -89,6 +94,7 @@ class IntegrationCommandCompletionProcessorTest {
             implements IntegrationCommandLedger {
 
         private String completedCommandId;
+        private String completedOwner;
         private String completedResult;
 
         @Override
@@ -99,10 +105,12 @@ class IntegrationCommandCompletionProcessorTest {
         @Override
         public void complete(
                 String commandId,
+                String claimOwner,
                 String resultPayload
         ) {
 
             completedCommandId = commandId;
+            completedOwner = claimOwner;
             completedResult = resultPayload;
         }
     }

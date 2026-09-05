@@ -16,6 +16,9 @@ public class IntegrationCommandClaimProcessor
     public static final String DECISION_PROPERTY =
             "integrationIdempotencyDecision";
 
+    public static final String CLAIM_OWNER_PROPERTY =
+            "integrationIdempotencyClaimOwner";
+
     private static final Logger LOG =
             Logger.getLogger(
                     IntegrationCommandClaimProcessor.class
@@ -42,6 +45,7 @@ public class IntegrationCommandClaimProcessor
                 DECISION_PROPERTY,
                 "UNRESOLVED"
         );
+        exchange.removeProperty(CLAIM_OWNER_PROPERTY);
 
         JsonNode command =
                 exchange.getProperty(
@@ -72,10 +76,27 @@ public class IntegrationCommandClaimProcessor
                         String.class
                 );
 
+        if (claim.decision() == IntegrationCommandLedger.Decision.EXECUTE ||
+                claim.decision() == IntegrationCommandLedger.Decision.RECONCILE) {
+            String claimOwner = claim.claimOwner();
+            if (claimOwner == null || claimOwner.isBlank()) {
+                throw new IllegalStateException(
+                        "Owned idempotency decision has no claim owner: " + commandId
+                );
+            }
+            exchange.setProperty(CLAIM_OWNER_PROPERTY, claimOwner);
+        }
+
         switch (claim.decision()) {
             case EXECUTE -> LOG.infov(
                     "Idempotency claim acquired: " +
                     "commandId={0}, decision=EXECUTE",
+                    commandId
+            );
+
+            case RECONCILE -> LOG.warnv(
+                    "Expired idempotency claim acquired for reconciliation: " +
+                    "commandId={0}, decision=RECONCILE",
                     commandId
             );
 

@@ -37,16 +37,23 @@ public class IntegrationCommandCompletionProcessor
                         String.class
                 );
 
-        if (!IntegrationCommandLedger.Decision.EXECUTE
-                .name()
-                .equals(decision)) {
+        boolean ownedDecision =
+                IntegrationCommandLedger.Decision.EXECUTE.name().equals(decision) ||
+                IntegrationCommandLedger.Decision.RECONCILE.name().equals(decision);
 
+        if (!ownedDecision) {
             return;
         }
 
         String commandId =
                 exchange.getProperty(
                         "commandId",
+                        String.class
+                );
+
+        String claimOwner =
+                exchange.getProperty(
+                        IntegrationCommandClaimProcessor.CLAIM_OWNER_PROPERTY,
                         String.class
                 );
 
@@ -62,6 +69,12 @@ public class IntegrationCommandCompletionProcessor
             );
         }
 
+        if (claimOwner == null || claimOwner.isBlank()) {
+            throw new IllegalStateException(
+                    "claimOwner unavailable during completion: " + commandId
+            );
+        }
+
         if (resultPayload == null ||
                 resultPayload.isBlank()) {
 
@@ -73,6 +86,7 @@ public class IntegrationCommandCompletionProcessor
 
         ledger.complete(
                 commandId,
+                claimOwner,
                 resultPayload
         );
 

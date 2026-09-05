@@ -43,6 +43,57 @@
                 </when>
 
                 <!--
+                    An expired claim is never blindly created again. First
+                    reconcile by the durable ServiceNow event identity.
+                -->
+                <when>
+                    <simple>${exchangeProperty.integrationIdempotencyDecision} == 'RECONCILE'</simple>
+
+                    <process ref="serviceNowReconciliationProcessor"/>
+
+                    <choice>
+                        <when>
+                            <simple>${exchangeProperty.serviceNowReconciliationOutcome} == 'FOUND'</simple>
+
+                            <process ref="integrationResultProcessor"/>
+                        </when>
+                        <when>
+                            <simple>${exchangeProperty.serviceNowReconciliationOutcome} == 'NOT_FOUND_CONFIRMED'</simple>
+
+                            <removeHeaders pattern="*"/>
+
+                            <setHeader name="Content-Type">
+                                <constant>application/json</constant>
+                            </setHeader>
+
+                            <setHeader name="CamelHttpMethod">
+                                <constant>POST</constant>
+                            </setHeader>
+
+                            <log loggingLevel="WARN"
+                                 message="Reconciliación confirmó ausencia; creando ticket: commandId=${exchangeProperty.commandId}"/>
+
+                            <process ref="serviceNowRetryExecutor"/>
+                            <process ref="integrationResultProcessor"/>
+                        </when>
+                        <when>
+                            <simple>${exchangeProperty.serviceNowReconciliationOutcome} == 'RETRY_LATER'</simple>
+
+                            <log loggingLevel="WARN"
+                                 message="Reconciliación diferida sin CREATE ni resultado terminal: commandId=${exchangeProperty.commandId}"/>
+
+                            <stop/>
+                        </when>
+                        <otherwise>
+                            <log loggingLevel="ERROR"
+                                 message="Resultado de reconciliación no resuelto; flujo detenido: commandId=${exchangeProperty.commandId}"/>
+
+                            <stop/>
+                        </otherwise>
+                    </choice>
+                </when>
+
+                <!--
                     The command already completed. The claim processor
                     placed its stored terminal result in the message body.
                 -->

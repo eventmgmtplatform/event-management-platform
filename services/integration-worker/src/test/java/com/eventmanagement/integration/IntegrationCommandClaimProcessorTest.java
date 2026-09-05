@@ -22,7 +22,8 @@ class IntegrationCommandClaimProcessorTest {
         StubLedger ledger = new StubLedger(
                 new IntegrationCommandLedger.Claim(
                         IntegrationCommandLedger.Decision.EXECUTE,
-                        null
+                        null,
+                        "owner-execute"
                 )
         );
 
@@ -61,7 +62,8 @@ class IntegrationCommandClaimProcessorTest {
         StubLedger ledger = new StubLedger(
                 new IntegrationCommandLedger.Claim(
                         IntegrationCommandLedger.Decision.REPLAY,
-                        result
+                        result,
+                        null
                 )
         );
 
@@ -95,6 +97,7 @@ class IntegrationCommandClaimProcessorTest {
         StubLedger ledger = new StubLedger(
                 new IntegrationCommandLedger.Claim(
                         IntegrationCommandLedger.Decision.IN_PROGRESS,
+                        null,
                         null
                 )
         );
@@ -130,6 +133,7 @@ class IntegrationCommandClaimProcessorTest {
                     @Override
                     public void complete(
                             String commandId,
+                            String claimOwner,
                             String resultPayload
                     ) {
                     }
@@ -213,6 +217,7 @@ class IntegrationCommandClaimProcessorTest {
         @Override
         public void complete(
                 String commandId,
+                String claimOwner,
                 String resultPayload
         ) {
         }
