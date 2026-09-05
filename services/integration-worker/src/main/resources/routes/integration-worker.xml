@@ -6,7 +6,7 @@
          INTEGRATION COMMAND CONSUMER
          ===================================================== -->
 
-    <route id="integration-command-consumer">
+    <route id="integration-command-consumer" autoStartup="false">
 
         <from uri="kafka:{{kafka.topic.integration.commands}}?brokers={{kafka.bootstrap.servers}}&amp;groupId={{kafka.consumer.group.id}}&amp;autoOffsetReset={{kafka.consumer.auto.offset.reset}}&amp;sessionTimeoutMs={{kafka.consumer.session-timeout-ms}}&amp;heartbeatIntervalMs={{kafka.consumer.heartbeat-interval-ms}}"/>
 

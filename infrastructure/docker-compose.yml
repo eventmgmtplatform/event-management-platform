@@ -33,6 +33,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       INTEGRATION_IDEMPOTENCY_LEASE_DURATION_MS: 60000
+      INTEGRATION_CONTROL_TOKEN: ${INTEGRATION_CONTROL_TOKEN:-local-control-token}
 
       HTTP_PORT: 8083
       INTEGRATION_READINESS_TIMEOUT_MS: 5000
@@ -44,7 +45,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - curl --fail --silent http://localhost:8083/health/ready >/dev/null || exit 1
+        - curl --fail --silent http://localhost:8083/health/live >/dev/null || exit 1
       interval: 10s
       timeout: 7s
       retries: 12

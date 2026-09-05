@@ -34,6 +34,7 @@ public class IntegrationWorkerReadinessCheck
     private final long timeoutMs;
     private final long stabilizationMs;
     private final long startedAtNanos;
+    private final IntegrationOperationalState operationalState;
 
     @Inject
     public IntegrationWorkerReadinessCheck(
@@ -59,7 +60,8 @@ public class IntegrationWorkerReadinessCheck
                     name = "integration.readiness.stabilization-ms",
                     defaultValue = "15000"
             )
-            long stabilizationMs
+            long stabilizationMs,
+            IntegrationOperationalState operationalState
     ) {
         this.camelContext = camelContext;
         this.bootstrapServers = bootstrapServers;
@@ -67,6 +69,7 @@ public class IntegrationWorkerReadinessCheck
         this.commandTopic = commandTopic;
         this.timeoutMs = timeoutMs;
         this.stabilizationMs = stabilizationMs;
+        this.operationalState = operationalState;
         this.startedAtNanos = System.nanoTime();
     }
 
@@ -145,7 +148,8 @@ public class IntegrationWorkerReadinessCheck
                 routeStarted &&
                 consumerGroupStable &&
                 kafkaAssigned &&
-                stabilizationComplete;
+                stabilizationComplete &&
+                operationalState.admissionOpen();
 
         return HealthCheckResponse
                 .named("integration-worker-readiness")
@@ -169,6 +173,18 @@ public class IntegrationWorkerReadinessCheck
                 .withData(
                         "stabilizationMs",
                         stabilizationMs
+                )
+                .withData(
+                        "operatingMode",
+                        operationalState.mode().name()
+                )
+                .withData(
+                        "admissionOpen",
+                        operationalState.admissionOpen()
+                )
+                .withData(
+                        "recoveryComplete",
+                        operationalState.recoveryComplete()
                 )
                 .withData(
                         "consumerGroup",
