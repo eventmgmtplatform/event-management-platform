@@ -48,6 +48,13 @@ public class IntegrationOperationalState {
         errorType = "none";
     }
 
+    public synchronized void pullRestartComplete() {
+        mode = IntegrationOperatingMode.PULL_RESTART;
+        recoveryComplete = true;
+        admissionOpen = true;
+        errorType = "none";
+    }
+
     public synchronized void failure(Throwable exception) {
         admissionOpen = false;
         recoveryComplete = false;

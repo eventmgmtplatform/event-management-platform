@@ -10,6 +10,14 @@
 
         <from uri="kafka:{{kafka.topic.integration.commands}}?brokers={{kafka.bootstrap.servers}}&amp;groupId={{kafka.consumer.group.id}}&amp;autoOffsetReset={{kafka.consumer.auto.offset.reset}}&amp;sessionTimeoutMs={{kafka.consumer.session-timeout-ms}}&amp;heartbeatIntervalMs={{kafka.consumer.heartbeat-interval-ms}}"/>
 
+        <to uri="direct:integration-command-core"/>
+
+    </route>
+
+    <route id="integration-command-core">
+
+        <from uri="direct:integration-command-core"/>
+
         <log loggingLevel="INFO"
              message="Comando recibido desde integration.commands"/>
 
@@ -170,6 +178,8 @@
 
         <log loggingLevel="INFO"
              message="Resultado publicado: commandId=${exchangeProperty.commandId}, eventId=${exchangeProperty.eventId}"/>
+
+
 
     </route>
 

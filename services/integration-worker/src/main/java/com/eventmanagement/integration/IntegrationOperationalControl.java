@@ -28,16 +28,19 @@ public class IntegrationOperationalControl {
     private final DataSource dataSource;
     private final CamelContext camelContext;
     private final IntegrationOperationalState state;
+    private final PullRestartCoordinator pullRestartCoordinator;
 
     @Inject
     public IntegrationOperationalControl(
             DataSource dataSource,
             CamelContext camelContext,
-            IntegrationOperationalState state
+            IntegrationOperationalState state,
+            PullRestartCoordinator pullRestartCoordinator
     ) {
         this.dataSource = dataSource;
         this.camelContext = camelContext;
         this.state = state;
+        this.pullRestartCoordinator = pullRestartCoordinator;
     }
 
     void onStart(@Observes StartupEvent ignored) {
@@ -69,7 +72,10 @@ public class IntegrationOperationalControl {
     public synchronized ControlSnapshot changeMode(
             IntegrationOperatingMode requested
     ) throws Exception {
-        persist(requested);
+        IntegrationOperatingMode current = readPersistedMode();
+        if (current != requested) {
+            persist(requested);
+        }
         apply(requested);
         LOG.infov(
                 "Integration operating mode changed: mode={0}, admissionOpen={1}",
@@ -93,6 +99,7 @@ public class IntegrationOperationalControl {
             case PULL_RESTART -> {
                 suspendOrStopIngress();
                 state.pullRestartPending();
+                pullRestartCoordinator.start();
             }
         }
     }
@@ -168,6 +175,11 @@ public class IntegrationOperationalControl {
         String sql = """
                 UPDATE event_management.integration_worker_control
                 SET operating_mode = ?,
+                    recovery_generation = CASE
+                        WHEN ? = 'PULL_RESTART'
+                            THEN recovery_generation + 1
+                        ELSE recovery_generation
+                    END,
                     recovery_started_at = CASE
                         WHEN ? = 'PULL_RESTART' THEN CURRENT_TIMESTAMP
                         ELSE recovery_started_at
@@ -185,6 +197,7 @@ public class IntegrationOperationalControl {
             statement.setString(1, mode.name());
             statement.setString(2, mode.name());
             statement.setString(3, mode.name());
+            statement.setString(4, mode.name());
             if (statement.executeUpdate() != 1) {
                 throw new IllegalStateException(
                         "Integration worker control row was not updated"

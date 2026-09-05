@@ -207,7 +207,12 @@ public class JdbcIntegrationCommandLedger
                 JsonNode storedCommand = objectMapper.readTree(
                         resultSet.getString("command_payload")
                 );
-                if (!payloadHash.equals(storedHash) || !command.equals(storedCommand)) {
+
+                // PostgreSQL jsonb normalizes object property order. The durable
+                // command identity is therefore semantic JSON equality, not the
+                // byte-level hash of either serialization. payload_hash remains
+                // an audit value for the originally accepted representation.
+                if (!command.equals(storedCommand)) {
                     throw new CommandIdCollisionException(commandId);
                 }
 

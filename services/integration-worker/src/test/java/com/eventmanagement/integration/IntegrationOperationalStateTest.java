@@ -34,6 +34,17 @@ class IntegrationOperationalStateTest {
     }
 
     @Test
+    void shouldOpenAdmissionAfterPullRestartCompletes() {
+        IntegrationOperationalState state = new IntegrationOperationalState();
+        state.pullRestartPending();
+        state.pullRestartComplete();
+
+        assertEquals(IntegrationOperatingMode.PULL_RESTART, state.mode());
+        assertTrue(state.admissionOpen());
+        assertTrue(state.recoveryComplete());
+    }
+
+    @Test
     void shouldParseModesCaseInsensitively() {
         assertEquals(
                 IntegrationOperatingMode.PULL_RESTART,
