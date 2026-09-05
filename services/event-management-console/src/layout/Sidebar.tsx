@@ -1,0 +1,5 @@
+import { NavLink } from "react-router-dom";
+import { NavigationIcon } from "../navigation/NavigationIcon";
+import { navigation } from "../navigation/navigation.registry";
+
+export function Sidebar({open,onClose}:{open:boolean;onClose:()=>void}){return <aside className={open?"sidebar open":"sidebar"} aria-label="Navegación principal"><div className="brand"><span className="brand-mark">EM</span><div><strong>Event Management</strong><small>Console 1.0.0</small></div><button className="icon-button mobile-only" onClick={onClose} aria-label="Cerrar menú">×</button></div><nav>{navigation.map(group=><section className="nav-group" key={group.label}><span className="nav-group-title">{group.label}</span>{group.items.map(item=><NavLink key={item.path} to={item.path} title={item.description} onClick={onClose} className={({isActive})=>isActive?"nav-item active":"nav-item"}><NavigationIcon name={item.icon}/><span>{item.label}</span>{item.status==="preview"&&<span className="nav-dot" title="Próximamente"/>}</NavLink>)}</section>)}</nav><footer className="sidebar-footer"><span className="status-dot"/>Foundation local<small>Sin conexión a servicios Core</small></footer></aside>}

@@ -1,0 +1,2 @@
+import { Link, useLocation } from "react-router-dom";
+export function Breadcrumbs(){const parts=useLocation().pathname.split("/").filter(Boolean);return <nav className="breadcrumbs" aria-label="Ruta"><Link to="/dashboard">Console</Link>{parts.map((part,index)=>{const path=`/${parts.slice(0,index+1).join("/")}`;const label=part.charAt(0).toUpperCase()+part.slice(1);return <span key={path}><b>/</b>{index===parts.length-1?<em>{label}</em>:<Link to={path}>{label}</Link>}</span>})}</nav>}

@@ -1,0 +1,4 @@
+import { useLocation } from "react-router-dom";
+import { navigation } from "../navigation/navigation.registry";
+
+export function Header({onMenu}:{onMenu:()=>void}){const location=useLocation();const item=navigation.flatMap(group=>group.items).find(entry=>location.pathname.startsWith(entry.path));return <header className="topbar"><button className="icon-button mobile-only" onClick={onMenu} aria-label="Abrir menú">☰</button><div className="page-context"><span className="eyebrow">Event Management OpenSource</span><strong>{item?.label??"Console"}</strong></div><div className="topbar-actions"><span className="environment"><span className="status-dot"/>LOCAL</span><span className="data-mode">MOCK DATA</span><button className="avatar" aria-label="Perfil no disponible" title="Seguridad fuera de alcance">OP</button></div></header>}
