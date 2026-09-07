@@ -17,4 +17,5 @@ RUN chown -R eventmanagement:eventmanagement /deployments
 USER eventmanagement
 EXPOSE 8082
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /deployments/quarkus-run.jar"]
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -jar /deployments/quarkus-run.jar"]

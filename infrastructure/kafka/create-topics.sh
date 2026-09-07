@@ -11,6 +11,21 @@ echo "============================================================"
 echo "Bootstrap server: ${KAFKA_BOOTSTRAP_SERVER}"
 echo "============================================================"
 
+topic_exists() {
+    local requested_topic="$1"
+    local configured_topic
+
+    while IFS= read -r configured_topic; do
+        if [[ "${configured_topic}" == "${requested_topic}" ]]; then
+            return 0
+        fi
+    done < <(
+        "${KAFKA_TOPICS_COMMAND}"             --bootstrap-server "${KAFKA_BOOTSTRAP_SERVER}"             --list
+    )
+
+    return 1
+}
+
 create_topic() {
     local topic_name="$1"
     local partitions="$2"
@@ -21,10 +36,7 @@ create_topic() {
     echo
     echo "Validando topic: ${topic_name}"
 
-    if "${KAFKA_TOPICS_COMMAND}" \
-        --bootstrap-server "${KAFKA_BOOTSTRAP_SERVER}" \
-        --list |
-        grep -Fxq "${topic_name}"; then
+    if topic_exists "${topic_name}"; then
 
         echo "EXISTENTE: ${topic_name}"
         return 0

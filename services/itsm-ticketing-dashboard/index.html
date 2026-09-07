@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ITSM · Dashboard de tickets</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">EM</span><div><strong>Event Management</strong><small>Console</small></div></div>
+    <nav>
+      <a href="#">Resumen</a>
+      <div class="nav-title">ITSM / Ticketing</div>
+      <a class="active" href="/itsm/tickets/">Dashboard de tickets</a>
+      <a class="disabled" href="#">Instancias</a>
+      <a class="disabled" href="#">Configuración</a>
+    </nav>
+    <div class="mode"><span></span> ServiceNow Core activo</div>
+  </aside>
+
+  <main>
+    <header>
+      <div><div class="breadcrumbs">Console / ITSM / Ticketing</div><h1>Dashboard de tickets</h1><p>Consulta y administración operativa de incidentes.</p></div>
+      <button id="refreshBtn" class="secondary">↻ Actualizar</button>
+    </header>
+
+    <section id="cards" class="cards"></section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Buscar ticket, evento, resumen o torre…">
+        <select id="statusFilter"><option value="">Todos los estados</option></select>
+        <select id="severityFilter"><option value="">Todas las severidades</option></select>
+        <select id="towerFilter"><option value="">Todas las torres</option></select>
+        <button id="clearBtn" class="ghost">Limpiar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ticket</th><th>Estado</th><th>Sev.</th><th>Torre</th><th>Evento</th><th>Resumen</th><th>Actualizado</th></tr></thead>
+          <tbody id="ticketRows"></tbody>
+        </table>
+        <div id="empty" class="empty" hidden>No hay tickets que coincidan con los filtros.</div>
+      </div>
+      <footer class="pager"><span id="countLabel"></span><div><button id="prevBtn" class="ghost">Anterior</button><span id="pageLabel"></span><button id="nextBtn" class="ghost">Siguiente</button></div></footer>
+    </section>
+  </main>
+
+  <div id="contextMenu" class="context-menu" hidden>
+    <button data-action="detail">Ver detalle</button>
+    <button data-action="copy">Copiar número</button>
+    <hr>
+    <button data-action="close" class="danger-text">Cerrar ticket</button>
+  </div>
+
+  <div id="modal" class="modal-backdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head"><div><small>Operación de ticketing</small><h2 id="modalTitle">Cerrar ticket</h2></div><button id="modalX" class="icon">×</button></div>
+      <form id="closeForm">
+        <label>Ticket<input id="modalTicket" readonly></label>
+        <label>Código de cierre<select id="closeCode" required><option value="">Selecciona una opción</option><option>SOLVED_PERMANENTLY</option><option>SOLVED_WORKAROUND</option><option>FALSE_POSITIVE</option><option>DUPLICATE</option></select></label>
+        <label>Nota de cierre<textarea id="closeNotes" rows="4" minlength="10" required placeholder="Describe la solución y la validación realizada"></textarea></label>
+        <label class="check"><input id="closeEvent" type="checkbox"> Cerrar también el evento asociado</label>
+        <label class="check"><input id="confirmClose" type="checkbox" required> Confirmo el cierre del ticket</label>
+        <div class="modal-actions"><button type="button" id="cancelBtn" class="secondary">Cancelar</button><button type="submit" class="danger">Solicitar cierre</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div id="detailPanel" class="drawer" hidden><button id="drawerX" class="icon">×</button><div id="detailContent"></div></div>
+  <div id="toast" class="toast" hidden></div>
+  <script src="mock-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+

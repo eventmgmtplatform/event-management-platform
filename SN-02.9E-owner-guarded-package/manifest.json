@@ -1,0 +1,15 @@
+{
+  "package": "SN-02.9E-owner-guarded-recovery",
+  "version": "1.2.0",
+  "baselineCommit": "74d75b0f4dec94a2b1d0aaaa06ec18aa2d61385e",
+  "targetBranch": "feature/os-01-02-servicenow-core-foundation",
+  "technicalDebt": "SN_006",
+  "installationCheckpoints": [
+    "SN-02.9E owner-guarded ledger",
+    "SN-02.9F ServiceNow lookup",
+    "SN-02.9G persistent standby/active/pull_restart control",
+    "SN-02.9H pull_restart backlog coordinator",
+    "SN-02.9I crash-recovery certification"
+  ],
+  "resolutionGate": "LAB_SN_02_9I_CRASH_RECOVERY_CERTIFIED=TRUE"
+}

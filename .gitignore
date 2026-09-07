@@ -79,5 +79,9 @@ surefire-reports/
 *.tgz
 *.backup
 *.old
-# OS_08_10 generated operational evidence
-evidence/os-08-10/
+# Generated operational evidence
+evidence/
+
+# SN-UI generated operational artifacts
+services/event-management-console/.sn-ui-03-backups/
+services/event-management-console/.sn-ui-03.*

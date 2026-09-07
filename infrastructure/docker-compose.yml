@@ -37,6 +37,8 @@ services:
       INTEGRATION_PULL_RESTART_POLL_INTERVAL_MS: 1000
       INTEGRATION_PULL_RESTART_BATCH_SIZE: 100
 
+      GNM_DIAGNOSTIC_GET_ENABLED: ${GNM_DIAGNOSTIC_GET_ENABLED:-false}
+
       HTTP_PORT: 8083
       INTEGRATION_READINESS_TIMEOUT_MS: 5000
       INTEGRATION_READINESS_STABILIZATION_MS: 15000
@@ -60,6 +62,9 @@ services:
         condition: service_healthy
       servicenow-mock:
         condition: service_started
+
+    stop_signal: SIGTERM
+    stop_grace_period: 60s
 
     networks:
       - event-management-net
@@ -111,6 +116,9 @@ services:
       opensearch:
         condition: service_healthy
 
+    stop_signal: SIGTERM
+    stop_grace_period: 60s
+
     networks:
       - event-management-net
 
@@ -135,6 +143,48 @@ services:
 
     volumes:
       - ./mock-integrations/servicenow:/home/wiremock:ro
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl --fail --silent http://127.0.0.1:8080/__admin/health >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+    networks:
+      - event-management-net
+
+
+  # ---------------------------------------------------------------------------
+  # GNM / EVERBRIDGE MOCK — LOCAL LAB ONLY
+  # ---------------------------------------------------------------------------
+  gnm-mock:
+    image: wiremock/wiremock:3.13.1
+    container_name: event-gnm-mock
+    hostname: gnm-mock
+    restart: unless-stopped
+
+    command:
+      - "--port"
+      - "8080"
+      - "--verbose"
+
+    ports:
+      - "8182:8080"
+
+    volumes:
+      - ./mock-integrations/gnm:/home/wiremock:ro
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl --fail --silent http://127.0.0.1:8080/__admin/health >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
     networks:
       - event-management-net
@@ -293,6 +343,9 @@ services:
       retries: 15
       start_period: 30s
 
+    stop_signal: SIGTERM
+    stop_grace_period: 60s
+
     networks:
       - event-management-net
 
@@ -339,6 +392,9 @@ services:
       retries: 15
       start_period: 30s
 
+    stop_signal: SIGTERM
+    stop_grace_period: 60s
+
     networks:
       - event-management-net
 
@@ -358,7 +414,7 @@ services:
         condition: service_completed_successfully
 
     ports:
-      - "8080:8080"
+      - "8085:8080"
 
     environment:
       KAFKA_CLUSTERS_0_NAME: event-management-local
@@ -369,6 +425,15 @@ services:
 
       AUTH_TYPE: DISABLED
       MANAGEMENT_HEALTH_LDAP_ENABLED: "false"
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:8080/actuator/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
     networks:
       - event-management-net
@@ -489,8 +554,49 @@ services:
 
       SERVER_HOST: 0.0.0.0
 
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl --fail --silent http://127.0.0.1:5601/api/status >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 30s
+
     networks:
       - event-management-net
+
+
+  # ==========================================================
+  # EVENT MANAGEMENT CONSOLE
+  # ==========================================================
+  event-management-console:
+    build:
+      context: ../services/event-management-console
+      dockerfile: Dockerfile
+    image: event-management/event-management-console:1.0.0
+    container_name: event-management-console
+    hostname: event-management-console
+    restart: unless-stopped
+
+    ports:
+      - "8090:8080"
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+    security_opt:
+      - no-new-privileges:true
+
+    networks:
+      - event-management-net
+
 
 
 # ============================================================

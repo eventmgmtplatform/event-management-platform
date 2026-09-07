@@ -63,4 +63,5 @@ EXPOSE 8081
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0"
 
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /deployments/quarkus-run.jar"]
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["sh", "-c", "exec java ${JAVA_OPTS} -jar /deployments/quarkus-run.jar"]
