@@ -72,7 +72,8 @@ public class JdbcIntegrationCommandLedger
                 return new Claim(
                         Decision.EXECUTE,
                         null,
-                        candidateOwner
+                        candidateOwner,
+                        null
                 );
             }
 
@@ -83,6 +84,65 @@ public class JdbcIntegrationCommandLedger
                     command,
                     candidateOwner
             );
+        }
+    }
+
+    @Override
+    @Transactional
+    public void checkpointProvider(
+            String commandId,
+            String claimOwner,
+            String providerCheckpoint
+    ) throws Exception {
+
+        requireNonBlank(
+                commandId,
+                "commandId is required to checkpoint provider identity"
+        );
+        requireNonBlank(
+                claimOwner,
+                "claimOwner is required to checkpoint provider identity"
+        );
+        requireNonBlank(
+                providerCheckpoint,
+                "providerCheckpoint is required"
+        );
+
+        JsonNode checkpoint =
+                objectMapper.readTree(providerCheckpoint);
+
+        if (checkpoint == null || !checkpoint.isObject()) {
+            throw new IllegalArgumentException(
+                    "Provider checkpoint must be a JSON object"
+            );
+        }
+
+        String sql = """
+                UPDATE event_management.integration_command_execution
+                SET provider_checkpoint = ?::jsonb,
+                    provider_checkpoint_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE command_id = ?
+                  AND execution_status = 'IN_PROGRESS'
+                  AND claim_owner = ?
+                """;
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setString(1, providerCheckpoint);
+            statement.setString(2, commandId);
+            statement.setString(3, claimOwner);
+
+            int updated = statement.executeUpdate();
+
+            if (updated != 1) {
+                throw new IllegalStateException(
+                        "Claim ownership lost before provider checkpoint: "
+                                + commandId
+                );
+            }
         }
     }
 
@@ -224,7 +284,12 @@ public class JdbcIntegrationCommandLedger
                                 "Completed command has no result: " + commandId
                         );
                     }
-                    return new Claim(Decision.REPLAY, resultPayload, null);
+                    return new Claim(
+                            Decision.REPLAY,
+                            resultPayload,
+                            null,
+                            null
+                    );
                 }
 
                 if (!"IN_PROGRESS".equals(status)) {
@@ -235,16 +300,75 @@ public class JdbcIntegrationCommandLedger
                 }
 
                 if (!resultSet.getBoolean("lease_expired")) {
-                    return new Claim(Decision.IN_PROGRESS, null, null);
+                    return new Claim(
+                            Decision.IN_PROGRESS,
+                            null,
+                            null,
+                            null
+                    );
                 }
             }
         }
 
         if (takeOverExpiredClaim(connection, commandId, candidateOwner)) {
-            return new Claim(Decision.RECONCILE, null, candidateOwner);
+            String providerCheckpoint =
+                    loadProviderCheckpoint(
+                            connection,
+                            commandId,
+                            candidateOwner
+                    );
+
+            return new Claim(
+                    Decision.RECONCILE,
+                    null,
+                    candidateOwner,
+                    providerCheckpoint
+            );
         }
 
-        return new Claim(Decision.IN_PROGRESS, null, null);
+        return new Claim(
+                Decision.IN_PROGRESS,
+                null,
+                null,
+                null
+        );
+    }
+
+    private String loadProviderCheckpoint(
+            Connection connection,
+            String commandId,
+            String claimOwner
+    ) throws Exception {
+
+        String sql = """
+                SELECT provider_checkpoint
+                FROM event_management.integration_command_execution
+                WHERE command_id = ?
+                  AND execution_status = 'IN_PROGRESS'
+                  AND claim_owner = ?
+                """;
+
+        try (PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setString(1, commandId);
+            statement.setString(2, claimOwner);
+
+            try (ResultSet resultSet =
+                         statement.executeQuery()) {
+
+                if (!resultSet.next()) {
+                    throw new IllegalStateException(
+                            "Owned claim disappeared while loading provider checkpoint: "
+                                    + commandId
+                    );
+                }
+
+                return resultSet.getString(
+                        "provider_checkpoint"
+                );
+            }
+        }
     }
 
     private boolean takeOverExpiredClaim(

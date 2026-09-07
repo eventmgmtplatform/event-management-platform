@@ -2,7 +2,6 @@ package com.eventmanagement.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -27,140 +26,84 @@ public class IntegrationCommandProcessor implements Processor {
     @Override
     public void process(Exchange exchange) throws Exception {
 
-        String commandJson =
+        String rawBody =
                 exchange.getMessage().getBody(String.class);
 
-        if (commandJson == null || commandJson.isBlank()) {
+        JsonNode command =
+                objectMapper.readTree(rawBody);
+
+        if (command == null || !command.isObject()) {
             throw new IllegalArgumentException(
-                    "El comando de integración está vacío"
+                    "El comando de integración debe ser un objeto JSON"
             );
         }
 
-        JsonNode command = objectMapper.readTree(commandJson);
+        String commandId =
+                requiredText(command, "commandId");
 
-        String commandId = requiredText(command, "commandId");
-        String correlationId =
-                optionalText(command, "correlationId", commandId);
-        String eventId = requiredText(command, "eventId");
-        String eventKey = requiredText(command, "eventKey");
-        String tenant = requiredText(command, "tenant");
+        String eventId =
+                requiredText(command, "eventId");
+
+        String eventKey =
+                requiredText(command, "eventKey");
+
+        String tenant =
+                requiredText(command, "tenant");
 
         String integrationType =
-                requiredText(command, "integrationType").toUpperCase();
+                requiredText(command, "integrationType")
+                        .toUpperCase();
 
         String operation =
-                requiredText(command, "operation").toUpperCase();
+                requiredText(command, "operation")
+                        .toUpperCase();
 
-        if (!"SERVICENOW".equals(integrationType)) {
+        JsonNode payload =
+                command.get("payload");
+
+        if (payload == null ||
+                payload.isNull() ||
+                !payload.isObject()) {
+
             throw new IllegalArgumentException(
-                    "Integración todavía no soportada: " + integrationType
+                    "Campo obligatorio ausente o inválido: payload"
             );
         }
 
-        if (!"CREATE_TICKET".equals(operation)) {
-            throw new IllegalArgumentException(
-                    "Operación ServiceNow no soportada: " + operation
-            );
-        }
-
-        JsonNode payload = command.path("payload");
-
-        if (!payload.isObject()) {
-            throw new IllegalArgumentException(
-                    "El comando no contiene un payload válido"
-            );
-        }
-
-        String resource =
-                requiredText(payload, "resource");
-
-        String summary =
-                requiredText(payload, "summary");
-
-        int severity = payload.path("severity").asInt(-1);
-
-        if (severity < 0 || severity > 5) {
-            throw new IllegalArgumentException(
-                    "La severidad del comando debe estar entre 0 y 5"
-            );
-        }
-
+        /*
+         * Preserve the complete canonical command before any
+         * provider-specific transformation.
+         *
+         * The durable idempotency ledger must always claim this
+         * original representation.
+         */
         exchange.setProperty(
                 "originalIntegrationCommand",
                 command.deepCopy()
         );
 
         exchange.setProperty("commandId", commandId);
-        exchange.setProperty("correlationId", correlationId);
         exchange.setProperty("eventId", eventId);
         exchange.setProperty("eventKey", eventKey);
         exchange.setProperty("tenant", tenant);
         exchange.setProperty("integrationType", integrationType);
         exchange.setProperty("operation", operation);
-        exchange.setProperty("resource", resource);
-        exchange.setProperty("summary", summary);
-        exchange.setProperty("severity", severity);
 
-        ObjectNode serviceNowRequest =
-                objectMapper.createObjectNode();
-
-        serviceNowRequest.put(
-                "short_description",
-                summary
+        /*
+         * Provider processors consume this property.
+         * No provider-specific interpretation occurs here.
+         */
+        exchange.setProperty(
+                "integrationPayload",
+                payload.deepCopy()
         );
-
-        serviceNowRequest.put(
-                "description",
-                buildDescription(
-                        eventId,
-                        eventKey,
-                        tenant,
-                        resource,
-                        summary,
-                        severity
-                )
-        );
-
-        serviceNowRequest.put(
-                "impact",
-                mapServiceNowImpact(severity)
-        );
-
-        serviceNowRequest.put(
-                "urgency",
-                mapServiceNowUrgency(severity)
-        );
-
-        serviceNowRequest.put(
-                "severity",
-                severity
-        );
-
-        serviceNowRequest.put(
-                "resource",
-                resource
-        );
-
-        serviceNowRequest.put(
-                "correlation_id",
-                eventKey
-        );
-
-        serviceNowRequest.put(
-                "u_event_id",
-                eventId
-        );
-
-        String requestJson =
-                objectMapper.writeValueAsString(serviceNowRequest);
-
-        exchange.getMessage().setBody(requestJson);
 
         LOG.infov(
-                "Comando preparado: commandId={0}, eventId={1}, integration={2}",
+                "Integration command envelope prepared: commandId={0}, eventId={1}, integration={2}, operation={3}",
                 commandId,
                 eventId,
-                integrationType
+                integrationType,
+                operation
         );
     }
 
@@ -181,77 +124,5 @@ public class IntegrationCommandProcessor implements Processor {
         }
 
         return value.asText().trim();
-    }
-
-    private String optionalText(
-            JsonNode node,
-            String fieldName,
-            String defaultValue
-    ) {
-
-        JsonNode value = node.get(fieldName);
-
-        if (value == null ||
-                value.isNull() ||
-                value.asText().isBlank()) {
-
-            return defaultValue;
-        }
-
-        return value.asText().trim();
-    }
-
-    private String buildDescription(
-            String eventId,
-            String eventKey,
-            String tenant,
-            String resource,
-            String summary,
-            int severity
-    ) {
-
-        return """
-                Event Management Platform
-
-                Event ID : %s
-                Event Key: %s
-                Tenant   : %s
-                Resource : %s
-                Severity : %d
-                Summary  : %s
-                """.formatted(
-                eventId,
-                eventKey,
-                tenant,
-                resource,
-                severity,
-                summary
-        );
-    }
-
-    private int mapServiceNowImpact(int severity) {
-
-        if (severity >= 5) {
-            return 1;
-        }
-
-        if (severity >= 3) {
-            return 2;
-        }
-
-        return 3;
-    }
-
-    private int mapServiceNowUrgency(int severity) {
-
-        if (severity >= 4) {
-            return 1;
-        }
-
-        if (severity >= 2) {
-            return 2;
-        }
-
-        return 3;
     }
 }

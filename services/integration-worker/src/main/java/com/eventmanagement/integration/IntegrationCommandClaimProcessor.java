@@ -46,6 +46,7 @@ public class IntegrationCommandClaimProcessor
                 "UNRESOLVED"
         );
         exchange.removeProperty(CLAIM_OWNER_PROPERTY);
+        exchange.removeProperty("integrationProviderCheckpoint");
 
         JsonNode command =
                 exchange.getProperty(
@@ -85,6 +86,17 @@ public class IntegrationCommandClaimProcessor
                 );
             }
             exchange.setProperty(CLAIM_OWNER_PROPERTY, claimOwner);
+
+            if (claim.decision() ==
+                    IntegrationCommandLedger.Decision.RECONCILE &&
+                    claim.providerCheckpoint() != null &&
+                    !claim.providerCheckpoint().isBlank()) {
+
+                exchange.setProperty(
+                        "integrationProviderCheckpoint",
+                        claim.providerCheckpoint()
+                );
+            }
         }
 
         switch (claim.decision()) {

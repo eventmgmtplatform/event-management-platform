@@ -3,11 +3,11 @@ package com.eventmanagement.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.camel.Exchange;
-import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.support.DefaultExchange;
+import org.apache.camel.impl.DefaultCamelContext;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class IntegrationCommandProcessorTest {
 
@@ -18,21 +18,21 @@ class IntegrationCommandProcessorTest {
             new IntegrationCommandProcessor(objectMapper);
 
     @Test
-    void shouldPropagateExplicitCorrelationId() throws Exception {
+    void shouldPrepareServiceNowEnvelopeWithoutParsingProviderPayload()
+            throws Exception {
 
-        Exchange exchange = exchangeWithCommand("""
+        Exchange exchange = exchange("""
                 {
                   "schemaVersion": "1.1",
                   "commandId": "cmd-001",
-                  "correlationId": "corr-001",
                   "eventId": "evt-001",
-                  "eventKey": "bc1|server01|filesystem|var",
-                  "tenant": "bc1",
+                  "eventKey": "key-001",
+                  "tenant": "default",
                   "integrationType": "SERVICENOW",
                   "operation": "CREATE_TICKET",
                   "payload": {
                     "resource": "server01",
-                    "summary": "Filesystem usage is high",
+                    "summary": "CPU high",
                     "severity": 4
                   }
                 }
@@ -41,89 +41,113 @@ class IntegrationCommandProcessorTest {
         processor.process(exchange);
 
         assertEquals(
-                "corr-001",
-                exchange.getProperty(
-                        "correlationId",
-                        String.class
-                )
+                "SERVICENOW",
+                exchange.getProperty("integrationType")
         );
-    }
-
-    @Test
-    void shouldUseCommandIdWhenCorrelationIdIsMissing()
-            throws Exception {
-
-        Exchange exchange = exchangeWithCommand("""
-                {
-                  "schemaVersion": "1.0",
-                  "commandId": "cmd-002",
-                  "eventId": "evt-002",
-                  "eventKey": "bc1|server02|cpu",
-                  "tenant": "bc1",
-                  "integrationType": "SERVICENOW",
-                  "operation": "CREATE_TICKET",
-                  "payload": {
-                    "resource": "server02",
-                    "summary": "CPU utilization is high",
-                    "severity": 3
-                  }
-                }
-                """);
-
-        processor.process(exchange);
 
         assertEquals(
-                "cmd-002",
-                exchange.getProperty(
-                        "correlationId",
-                        String.class
-                )
+                "CREATE_TICKET",
+                exchange.getProperty("operation")
         );
-    }
 
-    @Test
-    void shouldPreserveServiceNowCorrelationIdAsEventKey()
-            throws Exception {
+        JsonNode original =
+                exchange.getProperty(
+                        "originalIntegrationCommand",
+                        JsonNode.class
+                );
 
-        Exchange exchange = exchangeWithCommand("""
-                {
-                  "schemaVersion": "1.1",
-                  "commandId": "cmd-003",
-                  "correlationId": "corr-003",
-                  "eventId": "evt-003",
-                  "eventKey": "lab|host01|service",
-                  "tenant": "LAB",
-                  "integrationType": "SERVICENOW",
-                  "operation": "CREATE_TICKET",
-                  "payload": {
-                    "resource": "host01",
-                    "summary": "Service unavailable",
-                    "severity": 5
-                  }
-                }
-                """);
+        assertNotNull(original);
+        assertEquals(
+                "cmd-001",
+                original.path("commandId").asText()
+        );
 
-        processor.process(exchange);
-
-        JsonNode serviceNowRequest =
-                objectMapper.readTree(
-                        exchange.getMessage().getBody(String.class)
+        JsonNode payload =
+                exchange.getProperty(
+                        "integrationPayload",
+                        JsonNode.class
                 );
 
         assertEquals(
-                "lab|host01|service",
-                serviceNowRequest
-                        .path("correlation_id")
-                        .asText()
+                "server01",
+                payload.path("resource").asText()
+        );
+
+        assertNull(exchange.getProperty("resource"));
+        assertNull(exchange.getProperty("summary"));
+    }
+
+    @Test
+    void shouldPrepareGnmEnvelopeWithoutEverbridgeKnowledge()
+            throws Exception {
+
+        Exchange exchange = exchange("""
+                {
+                  "schemaVersion": "1.1",
+                  "commandId": "cmd-gnm-001",
+                  "eventId": "evt-gnm-001",
+                  "eventKey": "vit:test",
+                  "tenant": "default",
+                  "integrationType": "GNM",
+                  "operation": "SEND_NOTIFICATION",
+                  "payload": {
+                    "customerCode": "vit"
+                  }
+                }
+                """);
+
+        processor.process(exchange);
+
+        assertEquals(
+                "GNM",
+                exchange.getProperty("integrationType")
+        );
+
+        assertEquals(
+                "SEND_NOTIFICATION",
+                exchange.getProperty("operation")
+        );
+
+        JsonNode payload =
+                exchange.getProperty(
+                        "integrationPayload",
+                        JsonNode.class
+                );
+
+        assertEquals(
+                "vit",
+                payload.path("customerCode").asText()
         );
     }
 
-    private Exchange exchangeWithCommand(String command) {
+    @Test
+    void shouldRejectMissingPayload() {
+
+        Exchange exchange = exchange("""
+                {
+                  "commandId": "cmd-002",
+                  "eventId": "evt-002",
+                  "eventKey": "key-002",
+                  "tenant": "default",
+                  "integrationType": "GNM",
+                  "operation": "SEND_NOTIFICATION"
+                }
+                """);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> processor.process(exchange)
+        );
+    }
+
+    private Exchange exchange(String body) {
 
         Exchange exchange =
-                new DefaultExchange(new DefaultCamelContext());
+                new DefaultExchange(
+                        new DefaultCamelContext()
+                );
 
-        exchange.getMessage().setBody(command);
+        exchange.getMessage().setBody(body);
 
         return exchange;
     }

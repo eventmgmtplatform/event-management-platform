@@ -1,0 +1,29 @@
+{
+  "status": 200,
+  "message": "OK",
+  "result": {
+    "id": "2713046552385248",
+    "organizationId": "453003085618991",
+    "incidentStatus": "Open",
+    "incidentAction": "Launch",
+    "phaseStatus": {
+      "id": 1001,
+      "incidentStatus": "Open",
+      "name": "New",
+      "phaseNodeType": "Begin",
+      "seq": 100
+    },
+    "incidentPhases": [
+      {
+        "id": 10011,
+        "name": "New",
+        "notificationId": "2713046552442022",
+        "phaseTemplate": {
+          "id": 1,
+          "templateId": "8101205968426652",
+          "templateName": "GSMA_C00_HV"
+        }
+      }
+    ]
+  }
+}

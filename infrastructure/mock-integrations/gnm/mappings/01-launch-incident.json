@@ -1,0 +1,30 @@
+{
+  "priority": 100,
+  "request": {
+    "method": "POST",
+    "urlPath": "/rest/incidents/453003085618991",
+    "headers": {
+      "Content-Type": {
+        "contains": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.incidentAction == 'Launch')]"
+      },
+      {
+        "matchesJsonPath": "$[?(@.incidentPhases[0].phaseTemplate.templateId == '8101205968426652')]"
+      },
+      {
+        "matchesJsonPath": "$[?(@.incidentPhases[0].phaseTemplate.templateName == 'GSMA_C00_HV')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "launch-success.json"
+  }
+}

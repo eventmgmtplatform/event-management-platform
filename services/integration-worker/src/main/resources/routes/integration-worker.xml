@@ -30,11 +30,169 @@
             <process ref="integrationCommandProcessor"/>
 
             <!--
-                Reserve commandId before any external side effect.
+                Resolve provider before acquiring a durable command claim.
+                GNM is recognized by the worker but intentionally cannot
+                execute an external side effect in GNM-01B.
             -->
-            <process ref="integrationCommandClaimProcessor"/>
+            <process ref="integrationProviderRouter"/>
 
             <choice>
+
+                <when>
+                    <simple>${exchangeProperty.integrationProvider} == 'GNM'</simple>
+
+                    <!--
+                        Validate the provider-neutral GNM command contract.
+                        Everbridge mapping and transport are deliberately absent
+                        from this checkpoint.
+                    -->
+                    <process ref="gnmCommandProcessor"/>
+
+                    <!--
+                        Acquire the same durable command claim used by the
+                        certified integration execution model before any
+                        provider mutation.
+                    -->
+                    <process ref="integrationCommandClaimProcessor"/>
+
+                    <choice>
+
+                        <!--
+                            A concurrent execution already owns the command.
+                            GNM transport MUST NOT execute.
+                        -->
+                        <when>
+                            <simple>${exchangeProperty.integrationIdempotencyDecision} == 'IN_PROGRESS'</simple>
+
+                            <log loggingLevel="INFO"
+                                 message="GNM duplicate in progress suppressed: commandId=${exchangeProperty.commandId}"/>
+
+                            <stop/>
+                        </when>
+
+                        <!--
+                            An expired/ambiguous GNM claim cannot blindly
+                            relaunch an Everbridge incident.
+
+                            GNM-03D will provide provider-state reconciliation.
+                        -->
+                        <when>
+    <simple>${exchangeProperty.integrationIdempotencyDecision} == 'RECONCILE'</simple>
+
+    <log loggingLevel="WARN"
+         message="GNM durable reconciliation executing GET only; POST Launch suppressed: commandId=${exchangeProperty.commandId}"/>
+
+    <process ref="gnmReconciliationProcessor"/>
+
+    <choice>
+        <when>
+            <simple>${exchangeProperty.gnmReconciliationOutcome} == 'OPEN_CONFIRMED' || ${exchangeProperty.gnmReconciliationOutcome} == 'CLOSED_CONFIRMED'</simple>
+
+            <log loggingLevel="INFO"
+                 message="GNM durable reconciliation confirmed OPEN: commandId=${exchangeProperty.commandId}"/>
+        </when>
+
+        <otherwise>
+            <log loggingLevel="WARN"
+                 message="GNM durable reconciliation unresolved; no provider mutation and no terminal completion: commandId=${exchangeProperty.commandId}"/>
+
+            <stop/>
+        </otherwise>
+    </choice>
+</when>
+
+                        <!--
+                            Stored terminal result is already in the message
+                            body. Never invoke GNM transport during replay.
+                        -->
+                        <when>
+                            <simple>${exchangeProperty.integrationIdempotencyDecision} == 'REPLAY'</simple>
+
+                            <log loggingLevel="INFO"
+                                 message="GNM idempotent result replay: commandId=${exchangeProperty.commandId}"/>
+                        </when>
+
+                        <!--
+                            EXECUTE is the only decision allowed to mutate the
+                            provider.
+                        -->
+                        <otherwise>
+
+                            <log loggingLevel="INFO"
+                                 message="GNM Launch executing against configured local provider: commandId=${exchangeProperty.commandId}"/>
+
+                            <choice>
+                                <when>
+                                    <simple>${exchangeProperty.operation} == 'CLOSE_NOTIFICATION'</simple>
+
+                                    <log loggingLevel="INFO"
+                                         message="GNM CLOSE executing against configured provider: commandId=${exchangeProperty.commandId}"/>
+
+                                    <process ref="gnmCloseExecutionProcessor"/>
+
+                                    <!--
+                                        CLOSE is a single provider mutation.
+
+                                        SUCCESS follows the certified
+                                        CLOSE_ACCEPTED -> durable checkpoint ->
+                                        authoritative GET path.
+
+                                        RECONCILIATION_REQUIRED means the provider
+                                        mutation outcome is ambiguous (including
+                                        duplicate Close HTTP 400). Never send a
+                                        second PUT; reconcile through GET only.
+                                    -->
+                                    <choice>
+                                        <when>
+                                            <simple>${exchangeProperty.gnmCloseExecutionOutcome} == 'RECONCILIATION_REQUIRED'</simple>
+
+                                            <process ref="gnmDuplicateCloseReconciliationProcessor"/>
+                                        </when>
+
+                                        <otherwise>
+                                            <process ref="gnmCloseResultProcessor"/>
+
+                                            <!--
+                                                Durable provider checkpoint MUST be persisted
+                                                immediately after provider acceptance and before
+                                                authoritative GET confirmation.
+                                            -->
+                                            <process ref="gnmProviderCheckpointProcessor"/>
+
+                                            <process ref="gnmClosedConfirmationProcessor"/>
+                                        </otherwise>
+                                    </choice>
+
+                                </when>
+
+                                <otherwise>
+
+                                    <process ref="gnmLaunchExecutionProcessor"/>
+                                    <process ref="gnmLaunchResultProcessor"/>
+                                    <process ref="gnmProviderCheckpointProcessor"/>
+                                    <process ref="gnmOpenConfirmationProcessor"/>
+
+                                </otherwise>
+                            </choice>
+
+                        </otherwise>
+
+                    </choice>
+                </when>
+
+                <otherwise>
+
+                    <!--
+                        Preserve the certified ServiceNow payload contract.
+                    -->
+                    <process ref="serviceNowCommandProcessor"/>
+
+                    <!--
+                        Reserve commandId before any external side effect.
+                    -->
+                    <process ref="integrationCommandClaimProcessor"/>
+
+                    <choice>
 
                 <!--
                     Another execution already owns this command.
@@ -144,6 +302,10 @@
 
                 </otherwise>
 
+                    </choice>
+
+                </otherwise>
+
             </choice>
 
             <doCatch>
@@ -172,6 +334,13 @@
             KafkaConstants.KEY is assigned through Java after header cleanup.
             This preserves ordering by the logical event identity.
         -->
+        <!--
+            Normalize the terminal payload before crossing the Kafka boundary.
+            integration.results uses StringSerializer; provider processors may
+            legitimately leave the body as a Jackson JsonNode.
+        -->
+        <process ref="integrationKafkaPayloadProcessor"/>
+
         <process ref="integrationKafkaKeyProcessor"/>
 
         <to uri="kafka:{{kafka.topic.integration.results}}?brokers={{kafka.bootstrap.servers}}"/>

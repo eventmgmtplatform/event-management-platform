@@ -1,0 +1,23 @@
+{
+  "provider": "EVERBRIDGE",
+  "tenants": {
+    "vit": {
+      "customerCode": "vit",
+      "organizationId": "453003085618991",
+      "incidentTemplate": {
+        "templateId": "8101205968426652",
+        "templateName": "GSMA_C00_HV"
+      },
+      "recipientGroups": {
+        "VIT - VITRO - K - VITRO-MX-WINTEL": {
+          "logicalName": "VIT - VITRO - K - VITRO-MX-WINTEL",
+          "groupIds": [
+            "3760896702677017",
+            "367116624592928"
+          ]
+        }
+      },
+      "cycleInterval": 15
+    }
+  }
+}

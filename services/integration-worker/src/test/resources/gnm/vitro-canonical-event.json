@@ -1,0 +1,29 @@
+{
+  "customerCode": "vit",
+  "customer": "VITRO",
+  "severity": 3,
+  "severityName": "Minor",
+  "node": "utlcorpdp01",
+  "nodeAlias": "172.16.3.7",
+  "resourceId": "utlcorpdp01",
+  "component": "WIN",
+  "componentType": "",
+  "subcomponent": "VIT Windows",
+  "instanceId": "D:",
+  "instanceValue": "90.21 %",
+  "alertKey": "vit_dsp_gntm_win",
+  "identifier": "vit_dsp_gntm_win:utlcorpdp01:D::Zabbix",
+  "summary": "High Space Used on disk D: 90% (MINOR)",
+  "ticketNumber": "INC0576787",
+  "ticketGroup": "K-MX-VIT-DYNAMIC-AUTOMATION",
+  "legacyCorrelation": {
+    "serverSerial": "1266890674",
+    "serverName": "MX330P0SDCP"
+  },
+  "notification": {
+    "type": "HUNT",
+    "scope": 3,
+    "trackDelivery": false,
+    "group": "VIT - VITRO - K - VITRO-MX-WINTEL"
+  }
+}

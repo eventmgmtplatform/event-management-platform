@@ -14,11 +14,34 @@ public interface IntegrationCommandLedger {
     record Claim(
             Decision decision,
             String resultPayload,
-            String claimOwner
+            String claimOwner,
+            String providerCheckpoint
     ) {
+        Claim(
+                Decision decision,
+                String resultPayload,
+                String claimOwner
+        ) {
+            this(
+                    decision,
+                    resultPayload,
+                    claimOwner,
+                    null
+            );
+        }
     }
 
     Claim claim(JsonNode command) throws Exception;
+
+    default void checkpointProvider(
+            String commandId,
+            String claimOwner,
+            String providerCheckpoint
+    ) throws Exception {
+        throw new UnsupportedOperationException(
+                "Provider checkpoint is not supported by this ledger implementation"
+        );
+    }
 
     void complete(
             String commandId,

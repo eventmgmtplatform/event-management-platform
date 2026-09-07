@@ -1,0 +1,52 @@
+{
+  "incidentAction": "Launch",
+  "name": "Alert for vit on utlcorpdp01: High Space Used on disk D: 90% (MINOR)",
+  "incidentPhases": [
+    {
+      "phaseTemplate": {
+        "broadcastTemplate": {
+          "priority": "NonPriority",
+          "type": "Standard",
+          "broadcastContacts": {
+            "externalIds": [],
+            "groupIds": [
+              "3760896702677017",
+              "367116624592928"
+            ]
+          },
+          "broadcastSettings": {
+            "confirm": "true",
+            "cycleInterval": 15,
+            "deliveryPathOrder": "Contact"
+          }
+        },
+        "formTemplate": {
+          "formVariableItems": [
+            {"variableId":"8114400107959239","seq":0,"val":["vit"]},
+            {"variableId":"8114400107959242","seq":1,"val":["vit_dsp_gntm_win:utlcorpdp01:D::Zabbix"]},
+            {"variableId":"8114400107959241","seq":2,"val":["3"]},
+            {"variableId":"8114400107959244","seq":3,"val":["utlcorpdp01"]},
+            {"variableId":"8114400107959235","seq":4,"val":["172.16.3.7"]},
+            {"variableId":"8114400107959238","seq":5,"val":["MX330P0SDCP"]},
+            {"variableId":"8114400107959237","seq":6,"val":["1266890674"]},
+            {"variableId":"8114400107959234","seq":7,"val":["INC0576787"]},
+            {"variableId":"8114400107959243","seq":8,"val":["High Space Used on disk D: 90% (MINOR)"]},
+            {"variableId":"8114400107959240","seq":9,"val":["VITRO"]},
+            {"variableId":"8114400107959236","seq":10,"val":["K-MX-VIT-DYNAMIC-AUTOMATION"]},
+            {"variableId":"308967062372369","seq":11,"val":["VIT - VITRO - K - VITRO-MX-WINTEL"]},
+            {"variableId":"312403036209309","seq":12,"val":["Minor"]},
+            {"variableId":"312677914116259","seq":13,"val":["WIN"]},
+            {"variableId":"312677914116263","seq":14,"val":[""]},
+            {"variableId":"312677914116260","seq":15,"val":["D:"]},
+            {"variableId":"312677914116261","seq":16,"val":["90.21 %"]},
+            {"variableId":"312677914116262","seq":17,"val":["VIT Windows"]},
+            {"variableId":"351710576902192","seq":18,"val":["vit_dsp_gntm_win"]},
+            {"variableId":"535329018741318","seq":19,"val":["utlcorpdp01"]}
+          ]
+        },
+        "templateId": "8101205968426652",
+        "templateName": "GSMA_C00_HV"
+      }
+    }
+  ]
+}

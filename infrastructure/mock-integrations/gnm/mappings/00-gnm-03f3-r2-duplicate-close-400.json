@@ -1,0 +1,27 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "PUT",
+    "urlPath": "/rest/incidents/453003085618991/2713046552385248",
+    "headers": {
+      "Content-Type": {
+        "contains": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.incidentAction == 'CloseWithNotification')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "status": 400,
+      "message": "Invalid Incident operation."
+    }
+  }
+}
