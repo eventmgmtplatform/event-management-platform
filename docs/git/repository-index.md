@@ -72,3 +72,17 @@ At baseline, ignored material included `.env`, an owner-guarded recovery ZIP, `e
 - CODEOWNERS;
 - general release tagging;
 - product-wide semantic versioning.
+
+## CACF local — 2026-09-08
+
+- Workstream: OS_05_CACF.IMP.
+- Rama: `feature/os-05-cacf-core-foundation`.
+- Checkpoint de implementación publicado: `3d45006cbf23e2bef556da32946ac18035d4a7bb`.
+- Upstream: `origin/feature/os-05-cacf-core-foundation`.
+- Alcance: CACF, dependencias ServiceNow, Compose local y documentación de código.
+- Validación: 171 pruebas sin fallos y E2E local con mocks; véase
+  `docs/cacf/validation.md`. No certifica proveedores reales.
+- PKC y materiales de library excluidos de esta publicación.
+- No se promovieron main/develop ni se crearon tags de release.
+- Los conteos del inventario anterior corresponden a la baseline de 2026-09-07;
+  no representan una auditoría global nueva.
