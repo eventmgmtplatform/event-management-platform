@@ -1,0 +1,4 @@
+{
+  "request": {"method": "GET", "urlPath": "/api/now/table/incident", "queryParameters": {"sysparm_query": {"matches": "number=INC[A-Za-z0-9_-]+"}}},
+  "response": {"status": 200, "jsonBody": {"result": [{"sys_id": "cacf-local-incident", "number": "INCLOCAL001"}]}}
+}

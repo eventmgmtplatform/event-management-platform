@@ -85,3 +85,10 @@ evidence/
 # SN-UI generated operational artifacts
 services/event-management-console/.sn-ui-03-backups/
 services/event-management-console/.sn-ui-03.*
+
+# Library-only CACF package material; never publish in the source repository
+/artifacts/cacf/
+/scripts/build-cacf-pkc.py
+/docs/cacf/knowledge-base.json
+/docs/cacf/timeline.json
+/docs/cacf/test-results.json

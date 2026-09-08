@@ -1,0 +1,4 @@
+{
+  "request": {"method": "PATCH", "urlPath": "/api/now/table/incident/cacf-local-incident", "bodyPatterns": [{"matchesJsonPath": "$.work_notes"}]},
+  "response": {"status": 200, "jsonBody": {"result": {"sys_id": "cacf-local-incident", "number": "INCLOCAL001"}}}
+}

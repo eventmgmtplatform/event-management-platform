@@ -1,0 +1,31 @@
+# Overlay for the existing local runtime; supply NEXT credentials externally.
+services:
+  integration-worker:
+    environment:
+      CACF_ENABLED: "true"
+      NEXT_BASE_URL: ${NEXT_BASE_URL:-http://next-mock:8080}
+      NEXT_USERNAME: ${NEXT_USERNAME:?NEXT_USERNAME is required}
+      NEXT_PASSWORD: ${NEXT_PASSWORD:?NEXT_PASSWORD is required}
+      CACF_API_TOKEN: ${CACF_API_TOKEN:?CACF_API_TOKEN is required}
+      NEXT_HTTP_TIMEOUT_SECONDS: ${NEXT_HTTP_TIMEOUT_SECONDS:-180}
+      CACF_RESULT_TIMEOUT_SECONDS: ${CACF_RESULT_TIMEOUT_SECONDS:-600}
+      CACF_ACK_TIMEOUT_SECONDS: ${CACF_ACK_TIMEOUT_SECONDS:-600}
+      CACF_XML_MAX_BYTES: ${CACF_XML_MAX_BYTES:-1048576}
+    depends_on:
+      next-mock: {condition: service_started}
+  next-mock:
+    image: wiremock/wiremock:3.13.1
+    volumes: ["./mock-integrations/next:/home/wiremock:ro"]
+    ports: ["127.0.0.1:8183:8080"]
+    networks: [event-management-net]
+  cacf-migrate:
+    image: ${POSTGRES_IMAGE}
+    profiles: [cacf-migrate]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes: ["./postgres/init/008-cacf-core.sql:/008-cacf-core.sql:ro"]
+    entrypoint: ["psql", "-v", "ON_ERROR_STOP=1", "-f", "/008-cacf-core.sql"]
+    networks: [event-management-net]

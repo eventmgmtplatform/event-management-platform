@@ -89,3 +89,18 @@ A certified checkpoint is immutable by convention. New work MUST proceed on a ne
 ## 11. Current exceptions and pending decisions
 
 Repository history contains zero merge commits at baseline and only one historical tag (`terraform-project-common-v0.1.0`). Therefore this baseline intentionally does not prescribe merge commits, squash, rebase, PR enforcement or global tagging until separately decided and recorded.
+
+## 12. Separación global entre código y library
+
+Por instrucción del usuario del 2026-09-08, para todos los workstreams:
+
+- Git MUST contener la implementación y su documentación técnica de código.
+- Los PKC MUST permanecer exclusivamente en la library de la conversación;
+  MUST NOT añadirse al repositorio, aunque contengan copias de código.
+- ZIP de PKC, checksums y materiales exclusivos de empaquetado/library MUST
+  permanecer fuera de Git. No usar git add -f para eludir esta separación.
+- Respaldos Docker/PostgreSQL siguen su procedimiento operativo existente,
+  separados de Git y del PKC. No versionar datos persistidos ni dumps.
+- La documentación técnica puede incluir arquitectura, contratos, runbooks,
+  decisiones, validación resumida y Defect Prevention; los logs crudos siguen
+  excluidos por la política de evidencia.

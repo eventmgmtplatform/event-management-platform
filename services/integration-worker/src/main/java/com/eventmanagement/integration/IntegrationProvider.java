@@ -3,7 +3,8 @@ package com.eventmanagement.integration;
 public enum IntegrationProvider {
 
     SERVICENOW,
-    GNM;
+    GNM,
+    CACF;
 
     public static IntegrationProvider from(String value) {
 

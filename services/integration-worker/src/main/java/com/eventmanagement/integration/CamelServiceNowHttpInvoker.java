@@ -14,6 +14,8 @@ public class CamelServiceNowHttpInvoker
 
     private final ProducerTemplate producerTemplate;
     private final String endpointUri;
+    private final String updateBase;
+    private final long timeoutMs;
 
     @Inject
     public CamelServiceNowHttpInvoker(
@@ -32,6 +34,8 @@ public class CamelServiceNowHttpInvoker
             long timeoutMs
     ) {
         this.producerTemplate = producerTemplate;
+        this.updateBase = baseUrl + createTicketPath;
+        this.timeoutMs = timeoutMs;
 
         this.endpointUri =
                 baseUrl +
@@ -86,5 +90,20 @@ public class CamelServiceNowHttpInvoker
                 httpStatus,
                 responseBody
         );
+    }
+    @Override
+    public HttpResult updateTicket(String sysId, String requestBody) throws Exception {
+        if (sysId == null || !sysId.matches("[A-Za-z0-9_-]{1,100}")) throw new IllegalArgumentException("Invalid ServiceNow sysId");
+        Exchange response = producerTemplate.request(updateBase + "/" + sysId
+                + "?throwExceptionOnFailure=true&automaticRetriesDisabled=true&connectTimeout=" + timeoutMs + "&responseTimeout=" + timeoutMs,
+                request -> {
+                    request.getMessage().setBody(requestBody);
+                    request.getMessage().setHeader(Exchange.CONTENT_TYPE, "application/json");
+                    request.getMessage().setHeader(Exchange.HTTP_METHOD, "PATCH");
+                });
+        Exception error = response.getException();
+        if (error == null) error = response.getProperty(Exchange.EXCEPTION_CAUGHT, Exception.class);
+        if (error != null) throw error;
+        return new HttpResult(response.getMessage().getHeader(Exchange.HTTP_RESPONSE_CODE, 0, Integer.class), response.getMessage().getBody(String.class));
     }
 }

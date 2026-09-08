@@ -16,4 +16,8 @@ public interface ServiceNowLookupClient {
     }
 
     LookupResult findByEventId(String eventId) throws Exception;
+
+    default LookupResult findByTicketNumber(String number) throws Exception {
+        throw new UnsupportedOperationException("ServiceNow lookup by number is not configured");
+    }
 }

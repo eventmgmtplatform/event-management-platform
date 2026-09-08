@@ -49,7 +49,16 @@ public class CamelServiceNowLookupClient
             );
         }
 
-        String serviceNowQuery = "u_event_id=" + eventId.trim();
+        return find("u_event_id=" + eventId.trim(), eventId);
+    }
+
+    @Override
+    public LookupResult findByTicketNumber(String number) throws Exception {
+        if (number == null || !number.matches("[A-Za-z0-9_-]{1,100}")) throw new IllegalArgumentException("Invalid ticket number");
+        return find("number=" + number, number);
+    }
+
+    private LookupResult find(String serviceNowQuery, String eventId) throws Exception {
         String httpQuery =
                 "sysparm_query=" + URLEncoder.encode(
                         serviceNowQuery,

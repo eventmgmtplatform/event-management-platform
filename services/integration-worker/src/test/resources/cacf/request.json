@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0",
+  "executionId": "6d072d97-493d-4cd8-8492-70ec157b61e1",
+  "eventId": "a4382648-47a2-41c7-8ed0-d2ad9b8c3f89",
+  "correlationId": "46fd6c0c-e2eb-4ba5-9c15-5ff2cffc747d",
+  "customer": {"code": "local", "name": "CACF Local Certification"},
+  "ticket": {"number": "INCLOCAL001", "originalAssignmentGroup": "LOCAL-HUMAN", "holdingAssignmentGroup": "LOCAL-AUTOMATION"},
+  "event": {
+    "sourceSystem": "LOCAL", "sourceSerial": "1", "summary": "CPU > 80% & needs review",
+    "severity": 4, "node": "local-host", "nodeAlias": "127.0.0.1", "resourceId": "local-host",
+    "alertKey": "local_cpu", "alertGroup": "Zabbix", "component": "CPU",
+    "monitoringSolution": "Zabbix", "occurredAt": "2026-09-08T00:00:00Z"
+  },
+  "automation": {"provider": "NEXT", "resultTimeoutSeconds": 600}
+}

@@ -39,6 +39,31 @@
             <choice>
 
                 <when>
+                    <simple>${exchangeProperty.integrationProvider} == 'CACF'</simple>
+                    <!-- CACF has its own durable-admission consumer group on this topic. -->
+                    <stop/>
+                </when>
+
+                <when>
+                    <simple>${exchangeProperty.integrationProvider} == 'SERVICENOW' &amp;&amp; ${exchangeProperty.operation} == 'APPLY_AUTOMATION_RESULT'</simple>
+                    <process ref="integrationCommandClaimProcessor"/>
+                    <choice>
+                        <when>
+                            <simple>${exchangeProperty.integrationIdempotencyDecision} == 'IN_PROGRESS'</simple>
+                            <!-- Never repeat a potentially accepted work-note mutation. -->
+                            <stop/>
+                        </when>
+                        <when>
+                            <simple>${exchangeProperty.integrationIdempotencyDecision} == 'REPLAY'</simple>
+                        </when>
+                        <otherwise>
+                            <process ref="serviceNowAutomationActionProcessor"/>
+                            <process ref="integrationResultProcessor"/>
+                        </otherwise>
+                    </choice>
+                </when>
+
+                <when>
                     <simple>${exchangeProperty.integrationProvider} == 'GNM'</simple>
 
                     <!--

@@ -1,0 +1,9 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/tupix/api/v1/netcool/incidents",
+    "headers": {"Content-Type": {"contains": "text/xml"}, "Authorization": {"matches": "Basic .+"}},
+    "bodyPatterns": [{"matchesXPath": "//*[local-name()='FlexField' and @mappedTo='ipc']"}, {"matchesXPath": "//*[local-name()='ProviderID']"}]
+  },
+  "response": {"status": 200, "headers": {"Content-Type": "text/xml"}, "body": "<Response><StatusCode>0</StatusCode><Acknowledge>true</Acknowledge></Response>"}
+}
