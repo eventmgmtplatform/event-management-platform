@@ -62,6 +62,8 @@ services:
         condition: service_healthy
       servicenow-mock:
         condition: service_started
+      gnm-mock:
+        condition: service_healthy
 
     stop_signal: SIGTERM
     stop_grace_period: 60s

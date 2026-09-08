@@ -26,12 +26,13 @@ if [[ -r "${TICKETING_FILE}" ]]; then
     COMPOSE+=(-f "${TICKETING_FILE}")
 fi
 
-readonly -a START_ORDER=(
+START_ORDER=(
     postgres
     opensearch
     kafka
     kafka-init
     servicenow-mock
+    gnm-mock
     event-gateway
     enrichment-engine
     integration-worker
@@ -42,7 +43,7 @@ readonly -a START_ORDER=(
     event-management-console
 )
 
-readonly -a STOP_ORDER=(
+STOP_ORDER=(
     event-management-console
     itsm-ticketing-dashboard
     kafka-ui
@@ -51,12 +52,26 @@ readonly -a STOP_ORDER=(
     enrichment-engine
     integration-worker
     event-state-service
+    gnm-mock
     servicenow-mock
     kafka-init
     kafka
     opensearch
     postgres
 )
+
+# CACF retains the isolated topology and fixtures defined by OS-05.
+readonly RUNTIME="${EVENTMANAGEMENT_RUNTIME:-ecosystem}"
+case "${RUNTIME}" in
+    local|ecosystem) ;;
+    cacf-certification)
+        COMPOSE=(docker compose -p cacf-certification -f "${PROJECT_ROOT}/infrastructure/docker-compose.cacf-test.yml")
+        START_ORDER=(postgres kafka kafka-init next-mock servicenow-mock integration-worker)
+        STOP_ORDER=(integration-worker servicenow-mock next-mock kafka-init kafka postgres)
+        ;;
+    *) echo "ERROR: EVENTMANAGEMENT_RUNTIME inválido: ${RUNTIME}" >&2; exit 2 ;;
+esac
+readonly -a START_ORDER STOP_ORDER
 
 usage() {
     cat <<EOF
@@ -89,6 +104,7 @@ Ejemplos:
   ${SCRIPT_NAME} integration-worker restart
 
 Variables opcionales:
+  EVENTMANAGEMENT_RUNTIME        ecosystem (default) | local | cacf-certification.
   EVENTMANAGEMENT_WAIT_TIMEOUT   Espera máxima por servicio; default ${WAIT_TIMEOUT}s.
   EVENTMANAGEMENT_LOG_TAIL       Líneas de logs; default ${LOG_TAIL}.
   EVENTMANAGEMENT_STOP_TIMEOUT   Espera graceful; default ${STOP_TIMEOUT}s.
@@ -109,9 +125,21 @@ require_runtime() {
     command -v jq >/dev/null 2>&1 || die "jq no está instalado."
     docker compose version >/dev/null 2>&1 || die "docker compose no está disponible."
     docker info >/dev/null 2>&1 || die "Docker Engine no está disponible para el usuario actual."
-    [[ -r "${ENV_FILE}" ]] || die "no se puede leer ${ENV_FILE}."
+    [[ "${RUNTIME}" != local || -r "${ENV_FILE}" ]] || die "no se puede leer ${ENV_FILE}."
     [[ -r "${COMPOSE_FILE}" ]] || die "no se puede leer ${COMPOSE_FILE}."
     "${COMPOSE[@]}" config --quiet || die "la configuración Compose es inválida."
+    local configured service found ordered
+    configured="$("${COMPOSE[@]}" config --services)"
+    while IFS= read -r service; do
+        found=0
+        for ordered in "${START_ORDER[@]}"; do
+            [[ "$ordered" != "$service" ]] || found=1
+        done
+        (( found == 1 )) || die "servicio fuera del orden administrado: $service"
+    done <<< "$configured"
+    for service in "${START_ORDER[@]}" "${STOP_ORDER[@]}"; do
+        service_exists "$service" || die "servicio del orden ausente en Compose: $service"
+    done
 }
 
 service_exists() {
@@ -189,8 +217,7 @@ validate_all() {
     "${COMPOSE[@]}" config --quiet
     echo "PASS: contrato Compose válido."
     echo "ProjectRoot=${PROJECT_ROOT}"
-    printf 'ComposeFile=%s\n' "${COMPOSE_FILE}"
-    [[ -r "${TICKETING_FILE}" ]] && printf 'ComposeOverlay=%s\n' "${TICKETING_FILE}"
+    printf 'Runtime=%s\n' "${RUNTIME}"
 }
 
 services_all() {
@@ -202,32 +229,6 @@ declare -A STARTING_SERVICES=()
 start_service() {
     local service="$1"
     local id fields state health exit_code dependency
-
-    id="$(container_id "${service}")"
-
-    if [[ -n "${id}" ]]; then
-        fields="$(state_fields "${id}")"
-        IFS='|' read -r state health exit_code <<<"${fields}"
-
-        if [[ "${service}" == "kafka-init" &&
-              "${state}" == "exited" &&
-              "${exit_code}" == "0" ]]; then
-            echo "SKIP: kafka-init ya terminó correctamente."
-            return 0
-        fi
-
-        if [[ "${state}" == "running" &&
-              "${health}" == "healthy" ]]; then
-            echo "SKIP: ${service} ya está healthy."
-            return 0
-        fi
-
-        if [[ "${state}" == "running" &&
-              "${health}" == "none" ]]; then
-            echo "SKIP: ${service} ya está running."
-            return 0
-        fi
-    fi
 
     if [[ "${STARTING_SERVICES[${service}]:-0}" == "1" ]]; then
         die "se detectó un ciclo de dependencias en ${service}."
@@ -241,6 +242,37 @@ start_service() {
             die "${service} depende de un servicio inexistente: ${dependency}"
         start_service "${dependency}"
     done < <(service_dependencies "${service}")
+
+
+    id="$(container_id "${service}")"
+
+    if [[ -n "${id}" ]]; then
+        fields="$(state_fields "${id}")"
+        IFS='|' read -r state health exit_code <<<"${fields}"
+
+        if [[ "${service}" == "kafka-init" &&
+              "${state}" == "exited" &&
+              "${exit_code}" == "0" ]]; then
+            echo "SKIP: kafka-init ya terminó correctamente."
+            unset 'STARTING_SERVICES['"${service}"']'
+            return 0
+        fi
+
+        if [[ "${state}" == "running" &&
+              "${health}" == "healthy" ]]; then
+            echo "SKIP: ${service} ya está healthy."
+            unset 'STARTING_SERVICES['"${service}"']'
+            return 0
+        fi
+
+        if [[ "${state}" == "running" &&
+              "${health}" == "none" ]]; then
+            echo "SKIP: ${service} ya está running."
+            unset 'STARTING_SERVICES['"${service}"']'
+            return 0
+        fi
+    fi
+
 
     echo "Iniciando ${service}; sus dependencias ya fueron verificadas..."
     "${COMPOSE[@]}" up -d --no-build --no-deps "${service}"
@@ -263,6 +295,12 @@ stop_service() {
     local service="$1"
     echo "Deteniendo ${service}; se conservan contenedor y datos..."
     "${COMPOSE[@]}" stop --timeout "${STOP_TIMEOUT}" "${service}"
+    local id fields state health exit_code
+    id="$(container_id "$service")"
+    [[ -n "$id" ]] || return 0
+    fields="$(state_fields "$id")"
+    IFS='|' read -r state health exit_code <<< "$fields"
+    [[ "$state" =~ ^(exited|created)$ ]] || die "$service no se detuvo: $state"
 }
 
 stop_all() {
@@ -287,13 +325,14 @@ status_service() {
 }
 
 status_all() {
-    local service
+    local service failed=0
     "${COMPOSE[@]}" ps -a
     echo
     echo "Resumen operacional:"
     while IFS= read -r service; do
-        status_service "${service}" | tail -n 1 || true
+        status_service "${service}" | tail -n 1 || failed=1
     done < <("${COMPOSE[@]}" config --services)
+    return "$failed"
 }
 
 health_service() {
@@ -305,18 +344,13 @@ health_service() {
     fi
     fields="$(state_fields "${id}")"
     IFS='|' read -r state health exit_code <<<"${fields}"
-    if [[ "${service}" == "kafka-init" ]]; then
-        [[ "${state}" == "exited" && "${exit_code}" == "0" ]]
-    else
-        [[ "${state}" == "running" && "${health}" == "healthy" ]]
-    fi
-    local rc=$?
-    if (( rc == 0 )); then
+    if { [[ "${service}" == kafka-init && "${state}" == exited && "${exit_code}" == 0 ]]; } ||
+       { [[ "${service}" != kafka-init && "${state}" == running && "${health}" =~ ^(healthy|none)$ ]]; }; then
         echo "PASS: ${service} state=${state} health=${health} exit=${exit_code}"
-    else
-        echo "FAIL: ${service} state=${state} health=${health} exit=${exit_code}" >&2
+        return 0
     fi
-    return "${rc}"
+    echo "FAIL: ${service} state=${state} health=${health} exit=${exit_code}" >&2
+    return 1
 }
 
 health_all() {
@@ -382,6 +416,30 @@ main() {
         validate|services|start|stop|restart|reload|status|health|logs|down) ;;
         *) usage; die "acción no válida: ${action}" ;;
     esac
+
+    if [[ "${RUNTIME}" == ecosystem ]]; then
+        # Preserve per-service calls against the principal runtime. CACF services
+        # can be selected explicitly with EVENTMANAGEMENT_RUNTIME.
+        if [[ "${service}" != all ]]; then
+            EVENTMANAGEMENT_RUNTIME=local bash "${SCRIPT_DIR}/eventmanagement-services.sh" "$@"
+            return
+        fi
+        local runtime failed=0
+        # Check every inventory before any lifecycle mutation.
+        for runtime in local cacf-certification; do
+            EVENTMANAGEMENT_RUNTIME="$runtime" bash "${SCRIPT_DIR}/eventmanagement-services.sh" validate
+        done
+        for runtime in local cacf-certification; do
+            echo "=== EventManagementOpenSource: $runtime / $action ==="
+            if EVENTMANAGEMENT_RUNTIME="$runtime" bash "${SCRIPT_DIR}/eventmanagement-services.sh" "$action"; then
+                :
+            else
+                failed=1
+                case "$action" in status|health|logs) ;; *) return 1 ;; esac
+            fi
+        done
+        return "$failed"
+    fi
 
     require_runtime
 
