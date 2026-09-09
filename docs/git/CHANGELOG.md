@@ -1,5 +1,15 @@
 # Git Governance Changelog
 
+## 2026-09-08 — Publicación CACF local
+
+- Publicado `3d45006cbf23e2bef556da32946ac18035d4a7bb` en la rama
+  `feature/os-05-cacf-core-foundation`, con upstream del mismo nombre.
+- Registrada la regla global del usuario: documentación técnica junto al código;
+  PKC y materiales exclusivos de library fuera de Git.
+- Conservados cambios concurrentes de administración de servicios fuera de CACF.
+- Sin promoción a main/develop, tags ni cambios Cloud Build/Terraform.
+
+
 ## [1.0.0] — 2026-09-07
 
 ### Recovery and publication baseline
