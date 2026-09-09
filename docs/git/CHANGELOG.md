@@ -1,5 +1,17 @@
 # Git Governance Changelog
 
+## 2026-09-09 — Consolidación autorizada hacia main
+
+- El usuario autoriza promover a main todos los commits pendientes de las ramas.
+- Inventario: 33 commits únicos fuera de main (`8e50880`); 32 contenidos en
+  `1c3ede3` y un commit documental CACF (`3a657ae`).
+- Merge conservando ambos historiales, sin rebase, squash ni force push.
+- Se preserva el código funcional de `1c3ede3` sin cambios.
+- Reportes de administración y cachés Python se excluyen de Git sin borrarlos.
+- Evidencia y bundle previo: `evidence/os-00-04-main-consolidation/20260909T103330Z/`.
+- No se promueve develop ni se mueven referencias release/remediation históricas.
+- Rama funcional posterior: `feature/os-06-core-event-processor`.
+
 ## 2026-09-08 — Publicación CACF local
 
 - Publicado `3d45006cbf23e2bef556da32946ac18035d4a7bb` en la rama

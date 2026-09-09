@@ -92,3 +92,8 @@ services/event-management-console/.sn-ui-03.*
 /docs/cacf/knowledge-base.json
 /docs/cacf/timeline.json
 /docs/cacf/test-results.json
+
+# Generated service administration evidence and Python caches
+/artifacts/service-administration/
+__pycache__/
+*.py[cod]

@@ -86,3 +86,25 @@ At baseline, ignored material included `.env`, an owner-guarded recovery ZIP, `e
 - No se promovieron main/develop ni se crearon tags de release.
 - Los conteos del inventario anterior corresponden a la baseline de 2026-09-07;
   no representan una auditoría global nueva.
+
+## Consolidación de main — 2026-09-09
+
+Promoción autorizada por el usuario desde main `8e508809c16557553887f4a240741b75f3eeadc4`.
+La rama `feature/os-00-04-main-consolidation` reúne `1c3ede3` y `3a657ae`,
+preservando todos los commits locales y remotos inventariados. El avance de main
+se realiza por fast-forward al checkpoint consolidado; los SHA finales y la
+verificación directa de origin se registran en la evidencia de ejecución.
+
+Esta consolidación certifica integridad Git, no una nueva certificación E2E:
+el reporte de administración del 2026-09-08 sigue registrando FAIL (start, 127).
+No se altera el código funcional para ocultar ese resultado.
+La documentación de validación CACF conserva el alcance histórico de sus pruebas.
+
+La siguiente rama de trabajo es `feature/os-06-core-event-processor`, creada
+desde main consolidado. Se conserva la nomenclatura feature/os-* del proyecto.
+
+Validación de consolidación: integridad Git y preservación del árbol funcional
+correctas. Suite worker Maven offline: 171 pruebas, 0 fallos, 0 errores,
+7 omitidas por falta de configuración JDBC del laboratorio aislado (164 ejecutadas).
+La ejecución inicial restringida falló por sockets; la repetición fuera del
+sandbox terminó BUILD SUCCESS. No se ejecutó la prueba maestra que reinicia servicios.
