@@ -18,7 +18,7 @@ public class ProcessorReadiness implements HealthCheck {
         try(var connection=dataSource.getConnection(); var statement=connection.createStatement()) {
             statement.setQueryTimeout(3);
             statement.executeQuery("SELECT processing_id FROM event_processor.processing_record LIMIT 0");
-            statement.executeQuery("SELECT message_id FROM event_processor.output_outbox LIMIT 0");
+            statement.executeQuery("SELECT message_id, dispatch_sequence, attempts, next_attempt_at FROM event_processor.output_outbox LIMIT 0");
             try(var admin=AdminClient.create(Map.of("bootstrap.servers",brokers,
                     "request.timeout.ms","3000","default.api.timeout.ms","3000"))) {
                 admin.describeCluster().clusterId().get(3,java.util.concurrent.TimeUnit.SECONDS);

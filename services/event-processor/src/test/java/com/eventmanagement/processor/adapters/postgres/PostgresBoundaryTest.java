@@ -58,7 +58,12 @@ class PostgresBoundaryTest {
         var deliveries=new ArrayList<String>();
         var first=dispatcher(deliveries,true);first.dispatch();
         assertEquals(1,deliveries.size());assertEquals(0,published());
-        var restarted=dispatcher(deliveries,false);restarted.dispatch();
+        var restarted=dispatcher(deliveries,false);
+        restarted.dispatch();assertEquals(1,deliveries.size(),"Retry must honor the durable deadline");
+        try(var c=ds.getConnection();var s=c.prepareStatement("UPDATE event_processor.output_outbox SET next_attempt_at=now() WHERE message_id=?")) {
+            s.setString(1,id);s.executeUpdate();
+        }
+        restarted.dispatch();
         assertEquals(2,deliveries.size());assertEquals(deliveries.get(0),deliveries.get(1));assertEquals(1,published());
         restarted.dispatch();assertEquals(2,deliveries.size());
     }
@@ -68,7 +73,7 @@ class PostgresBoundaryTest {
         }
     }
     private OutboxDispatcher dispatcher(List<String> deliveries,boolean fail) {
-        var dispatcher=new OutboxDispatcher();dispatcher.dataSource=ds;dispatcher.brokers="unused:9092";dispatcher.batchSize=1;
+        var dispatcher=new OutboxDispatcher();dispatcher.dataSource=ds;dispatcher.brokers="unused:9092";dispatcher.batchSize=1;dispatcher.initialRetryMs=60000;dispatcher.maxRetryMs=60000;
         dispatcher.producer=(ProducerTemplate)Proxy.newProxyInstance(getClass().getClassLoader(),new Class<?>[]{ProducerTemplate.class},(proxy,method,args)->{
             if(method.getName().equals("sendBodyAndHeader")) {
                 deliveries.add(args[1]+"|"+args[3]);if(fail)throw new RuntimeException("delivery outcome unknown");return null;

@@ -1,5 +1,13 @@
 # Event Processor changelog
 
+## Unreleased — durable output recovery, 2026-09-09
+
+- Backoff persistente, contador de intentos y error sanitizado; no descarta pendientes.
+- Orden entre filas comprometidas de la misma topic/key, con progreso de claves independientes.
+- Shutdown deja de reclamar nuevas salidas y readiness exige la migración 010.
+- Pruebas PostgreSQL concurrentes, fresh/upgrade, backup/restore y recuperación real tras caída DB.
+- Sin cambios al contrato público ni a reglas/lifecycle; no equivale a DR productivo certificado.
+
 ## Unreleased — foundation, 2026-09-09
 
 - Sustitución compatible de enrichment-engine en 8082; grupo Kafka conservado.

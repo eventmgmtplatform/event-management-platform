@@ -33,3 +33,18 @@ blackout, correlation y parity-fixture, ni políticas GSMA nombradas. No se
 reconstruirán como si fueran las fuentes originales. Los endpoints de mutación
 administrativa permanecerán sin exposición hasta implementar sus contratos y
 autorización. IdP, roles productivos, SLO y RPO/RTO no se inventan.
+
+## ADR-003 — recuperación de salidas, 2026-09-09
+
+El orden cubre filas ya comprometidas según dispatch_sequence para la misma
+pareja topic/key. No pretende resolver timestamps del origen ni lifecycle fuera
+de orden. Una fila aplazada bloquea sus sucesoras; otras claves siguen disponibles.
+Se conserva bloqueo PostgreSQL hasta publicar/registrar resultado. Un savepoint
+permite registrar el fallo sin liberar prematuramente la fila. Crash/conexión DB
+perdida antes de commit puede perder la metadata del intento, nunca el intent
+comprometido; se admite entrega duplicada con identidad estable.
+
+La migración aditiva 010 permite escritores anteriores mediante defaults. Readiness
+de la imagen nueva exige las columnas nuevas. El backup/restore probado cubre sólo
+el schema event_processor en bases aisladas; la recuperación completa de plataforma
+y los objetivos RPO/RTO siguen pendientes.
