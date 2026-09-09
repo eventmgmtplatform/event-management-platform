@@ -34,7 +34,7 @@ START_ORDER=(
     servicenow-mock
     gnm-mock
     event-gateway
-    enrichment-engine
+    event-processor
     integration-worker
     event-state-service
     kafka-ui
@@ -49,7 +49,7 @@ STOP_ORDER=(
     kafka-ui
     opensearch-dashboards
     event-gateway
-    enrichment-engine
+    event-processor
     integration-worker
     event-state-service
     gnm-mock

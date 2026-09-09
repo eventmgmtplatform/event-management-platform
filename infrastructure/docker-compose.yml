@@ -353,19 +353,21 @@ services:
 
 
   # ==========================================================
-  # ENRICHMENT ENGINE - HELLO WORLD FOUNDATION
+  # EVENT PROCESSOR FOUNDATION
   # ==========================================================
-  enrichment-engine:
+  event-processor:
     build:
-      context: ../services/enrichment-engine
+      context: ../services/event-processor
       dockerfile: Dockerfile
 
-    image: event-management/enrichment-engine:1.0.0
-    container_name: event-enrichment-engine
-    hostname: enrichment-engine
+    image: event-management/event-processor:1.0.0
+    container_name: event-event-processor
+    hostname: event-processor
     restart: unless-stopped
 
     depends_on:
+      postgres:
+        condition: service_healthy
       kafka:
         condition: service_healthy
       kafka-init:
@@ -376,11 +378,10 @@ services:
 
     environment:
       QUARKUS_HTTP_PORT: 8082
-      ENRICHMENT_KAFKA_BROKERS: kafka:29092
-      ENRICHMENT_KAFKA_INPUT_TOPIC: events.raw
-      ENRICHMENT_KAFKA_OUTPUT_TOPIC: events.normalized
-      ENRICHMENT_KAFKA_CONSUMER_GROUP: enrichment-engine
-      ENRICHMENT_KAFKA_AUTO_OFFSET_RESET: latest
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      POSTGRES_JDBC_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       JAVA_OPTS: >-
         -Xms128m
         -Xmx512m
@@ -388,7 +389,7 @@ services:
         -Djava.net.preferIPv4Stack=true
 
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/api/v1/enrichment >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8082/health/ready >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15

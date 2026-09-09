@@ -9,7 +9,7 @@ Rama: `codex/eventmanagement-service-administration`. Base CACF disponible:
 Las acciones globales administran los dos proyectos Compose existentes:
 
 - `local`: plataforma principal, GNM, ServiceNow mock, PostgreSQL, Kafka,
-  OpenSearch, gateway, enrichment, worker, state service y consolas.
+  OpenSearch, gateway, event-processor, worker, state service y consolas.
 - `cacf-certification`: worker CACF, NEXT mock, ServiceNow mock, PostgreSQL y Kafka
   del laboratorio definido por OS-05. Conserva sus puertos, datos y aislamiento.
 
@@ -55,7 +55,7 @@ contrato existente `--no-build`; reconstruir con `reload` cuando cambie el códi
 3. Ejecuta start por dependencias y health para todos los servicios.
 4. Envía los fixtures Zabbix OPEN/CLOSE existentes, con Node/hostname únicos.
 5. Comprueba HTTP 202, ambos eventId en `events.normalized`, lifecycle, eventKey
-   compartida y marca `PENDING_RULES` del enrichment existente. Lee particiones
+   compartida y marca `PENDING_RULES` conservada por la base Event Processor. Lee particiones
    desde offsets previos; no modifica grupos consumidores de aplicaciones.
 6. Reutiliza `scripts/cacf-local-certification.py`: CREATE, ACK, TKTUPDATE,
    reinicio, duplicados, timeout, callback tardío, UNKNOWN, Kafka y ServiceNow.
@@ -68,7 +68,15 @@ No se eliminan volúmenes ni se administran contenedores de otros proyectos.
 ## Límites del diseño existente
 
 DP-13: aún no existe orquestador de `events.normalized` a `integration.commands`.
-Por eso se certifican los recorridos gateway/enrichment y CACF separadamente.
+Por eso se certifican los recorridos gateway/event-processor y CACF separadamente.
 DP-22: la suite CACF existente no certifica proyección en event-state-service.
 Las consolas, PostgreSQL y OpenSearch reciben verificación de salud; el resultado
 no equivale a certificar cada función de negocio ni integraciones productivas.
+
+## Evolución Event Processor — 2026-09-09
+
+Event Processor reemplaza enrichment-engine en 8082. El controlador administra
+`event-processor`; el grupo Kafka sigue siendo enrichment-engine para conservar
+offsets. Aplicar primero la migración aditiva 009 a bases existentes. Véase
+[runbook del processor](../services/event-processor/README.md). El contenedor
+anterior detenido puede aparecer como orphan mientras se conserva para rollback.

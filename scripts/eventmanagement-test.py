@@ -67,13 +67,16 @@ def simulate():
                 if event.get('eventId') in expected:
                     assert event['lifecycleAction'] == expected[event['eventId']]
                     assert event['processing']['enrichment']['status'] == 'PENDING_RULES'
+                    assert event['processing']['enrichment']['engine'] == 'event-processor'
+                    assert event['processing']['processor']['canonicalStatus'] == ('PROBLEM' if expected[event['eventId']] == 'OPEN' else 'OK')
+                    assert event['processing']['processor']['processingId']
                     found[event['eventId']] = event
             before[partition] = end
         if len(found) < 2:
             time.sleep(1)
     assert len(found) == 2, 'OPEN/CLOSE missing from events.normalized'
     assert len({event['eventKey'] for event in found.values()}) == 1
-    print('PASS gateway → Kafka raw → enrichment → normalized: OPEN/CLOSE, same eventKey', flush=True)
+    print('PASS gateway → Kafka raw → event-processor → normalized: OPEN/CLOSE, same eventKey', flush=True)
     return {'node': node, 'eventIds': list(found), 'eventKey': next(iter(found.values()))['eventKey']}
 
 
