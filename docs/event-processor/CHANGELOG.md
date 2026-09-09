@@ -1,5 +1,12 @@
 # Event Processor changelog
 
+## Unreleased — revisión funcional GSMA, 2026-09-09
+
+- Mapeo de políticas a las 12 etapas, fuentes de datos con confianza explícita y topología objetivo.
+- Prevención de defectos de tenant, ventanas, precedencia y discrepancias de catálogo/contratos.
+- Alcance mínimo y 26 especificaciones de comparación en evidencia local; paridad histórica PENDING.
+- Actualizado estatus de schemas/fuentes recibidos; sin cambios al servicio ni nueva certificación.
+
 ## Unreleased — durable output recovery, 2026-09-09
 
 - Backoff persistente, contador de intentos y error sanitizado; no descarta pendientes.

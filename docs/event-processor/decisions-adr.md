@@ -22,17 +22,18 @@ en tablas propias, transacción PostgreSQL antes de confirmar Kafka. La publicac
 es at-least-once: un fallo después de publicar antes de marcar puede duplicar
 la entrega con el mismo identificador. No se afirma exactly-once.
 
-Los algoritmos dependientes de schemas DA no suministrados permanecen explícitos
+Los algoritmos pendientes de implementar a partir de los schemas DA permanecen explícitos
 como PENDING, sin defaults de negocio inventados. DA-10 y DA-15 se excluyen según
 el documento. El master describe 16 DA; no prueba su implementación.
 
-## Artefactos externos pendientes
+## Artefactos externos: actualización 2026-09-09
 
-No se localizaron schemas congelados rule-v1, enrichment-result-v1, suppression,
-blackout, correlation y parity-fixture, ni políticas GSMA nombradas. No se
-reconstruirán como si fueran las fuentes originales. Los endpoints de mutación
-administrativa permanecerán sin exposición hasta implementar sus contratos y
-autorización. IdP, roles productivos, SLO y RPO/RTO no se inventan.
+Se recibieron BASELINE, DA aplicables, schemas y fuentes IPL/JS GSMA con catálogo
+DB2. Su relación funcional y límites están en [legacy-mapping.md](legacy-mapping.md).
+Permanecen pendientes los bindings DataSource/DataType y los fixtures históricos
+con configuración y resultados esperados. No se reconstruirán como hechos.
+Los endpoints administrativos de mutación requieren contratos y autorización
+implementados antes de exponerse. IdP, roles productivos, SLO y RPO/RTO no se inventan.
 
 ## ADR-003 — recuperación de salidas, 2026-09-09
 
