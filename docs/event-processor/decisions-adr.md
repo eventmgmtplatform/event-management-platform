@@ -26,14 +26,12 @@ Los algoritmos pendientes de implementar a partir de los schemas DA permanecen e
 como PENDING, sin defaults de negocio inventados. DA-10 y DA-15 se excluyen según
 el documento. El master describe 16 DA; no prueba su implementación.
 
-## Artefactos externos: actualización 2026-09-09
+## Contratos de diseño recibidos
 
-Se recibieron BASELINE, DA aplicables, schemas y fuentes IPL/JS GSMA con catálogo
-DB2. Su relación funcional y límites están en [legacy-mapping.md](legacy-mapping.md).
-Permanecen pendientes los bindings DataSource/DataType y los fixtures históricos
-con configuración y resultados esperados. No se reconstruirán como hechos.
-Los endpoints administrativos de mutación requieren contratos y autorización
-implementados antes de exponerse. IdP, roles productivos, SLO y RPO/RTO no se inventan.
+BASELINE, DA aplicables y schemas están disponibles. La compatibilidad implementada
+se describe en [rules-and-contracts.md](rules-and-contracts.md). Las fuentes auxiliares
+de análisis permanecen fuera del repositorio. Los fixtures históricos con configuración
+y resultados esperados siguen pendientes. IdP, roles productivos, SLO y RPO/RTO no se inventan.
 
 ## ADR-003 — recuperación de salidas, 2026-09-09
 

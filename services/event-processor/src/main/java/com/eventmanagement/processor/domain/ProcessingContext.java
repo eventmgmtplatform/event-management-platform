@@ -9,7 +9,8 @@ public record ProcessingContext(Event event, String processingId, Mode mode,
                                 List<StageResult> stages,
                                 Map<String, String> enrichment,
                                 List<CommandIntent> candidates,
-                                StageResult.Directive directive) {
+                                StageResult.Directive directive,
+                                com.eventmanagement.processor.domain.rules.RuleSnapshot ruleSnapshot) {
     public enum Mode { PRODUCTION, SIMULATION }
     public record CommandIntent(String commandId, String idempotencyKey,
                                 String integrationType, String operation) {}
@@ -21,11 +22,15 @@ public record ProcessingContext(Event event, String processingId, Mode mode,
     }
     public static ProcessingContext begin(Event event, String processingId, Mode mode) {
         return new ProcessingContext(event, processingId, mode, List.of(), Map.of(),
-                List.of(), StageResult.Directive.CONTINUE);
+                List.of(), StageResult.Directive.CONTINUE, new com.eventmanagement.processor.domain.rules.RuleSnapshot(event.tenant(), List.of()));
+    }
+    public ProcessingContext withSnapshot(com.eventmanagement.processor.domain.rules.RuleSnapshot snapshot) {
+        if(!event.tenant().equals(snapshot.tenant())) throw new IllegalArgumentException("SNAPSHOT_TENANT_MISMATCH");
+        return new ProcessingContext(event,processingId,mode,stages,enrichment,candidates,directive,snapshot);
     }
     public ProcessingContext append(StageResult result) {
         var next = new java.util.ArrayList<>(stages); next.add(result);
         return new ProcessingContext(event, processingId, mode, next, enrichment,
-                candidates, DirectiveResolver.combine(directive, result.directive()));
+                candidates, DirectiveResolver.combine(directive, result.directive()), ruleSnapshot);
     }
 }

@@ -18,6 +18,19 @@ class IntegrationCommandProcessorTest {
             new IntegrationCommandProcessor(objectMapper);
 
     @Test
+    void acceptsProcessorCompatibilityFixture() throws Exception {
+        String json=java.nio.file.Files.readString(java.nio.file.Path.of(
+                "../event-processor/src/test/resources/contracts/worker-command.json"));
+        Exchange exchange=exchange(json);
+        processor.process(exchange);
+        assertEquals("SERVICENOW",exchange.getProperty("integrationType"));
+        assertEquals("tenant",exchange.getProperty("tenant"));
+        assertEquals("key",exchange.getProperty("eventKey"));
+        assertEquals("CREATE_TICKET",exchange.getProperty("operation"));
+        assertEquals(objectMapper.readTree(json),exchange.getProperty("originalIntegrationCommand",JsonNode.class));
+    }
+
+    @Test
     void shouldPrepareServiceNowEnvelopeWithoutParsingProviderPayload()
             throws Exception {
 

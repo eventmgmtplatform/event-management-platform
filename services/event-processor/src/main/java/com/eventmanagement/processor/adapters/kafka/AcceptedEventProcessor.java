@@ -33,14 +33,31 @@ public class AcceptedEventProcessor implements Processor {
         try { event=adapter.decode(body); }
         catch (IllegalArgumentException invalid) { reject(exchange,body,"INVALID_GATEWAY_CONTRACT"); commit.commit(); return; }
         var context=pipeline.process(event);
+        if(context.directive()==StageResult.Directive.DEAD_LETTER) {
+            ObjectNode failure=mapper.createObjectNode();
+            failure.put("schemaVersion","1.0");failure.put("dlqId",context.processingId());failure.put("processingId",context.processingId());
+            failure.put("eventId",event.eventId());failure.put("failedAt",Instant.now().toString());failure.put("stage","PolicyEvaluation");
+            failure.putObject("error").put("code","RULE_EVALUATION_FAILED").put("message","Rule input rejected").put("retryable",false);
+            String hash=StableIdentity.of("payload-v1",body);
+            failure.putObject("originalEvent").put("redacted",true).put("payloadHash",hash);
+            failure.set("source",source(exchange));failure.set("stages",mapper.valueToTree(context.stages()));
+            String json=mapper.writeValueAsString(failure);
+            try { store.accept(context.processingId(),hash,event.eventId(),event.tenant(),json,dlqTopic,event.eventKey(),json); }
+            catch(IllegalArgumentException collision) {
+                if(!"EVENT_ID_COLLISION".equals(collision.getMessage()))throw collision;
+                reject(exchange,body,"EVENT_ID_COLLISION");
+            }
+            commit.commit();return;
+        }
         ObjectNode output=(ObjectNode)mapper.readTree(event.originalJson());
         ObjectNode processing=output.has("processing") ? (ObjectNode)output.get("processing") : output.putObject("processing");
-        // Preserve the prior normalized contract without claiming rules are implemented.
+        // Preserve the prior normalized contract while enrichment remains pending.
         var enrichment=processing.putObject("enrichment");
         enrichment.put("status","PENDING_RULES"); enrichment.put("engine","event-processor");
         enrichment.put("processedAt",Instant.now().toString());
         var details=processing.putObject("processor"); details.put("processingId",context.processingId());
-        details.put("status","FOUNDATION"); details.put("canonicalStatus",event.status().name());
+        details.put("status","INCREMENTAL");
+        details.put("ruleSnapshotChecksum",context.ruleSnapshot().checksum()); details.put("canonicalStatus",event.status().name());
         details.put("canonicalSeverity",event.severity()); details.put("directive",context.directive().name());
         ObjectNode evidence=mapper.createObjectNode(); evidence.put("processingId",context.processingId());
         evidence.put("eventId",event.eventId()); evidence.put("directive",context.directive().name());
@@ -69,6 +86,10 @@ public class AcceptedEventProcessor implements Processor {
         String id=StableIdentity.of("dlq-v1",source.toString(),hash);
         ObjectNode failure=mapper.createObjectNode(); failure.put("schemaVersion","1.0");
         failure.put("service","event-processor"); failure.put("processingId",id);
+        failure.put("dlqId",id); failure.put("eventId","");
+        failure.put("failedAt",Instant.now().toString()); failure.put("stage","ContractValidation");
+        failure.putObject("error").put("code",reason).put("message","Input rejected").put("retryable",false);
+        failure.putObject("originalEvent").put("redacted",true).put("payloadHash",hash);
         failure.put("errorCode",reason); failure.put("payloadHash",hash); failure.set("source",source);
         // Invalid raw input is deliberately not copied into DLQ/logs/audit.
         String json=mapper.writeValueAsString(failure);

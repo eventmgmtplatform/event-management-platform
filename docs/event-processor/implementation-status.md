@@ -8,9 +8,9 @@ ADR-001 confirmado por el usuario el 2026-09-09. No es certificación de release
 |---|---|---|
 | 01 | Dominio independiente, contexto inmutable, puertos process/simulate, adaptador de contrato y transporte | PENDING: puertos administrativos y modelos de capacidades restantes |
 | 02 | 12 etapas deterministas, directivas, simulación por mismo pipeline, entrada durable | PENDING: algoritmos y escenarios funcionales posteriores |
-| 03 | Evidencia/outbox transaccionales, replay concurrente, reintentos persistentes y orden de filas por topic/key | PENDING: repositorios de configuración/versiones y proyección/rebuild |
-| 04 | Sin DSL ni activación de reglas inventadas | PENDING: implementar rule-v1 suministrado y validación semántica |
-| 05 | Contrato de enrichment anterior conservado con PENDING_RULES | PENDING: implementar enrichment-result y puertos; fuentes GSMA recibidas |
+| 03 | Evidencia/outbox transaccionales, replay concurrente, reintentos persistentes y orden de filas por topic/key | PENDING: configuración especializada y proyección/rebuild; registro POLICY implementado |
+| 04 | DSL tipada POLICY, validación y activación interna versionada | PENDING: capacidades especializadas y administración pública autorizada |
+| 05 | Contrato de enrichment anterior conservado con PENDING_RULES | PENDING: implementar enrichment-result y puertos; fuentes de diseño recibidas |
 | 06 | eventKey anterior e identidad de replay conservadas; no nueva autoridad lifecycle | PENDING: StatePort/atomicidad y política de identidad/occurrences |
 | 07 | Sólo semántica de directiva probada | PENDING: implementar schemas suministrados, recurrencia e importación maintenance |
 | 08 | Sin relaciones ni búsquedas de candidatos simuladas | PENDING: implementar schemas suministrados y coordinación de ownership |
@@ -24,12 +24,16 @@ ADR-001 confirmado por el usuario el 2026-09-09. No es certificación de release
 | 18 | ADR, runbook, matriz, evidencias separadas de código | PENDING: cierre de todos los gates |
 
 DA-10 y DA-15: NOT_APPLICABLE al alcance confirmado; no reconstruidos.
-Los schemas y fuentes GSMA ya fueron recibidos; disponibilidad documental no implica implementación ni certificación.
+Los schemas de diseño ya fueron recibidos; disponibilidad documental no implica implementación ni certificación.
 No hay afirmaciones de paridad legacy, GKE, proveedor real, disaster recovery o production readiness.
 
-## Revisión funcional de fuentes, 2026-09-09
+## Configuración y reglas, 2026-09-09
 
-Consultar [mapeo, topología objetivo, prevención y alcance mínimo](legacy-mapping.md).
-288 políticas inventariadas; revisión focalizada con 26 especificaciones de comparación, todas PENDING.
-Cero comparaciones históricas ejecutadas: faltan entradas/configuración/resultados esperados.
-Esta actualización sólo documenta el análisis; no modifica servicio ni recertifica pruebas.
+Implementados compilador tipado POLICY, validación estructural/semántica, registro
+PostgreSQL versionado y evaluación por snapshot. Consultar [contratos y límites](rules-and-contracts.md).
+DA-03/04 permanecen PENDING en su alcance completo: administración pública autorizada,
+reglas especializadas y gates restantes. El adaptador Worker no activa emisión de comandos.
+
+Validación de este incremento: 44 pruebas Processor y 4 de compatibilidad en Worker PASS,
+cero omisiones; empaquetado Quarkus PASS. Migración 011 probada en laboratorio.
+Despliegue y activación productiva no ejecutados.

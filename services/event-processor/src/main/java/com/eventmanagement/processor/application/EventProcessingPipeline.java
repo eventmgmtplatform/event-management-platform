@@ -6,7 +6,12 @@ import java.util.*;
 
 public final class EventProcessingPipeline implements ProcessEventUseCase, SimulateEventUseCase {
     private final List<ProcessingStage> stages;
+    private final com.eventmanagement.processor.ports.out.RuleSnapshots snapshots;
     public EventProcessingPipeline(List<ProcessingStage> stages) {
+        this(stages, tenant -> new com.eventmanagement.processor.domain.rules.RuleSnapshot(tenant, List.of()));
+    }
+    public EventProcessingPipeline(List<ProcessingStage> stages, com.eventmanagement.processor.ports.out.RuleSnapshots snapshots) {
+        this.snapshots=Objects.requireNonNull(snapshots);
         this.stages = List.copyOf(stages);
         if (!this.stages.stream().map(ProcessingStage::stage).toList()
                 .equals(List.of(StageResult.Stage.values())))
@@ -20,10 +25,10 @@ public final class EventProcessingPipeline implements ProcessEventUseCase, Simul
     }
     private ProcessingContext evaluate(Event event, ProcessingContext.Mode mode) {
         var context = ProcessingContext.begin(event,
-                StableIdentity.of("processing-v1", event.tenant(), event.eventId()), mode);
+                StableIdentity.of("processing-v1", event.tenant(), event.eventId()), mode).withSnapshot(snapshots.snapshot(event.tenant()));
         for (var stage : stages) {
             // Suppression never short-circuits recovery/state or hides later failures.
-            StageResult result = context.directive() == StageResult.Directive.DEAD_LETTER
+            StageResult result = context.directive() == StageResult.Directive.DEAD_LETTER && stage.stage() != StageResult.Stage.ProcessingAudit
                     ? StageResult.pending(stage.stage(), "NOT_EXECUTED_AFTER_FAILURE")
                     : stage.evaluate(context);
             if (result.stage() != stage.stage()) throw new IllegalStateException("STAGE_ID_MISMATCH");
@@ -32,6 +37,9 @@ public final class EventProcessingPipeline implements ProcessEventUseCase, Simul
         return context;
     }
     public static EventProcessingPipeline foundation() {
+        return configured(tenant -> new com.eventmanagement.processor.domain.rules.RuleSnapshot(tenant, List.of()));
+    }
+    public static EventProcessingPipeline configured(com.eventmanagement.processor.ports.out.RuleSnapshots snapshots) {
         return new EventProcessingPipeline(Arrays.stream(StageResult.Stage.values())
                 .map(stage -> (ProcessingStage) new ProcessingStage() {
                     public StageResult.Stage stage() { return stage; }
@@ -40,10 +48,11 @@ public final class EventProcessingPipeline implements ProcessEventUseCase, Simul
                             case ContractValidation -> StageResult.success(stage, "GATEWAY_CONTRACT_VALIDATED");
                             case Normalization -> StageResult.success(stage, "COMPATIBLE_INTERNAL_VIEW");
                             case IdentityFingerprint -> StageResult.pending(stage, "GATEWAY_KEY_PRESERVED_FINGERPRINT_POLICY_PENDING");
+                            case PolicyEvaluation -> context.ruleSnapshot().evaluate(context.event());
                             case ProcessingAudit -> StageResult.success(stage, "ORDERED_EVIDENCE_PREPARED");
                             default -> StageResult.pending(stage, "FROZEN_ARTIFACT_OR_CAPABILITY_PENDING");
                         };
                     }
-                }).toList());
+                }).toList(), snapshots);
     }
 }

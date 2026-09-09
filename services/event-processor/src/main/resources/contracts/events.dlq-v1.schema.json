@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "events.dlq v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "dlqId",
+    "eventId",
+    "failedAt",
+    "stage",
+    "error",
+    "source",
+    "originalEvent"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "dlqId": {
+      "type": "string"
+    },
+    "eventId": {
+      "type": "string"
+    },
+    "failedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stage": {
+      "type": "string"
+    },
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ]
+    },
+    "source": {
+      "type": "object"
+    },
+    "originalEvent": {
+      "type": "object"
+    }
+  }
+}

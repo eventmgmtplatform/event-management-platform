@@ -1,11 +1,11 @@
 # Event Processor changelog
 
-## Unreleased — revisión funcional GSMA, 2026-09-09
+## Unreleased — versioned policy configuration, 2026-09-09
 
-- Mapeo de políticas a las 12 etapas, fuentes de datos con confianza explícita y topología objetivo.
-- Prevención de defectos de tenant, ventanas, precedencia y discrepancias de catálogo/contratos.
-- Alcance mínimo y 26 especificaciones de comparación en evidencia local; paridad histórica PENDING.
-- Actualizado estatus de schemas/fuentes recibidos; sin cambios al servicio ni nueva certificación.
+- Typed POLICY compiler: local JSON Schema, semantic validation, bounded operators and deterministic resolution.
+- PostgreSQL immutable versions, tenant scope, lifecycle audit and optimistic activation; one snapshot per event.
+- Worker envelope compatibility boundary and sanitized DLQ envelope; no active routing or provider effects.
+- Reference-only analysis remains outside version control.
 
 ## Unreleased — durable output recovery, 2026-09-09
 

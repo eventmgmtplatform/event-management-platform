@@ -1,7 +1,7 @@
 # Event Processor — base incremental v1.0.0
 
 Sustituye enrichment-engine en el puerto 8082 por decisión ADR-001.
-Estado: FOUNDATION; no equivale al motor de reglas completo ni a producción lista.
+Estado: INCREMENTAL; no equivale al motor de reglas completo ni a producción lista.
 
 ## Contratos y operación
 
@@ -21,9 +21,10 @@ administrativa/simulación pública hasta definir contratos y autorización.
 
 ## Persistencia y limitaciones
 
-Aplicar las migraciones 009-event-processor.sql y 010-processor-outbox-recovery.sql
+Aplicar las migraciones 009-event-processor.sql, 010-processor-outbox-recovery.sql
+y 011-processor-rule-registry.sql
 antes del arranque en bases ya inicializadas. Son aditivas e idempotentes; no
-modifican event_state. La readiness comprueba las columnas de recuperación.
+modifican event_state. La readiness comprueba las columnas de recuperación y tablas de reglas.
 processing_record y output_outbox se guardan en una sola transacción. Después se
 confirma el offset de entrada. Dispatcher toma bloqueos SKIP LOCKED y publica con
 acks=all; sólo entonces marca published_at. Un crash en esa ventana puede duplicar
@@ -82,3 +83,9 @@ de pruebas porque PostgreSQL es compartido. No llama a proveedores reales.
 
 Los tiempos medidos se guardan en evidence/os-02-event-processor/recovery/;
 RPO/RTO y rendimiento productivos siguen PENDING al no tener objetivos aprobados.
+
+## Reglas tipadas
+
+Registro PostgreSQL con versiones inmutables y evaluación POLICY por snapshot.
+Consultar [contratos, límites y activación interna](../../docs/event-processor/rules-and-contracts.md).
+Los endpoints administrativos siguen pendientes de autorización.

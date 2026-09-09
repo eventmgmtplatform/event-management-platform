@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:event-management:rule-v1",
+  "title": "Event Processor Declarative Rule v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "type",
+    "enabled",
+    "priority",
+    "condition",
+    "actions",
+    "metadata"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "type": {
+      "enum": [
+        "ENRICHMENT",
+        "DEDUPLICATION",
+        "BLACKOUT",
+        "SUPPRESSION",
+        "CORRELATION",
+        "POLICY",
+        "ROUTING",
+        "NOTIFICATION",
+        "AUTOMATION",
+        "LIFECYCLE"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "priority": {
+      "type": "integer"
+    },
+    "condition": {
+      "$ref": "#/$defs/condition"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/action"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "owner"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "condition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "all"
+          ],
+          "properties": {
+            "all": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "any"
+          ],
+          "properties": {
+            "any": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "not"
+          ],
+          "properties": {
+            "not": {
+              "$ref": "#/$defs/condition"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field",
+            "operator"
+          ],
+          "properties": {
+            "field": {
+              "type": "string",
+              "minLength": 1
+            },
+            "operator": {
+              "enum": [
+                "EQ",
+                "NE",
+                "GT",
+                "GTE",
+                "LT",
+                "LTE",
+                "IN",
+                "NOT_IN",
+                "CONTAINS",
+                "STARTS_WITH",
+                "ENDS_WITH",
+                "REGEX",
+                "EXISTS",
+                "NOT_EXISTS",
+                "BETWEEN"
+              ]
+            },
+            "value": {}
+          }
+        }
+      ]
+    },
+    "action": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

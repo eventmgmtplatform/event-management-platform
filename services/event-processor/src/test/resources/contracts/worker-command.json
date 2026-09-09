@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "commandId": "b83c372b6b85d5c383b20fe2554c16ef834a754a440fa621e2d6736c5c0e7f5a",
+  "eventId": "event",
+  "eventKey": "key",
+  "tenant": "tenant",
+  "processingId": "processing",
+  "createdAt": "1970-01-01T00:00:00Z",
+  "integrationType": "SERVICENOW",
+  "operation": "CREATE_TICKET",
+  "configuration": "target",
+  "payload": {
+    "summary": "test"
+  },
+  "metadata": {
+    "idempotencyKey": "b83c372b6b85d5c383b20fe2554c16ef834a754a440fa621e2d6736c5c0e7f5a"
+  }
+}
