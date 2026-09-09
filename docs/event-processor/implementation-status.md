@@ -36,4 +36,6 @@ reglas especializadas y gates restantes. El adaptador Worker no activa emisión 
 
 Validación de este incremento: 44 pruebas Processor y 4 de compatibilidad en Worker PASS,
 cero omisiones; empaquetado Quarkus PASS. Migración 011 probada en laboratorio.
-Despliegue y activación productiva no ejecutados.
+Migración 011 y despliegue local ejecutados el 2026-09-09 sobre la implementación b059aaf.
+Salud local, replay/reinicio/DLQ y backup/restore con versiones de reglas: PASS.
+Cero reglas activas en el ambiente principal. Activación productiva pendiente.

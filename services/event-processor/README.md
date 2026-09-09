@@ -89,3 +89,20 @@ RPO/RTO y rendimiento productivos siguen PENDING al no tener objetivos aprobados
 Registro PostgreSQL con versiones inmutables y evaluación POLICY por snapshot.
 Consultar [contratos, límites y activación interna](../../docs/event-processor/rules-and-contracts.md).
 Los endpoints administrativos siguen pendientes de autorización.
+
+## Despliegue local controlado
+
+```bash
+python3 scripts/event-processor-deploy.py
+```
+
+Requiere Docker y el ambiente local saludable. Conserva una imagen de rollback y
+backup del schema; construye la imagen, aplica 011 y reemplaza sólo el Processor.
+La certificación posterior publica eventos sintéticos, prueba replay/DLQ y reinicia
+el Processor. Un fallo posterior al reemplazo intenta restaurar la imagen anterior,
+conservando la migración aditiva y la evidencia. Esa rama de rollback no equivale
+a una certificación de rollback por fallo inyectado.
+
+El despliegue local de b059aaf pasó el 2026-09-09. No activa reglas ni expone una API
+administrativa. El backup/restore aislado incluye versiones e historial de reglas,
+checksums y evaluación con el adaptador real después de restaurar.

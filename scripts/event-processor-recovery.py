@@ -49,6 +49,9 @@ def main():
         original = sql(source, "SELECT payload::text FROM event_processor.output_outbox")
         sql(source, upgrade)
         sql(source, upgrade)
+        registry = (ROOT / 'infrastructure/postgres/init/011-processor-rule-registry.sql').read_text()
+        sql(source, registry)
+        sql(source, registry)
         assert sql(source, 'SELECT payload::text FROM event_processor.output_outbox') == original
         assert sql(source, 'SELECT attempts FROM event_processor.output_outbox') == '0'
         # Old writer remains compatible with new additive columns through defaults.
@@ -65,10 +68,19 @@ def main():
         """)
         report['checks'].extend(['fresh schema 009', 'upgrade 010 preserves pending payload',
                                   'repeat migration 010', 'old writer compatible with new columns'])
+        with (evidence / 'prepare-rules-test.log').open('w') as log:
+            subprocess.run(['mvn', '-o', '-B', '-f', str(ROOT / 'services/event-processor/pom.xml'),
+                            '-Dtest=RestoreReplayIT#prepareVersionsForBackup',
+                            '-Dprocessor.restore.jdbc.url=jdbc:postgresql://127.0.0.1:15439/' + source, 'test'],
+                           cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=180)
+        report['checks'].append('migration 011 repeatable; production registry creates and activates immutable versions')
         snapshot_query = """
             SELECT json_build_object(
                 'records',(SELECT json_agg(p ORDER BY processing_id) FROM event_processor.processing_record p),
-                'outbox',(SELECT json_agg(o ORDER BY message_id) FROM event_processor.output_outbox o))::text
+                'outbox',(SELECT json_agg(o ORDER BY message_id) FROM event_processor.output_outbox o),
+                'rules',(SELECT json_agg(d ORDER BY tenant,rule_id) FROM event_processor.rule_definition d),
+                'versions',(SELECT json_agg(v ORDER BY tenant,rule_id,version) FROM event_processor.rule_version v),
+                'changes',(SELECT json_agg(h ORDER BY tenant,rule_id,revision) FROM event_processor.rule_change h))::text
         """
         before = json.loads(sql(source, snapshot_query))
         (evidence / 'before-backup.json').write_text(json.dumps(before, indent=2) + '\n')
@@ -85,13 +97,13 @@ def main():
         after = json.loads(sql(target, snapshot_query))
         assert before == after, 'Restored state, evidence, attempts or pending payload differs'
         (evidence / 'after-restore.json').write_text(json.dumps(after, indent=2) + '\n')
-        report['checks'].append('backup/restore exact records, evidence, attempts and outbox')
+        report['checks'].append('backup/restore exact records, outbox, rule definitions, versions and change history')
         with (evidence / 'restore-replay-test.log').open('w') as log:
             subprocess.run(['mvn', '-o', '-B', '-f', str(ROOT / 'services/event-processor/pom.xml'),
-                            '-Dtest=RestoreReplayIT',
+                            '-Dtest=RestoreReplayIT#restoredPendingOutputAndReplayUseProductionAdapters',
                             '-Dprocessor.restore.jdbc.url=jdbc:postgresql://127.0.0.1:15439/' + target, 'test'],
                            cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=180)
-        report['checks'].append('production store replay and dispatcher recover restored output once')
+        report['checks'].append('production store replay, dispatcher and rule snapshot recover with original identities and checksums')
         report['status'] = 'PASS'
     except Exception as error:
         report['status'] = 'FAIL'

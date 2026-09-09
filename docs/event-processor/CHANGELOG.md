@@ -1,5 +1,12 @@
 # Event Processor changelog
 
+## Unreleased — local deployment and configuration recovery, 2026-09-09
+
+- Local deployment script preserves prior image and schema backup; applies migration 011 before replacement.
+- Replay/restart/DLQ certification gates deployment; image rollback is prepared on failure.
+- Recovery tests now verify immutable rule versions, lifecycle history and the restored evaluator.
+- Local health, runtime certification and isolated configuration recovery passed; no customer rules activated.
+
 ## Unreleased — versioned policy configuration, 2026-09-09
 
 - Typed POLICY compiler: local JSON Schema, semantic validation, bounded operators and deterministic resolution.
