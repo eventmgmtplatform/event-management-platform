@@ -22,13 +22,13 @@ public class IntegrationResultStateProcessor implements Processor {
 
     private final ObjectMapper objectMapper;
     private final EventStateRepository repository;
-    private final OpenSearchStateClient openSearchClient;
+    private final StateProjectionService openSearchClient;
 
     @Inject
     public IntegrationResultStateProcessor(
             ObjectMapper objectMapper,
             EventStateRepository repository,
-            OpenSearchStateClient openSearchClient
+            StateProjectionService openSearchClient
     ) {
         this.objectMapper = objectMapper;
         this.repository = repository;
@@ -41,7 +41,7 @@ public class IntegrationResultStateProcessor implements Processor {
         String body =
                 exchange.getMessage().getBody(String.class);
 
-        if (body == null || body.isBlank()) {
+        if (body == null) {
             throw new IllegalArgumentException(
                     "El resultado de integración está vacío"
             );
@@ -59,40 +59,38 @@ public class IntegrationResultStateProcessor implements Processor {
             );
         }
 
-        JsonNode result =
-                objectMapper.readTree(body);
+        JsonNode result;
+        ConsolidatedEventState state;
+        try {
+            try {
+                result = objectMapper.readTree(body);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException invalidJson) {
+                throw new RejectedIntegrationResult("INVALID_JSON");
+            }
+            IntegrationResultContract.validate(result);
+            state = repository.consolidate(result);
+        } catch (RejectedIntegrationResult rejected) {
+            String topic = exchange.getMessage().getHeader(KafkaConstants.TOPIC, String.class);
+            Integer partition = exchange.getMessage().getHeader(KafkaConstants.PARTITION, Integer.class);
+            Long offset = exchange.getMessage().getHeader(KafkaConstants.OFFSET, Long.class);
+            if (topic == null || partition == null || offset == null) {
+                throw new IllegalStateException("QUARANTINE_SOURCE_COORDINATES_REQUIRED");
+            }
+            repository.quarantine(topic, partition, offset, body, rejected.getMessage());
+            // CDI transaction has committed. Failure to commit Kafka will replay
+            // into the same quarantine PK without discarding the rejected input.
+            manualCommit.commit();
+            exchange.setProperty("disposition", "QUARANTINED");
+            LOG.warnv("Resultado en cuarentena: topic={0}, partition={1}, offset={2}, reason={3}",
+                    topic, partition, offset, rejected.getMessage());
+            return;
+        }
+        String resultId = requiredText(result, "resultId");
+        String eventKey = requiredText(result, "eventKey");
+        String integrationType = requiredText(result, "integrationType");
+        String status = requiredText(result, "status");
 
-        String resultId =
-                requiredText(result, "resultId");
-
-        String eventKey =
-                requiredText(result, "eventKey");
-
-        String integrationType =
-                requiredText(result, "integrationType");
-
-        String status =
-                requiredText(result, "status");
-
-        LOG.infov(
-                "Consolidando resultado: resultId={0}, " +
-                "eventKey={1}, integration={2}, status={3}",
-                resultId,
-                eventKey,
-                integrationType,
-                status
-        );
-
-        /*
-         * Primero PostgreSQL y después OpenSearch.
-         *
-         * Si OpenSearch falla, el procesamiento completo fallará.
-         * Kafka podrá volver a entregar el mensaje.
-         */
-        ConsolidatedEventState state =
-                repository.consolidate(result);
-
-        openSearchClient.index(state);
+        openSearchClient.project(state.eventKey);
 
         /*
          * Confirmar Kafka únicamente después de que PostgreSQL y

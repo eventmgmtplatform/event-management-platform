@@ -28,4 +28,9 @@ public class ConsolidatedEventState {
     public OffsetDateTime lastUpdatedAt;
 
     public long version;
+    public Integer sourceSeverity;
+    public Integer effectiveSeverity;
+    public long tally;
+    public OffsetDateTime lastStateAt;
+    public JsonNode statePayload;
 }

@@ -1,0 +1,40 @@
+{
+  "templateVersion": "1.2.0",
+  "scope": "Shared local ESS: source OPEN/CLOSE/reopen and integration.results -> PostgreSQL -> OpenSearch; ServiceNow mock; synthetic GNM result (not provider lifecycle E2E)",
+  "result": {
+    "schemaVersion": "1.0",
+    "resultId": "ess-test-result",
+    "eventId": "ess-test-event",
+    "eventKey": "ess-test:key",
+    "tenant": "ess-test",
+    "integrationType": "SERVICENOW",
+    "operation": "CREATE_TICKET",
+    "status": "SUCCESS",
+    "externalId": "INC-ESS-TEST",
+    "completedAt": "2026-09-10T00:00:00Z"
+  },
+  "expected": {
+    "lifecycleStatus": "OPEN",
+    "version": 1,
+    "ticketNumber": "INC-ESS-TEST"
+  },
+  "requiredChecks": [
+    "cli",
+    "readiness",
+    "gateway-processor-worker-state-search",
+    "identical-redelivery",
+    "second-integration",
+    "invalid-message-quarantine",
+    "lifecycle-open-close-reopen",
+    "lifecycle-replay-stale",
+    "restart-redelivery",
+    "admin-api"
+  ],
+  "targetChecksPending": [
+    "ESS transactional outbox",
+    "events.lifecycle publication",
+    "generic stale integration result ordering",
+    "projection rebuild",
+    "quarantine topic publication and retention policy"
+  ]
+}

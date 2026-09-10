@@ -102,3 +102,12 @@ Secrets, credentials, tokens and passwords must not be embedded in:
 
 Cloud Build pipelines and Artifact Registry publication are outside the scope
 of OS_08_12.1. They will be implemented in OS_08_12.2.
+
+## ESS baseline and repeatable health certification
+
+See [the service runbook](../../docs/event-state-service/README.md) for the shared
+fixture, unit/JTA integration tests, `emctl event-state-service test`, controlled
+local deployment and the explicit gap between current functionality and target V1.
+PostgreSQL credentials must be supplied; `POSTGRES_PASSWORD` has no default.
+
+[Historial de cambios del componente](CHANGELOG.md).

@@ -31,25 +31,33 @@ public class EventStateRepository {
         this.objectMapper = objectMapper;
     }
 
-    @Transactional
+    @Transactional(rollbackOn = Exception.class)
     public ConsolidatedEventState consolidate(JsonNode result)
             throws Exception {
 
+        IntegrationResultContract.validate(result);
         String resultId = requiredText(result, "resultId");
         String eventKey = requiredText(result, "eventKey");
         String eventId = requiredText(result, "eventId");
         String tenant = requiredText(result, "tenant");
 
         String integrationType =
-                requiredText(result, "integrationType").toUpperCase();
+                requiredText(result, "integrationType").toUpperCase(java.util.Locale.ROOT);
 
         String integrationStatus =
-                requiredText(result, "status").toUpperCase();
+                requiredText(result, "status").toUpperCase(java.util.Locale.ROOT);
 
         String externalId =
                 nullableText(result, "externalId");
 
         try (Connection connection = dataSource.getConnection()) {
+            // Row locks cannot serialize the first insert. Hold a transaction-scoped
+            // key lock before claiming a result, including when the aggregate is absent.
+            try (PreparedStatement lock = connection.prepareStatement(
+                    "SELECT pg_advisory_xact_lock(hashtextextended(?, 0))")) {
+                lock.setString(1, eventKey);
+                lock.execute();
+            }
 
             boolean newResult = claimResult(
                     connection,
@@ -92,52 +100,49 @@ public class EventStateRepository {
 
                 return existingState;
             }
-           
-	   ConsolidatedEventState state =
-        findForUpdate(connection, eventKey);
+            ConsolidatedEventState state = findForUpdate(connection, eventKey);
+            if (state == null) {
+                state = newState(eventKey, eventId, tenant);
+            } else if (!tenant.equals(state.tenant)) {
+                // Legacy PK is global event_key: reject a collision instead of
+                // transferring an existing aggregate to a different tenant.
+                throw new RejectedIntegrationResult("EVENT_TENANT_COLLISION");
+            }
+            if (state.lastStateAt == null) state.eventId = eventId;
+            state.lastUpdatedAt = OffsetDateTime.now();
+            state.version++;
+            String providerKey=integrationType.toLowerCase(java.util.Locale.ROOT);
+            JsonNode previous=state.integrations.get(providerKey);
+            // Retain provider terminal confirmation when a late open/holding/note result arrives.
+            boolean terminal=previous!=null && (
+                    "RESOLVED_CONFIRMED".equals(previous.path("ticketLifecycleState").asText())
+                    || "CLOSED_CONFIRMED".equals(previous.path("providerNotificationIdentity").path("lifecycleState").asText()));
+            if(!terminal) {
+                state.integrations.put(providerKey,result.deepCopy());
+                applyIntegrationResult(state, integrationType, integrationStatus, externalId);
+                if("RESOLVED_CONFIRMED".equals(result.path("ticketLifecycleState").asText()))state.servicenowStatus="RESOLVED";
+                if("CLOSED_CONFIRMED".equals(result.path("providerNotificationIdentity").path("lifecycleState").asText()))state.gnmStatus="CLOSED";
+                else if("OPEN_CONFIRMED".equals(result.path("providerNotificationIdentity").path("lifecycleState").asText()))state.gnmStatus="OPEN";
+                if("CACF".equals(integrationType) && result.has("outcome"))state.cacfStatus=result.path("outcome").asText();
+            }
+            upsert(connection, state, result);
+            LOG.infov("Estado consolidado: eventKey={0}, integration={1}, version={2}",
+                    eventKey, integrationType, state.version);
+            return state;
+        }
+    }
 
-if (state == null) {
-    state = newState(
-            eventKey,
-            eventId,
-            tenant
-    );
-}
-
-state.eventId = eventId;
-state.tenant = tenant;
-state.lastUpdatedAt = OffsetDateTime.now();
-state.version++;
-
-state.integrations.put(
-        integrationType.toLowerCase(),
-        result.deepCopy()
-);
-
-applyIntegrationResult(
-        state,
-        integrationType,
-        integrationStatus,
-        externalId
-);
-
-upsert(
-        connection,
-        state,
-        result
-);
-
-LOG.infov(
-        "Estado consolidado en PostgreSQL: " +
-        "eventKey={0}, integration={1}, " +
-        "status={2}, version={3}",
-        eventKey,
-        integrationType,
-        integrationStatus,
-        state.version
-);
-
-return state;
+    @Transactional(rollbackOn = Exception.class)
+    public void quarantine(String topic, int partition, long offset, String body, String reason) throws Exception {
+        String hash = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                .digest(body.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement("""
+                INSERT INTO event_management.ess_quarantine(topic,partition_id,offset_id,payload_hash,reason,payload)
+                VALUES (?,?,?,?,?,?) ON CONFLICT (topic,partition_id,offset_id) DO NOTHING
+                """)) {
+            statement.setString(1, topic); statement.setInt(2, partition); statement.setLong(3, offset);
+            statement.setString(4, hash); statement.setString(5, reason); statement.setString(6, body);
+            statement.executeUpdate();
         }
     }
 
@@ -250,16 +255,13 @@ return state;
                 if (!identityMatches ||
                         !result.equals(storedPayload)) {
 
-                    throw new IllegalStateException(
-                            "Colisión de resultId con contenido " +
-                            "diferente: " + resultId
-                    );
+                    throw new RejectedIntegrationResult("RESULT_ID_COLLISION");
                 }
             }
         }
     }
 
-    private ConsolidatedEventState findForUpdate(
+    ConsolidatedEventState findForUpdate(
             Connection connection,
             String eventKey
     ) throws Exception {
@@ -279,7 +281,7 @@ return state;
                     integration_state,
                     first_seen_at,
                     last_updated_at,
-                    version
+                    version, source_severity, effective_severity, tally, last_state_at, state_payload
                 FROM event_management.event_state
                 WHERE event_key = ?
                 FOR UPDATE
@@ -361,6 +363,12 @@ return state;
                 state.version =
                         rs.getLong("version");
 
+                state.sourceSeverity = (Integer) rs.getObject("source_severity");
+                state.effectiveSeverity = (Integer) rs.getObject("effective_severity");
+                state.tally = rs.getLong("tally");
+                state.lastStateAt = rs.getObject("last_state_at", OffsetDateTime.class);
+                String payload = rs.getString("state_payload");
+                if (payload != null) state.statePayload = objectMapper.readTree(payload);
                 return state;
             }
         }
