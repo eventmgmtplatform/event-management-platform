@@ -155,13 +155,15 @@ puede quedar activa en un Processor anterior que desconozca esos parámetros.
 
 ## Runbook y límites
 
-Preparar el laboratorio mediante `python3 testing/run.py certification --name lifecycle-prepare`.
-Usa el proyecto Compose `os11-lifecycle`, sin modificar el runtime compartido.
-Ejecutar `python3 testing/run.py happy-path`; para reinicio entre NEXT SUBMITTED y
-ACK: `python3 testing/run.py certification --name lifecycle-restart`.
-Consultar `testing/README.md` para suites de regresión y UC-002.
-No limpiar/recompilar los directorios target mientras el laboratorio que los monta
-esté en ejecución; la preparación detiene primero esos servicios aislados.
+`python3 testing/run.py certification --name lifecycle-prepare` valida y revisa la
+salud del runtime compartido; ya no crea implícitamente el laboratorio histórico.
+Ejecutar `python3 testing/run.py happy-path --runtime shared`; para reinicio entre
+NEXT SUBMITTED y ACK: `python3 testing/run.py happy-path --runtime shared --restart`.
+La variante `python3 testing/certifications/processor-integrated-certification.py`
+añade inventory/enrichment, Policy y controles de blackout/auto-suppression al mismo
+recorrido. Aísla recurso/reglas sintéticos, no los contenedores. El modo os11 exige
+recuperación explícita del laboratorio histórico. Consultar testing/README.md.
+No limpiar/recompilar target mientras un runtime lo monte.
 
 Consultar `event_processor.lifecycle.document`, lifecycle_result, output_outbox y
 el ledger Worker por tenant/cycleId. Para REVIEW inspeccionar `reason` y el resultado
