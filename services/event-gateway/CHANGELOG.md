@@ -6,6 +6,8 @@ Historia reconstruida desde Git local: fechas de autor y SHA verificables; no eq
 
 ## 2026-09-10 — API administrativa de reglas y activación local
 
+Implementación: [`fa14c4c`](https://github.com/eventmgmtplatform/event-management-platform/commit/fa14c4c5734f02f387707c24b8dcbb2e89a7c737).
+
 - API administrativa de reglas en el gateway: catálogo persistente, historial,
   control optimista de revisión, validación y simulación. Ejecución de reglas de
   ingesta, normalización, validación y enriquecimiento base previa a Kafka,
