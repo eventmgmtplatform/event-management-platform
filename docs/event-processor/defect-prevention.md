@@ -15,6 +15,7 @@ Este registro no convierte capacidades pendientes en PASS.
 | DP-EP-08 | Escalamiento y recuperación ampliada | Separar capacidad activa de historial del ciclo, pruebas de carga, backup/restore de relaciones+ledger con datos y replay de configuración/grupos más allá de límites iniciales. |
 
 | DP-EP-09 | AIOps real y automatización | CRUD persistente y consumo HTTP de mock interno implementados. Pendientes adaptador certificado de Kyndryl Bridge, su autenticación, historial de evaluaciones y eventual incorporación al pipeline/contratos. Ver aiops-engine.md. |
+| DP-EP-10 | Escritura desde interfaz por motor | Backend de blackouts probado; formulario y proxy administrativo aún pendientes. Ejecutar docs/event-processor/frontend-handoffs/blackouts.md en el chat de front y conservar evidencia real de navegador antes de declarar PASS de esa capa. Repetir el esquema de entrega para cada motor. |
 
 DP-EP-03..09 registran límites o extensiones pendientes; no convierten el subconjunto implementado en certificación de todo v1.
 DP-EP-01 queda fuera del incremento funcional por decisión del usuario.
