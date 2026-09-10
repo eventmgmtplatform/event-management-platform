@@ -53,3 +53,8 @@
 - PR and merge strategy.
 - GitHub protection rules and CODEOWNERS.
 - General release/tagging and product semantic-versioning policy.
+
+## Unreleased — 2026-09-10 — OS_11
+
+- Registra la rama `remediation/os-11-01-lifecycle-orchestration` y el checkpoint funcional `c2e568949de7eae26b787a20d4cf88f82e50d474`.
+- Publicación de alcance backend mediante checkout aislado, conservando el trabajo concurrente y los checkpoints protegidos.

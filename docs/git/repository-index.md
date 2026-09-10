@@ -108,3 +108,12 @@ correctas. Suite worker Maven offline: 171 pruebas, 0 fallos, 0 errores,
 7 omitidas por falta de configuración JDBC del laboratorio aislado (164 ejecutadas).
 La ejecución inicial restringida falló por sockets; la repetición fuera del
 sandbox terminó BUILD SUCCESS. No se ejecutó la prueba maestra que reinicia servicios.
+
+## OS_11_01 — Lifecycle orchestration
+
+- Rama nominal: `remediation/os-11-01-lifecycle-orchestration`, según la nomenclatura de remediation solicitada.
+- Base identificada: `887baeaf51f1c9274786388dc36b175dce30b3bb`.
+- Checkpoint funcional: `c2e568949de7eae26b787a20d4cf88f82e50d474`.
+- Alcance: coordinación OS_11, dependencias ESS 016/017, migraciones 020/021 y testing backend centralizado.
+- Publicación mediante checkout aislado; cambios concurrentes de consola/dashboards permanecen en su workstream.
+- El SHA final de rama puede incluir documentación de gobierno posterior al checkpoint funcional. La comparación exacta local/origin se conserva en evidences, fuera de Git.
