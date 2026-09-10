@@ -36,11 +36,13 @@ public class AcceptedEventProcessor implements Processor {
         if(context.directive()==StageResult.Directive.DEAD_LETTER) {
             ObjectNode failure=mapper.createObjectNode();
             failure.put("schemaVersion","1.0");failure.put("dlqId",context.processingId());failure.put("processingId",context.processingId());
-            failure.put("eventId",event.eventId());failure.put("failedAt",Instant.now().toString());failure.put("stage","PolicyEvaluation");
-            failure.putObject("error").put("code","RULE_EVALUATION_FAILED").put("message","Rule input rejected").put("retryable",false);
+            var failedStage=context.stages().stream().filter(s->s.status()==StageResult.Status.FAILED).findFirst().orElseThrow();
+            failure.put("eventId",event.eventId());failure.put("failedAt",Instant.now().toString());failure.put("stage",failedStage.stage().name());
+            failure.putObject("error").put("code",failedStage.reason()).put("message","Processing input rejected").put("retryable",false);
             String hash=StableIdentity.of("payload-v1",body);
             failure.putObject("originalEvent").put("redacted",true).put("payloadHash",hash);
             failure.set("source",source(exchange));failure.set("stages",mapper.valueToTree(context.stages()));
+            failure.set("enrichment",mapper.valueToTree(context.enrichment()));
             String json=mapper.writeValueAsString(failure);
             try { store.accept(context.processingId(),hash,event.eventId(),event.tenant(),json,dlqTopic,event.eventKey(),json); }
             catch(IllegalArgumentException collision) {
@@ -51,10 +53,10 @@ public class AcceptedEventProcessor implements Processor {
         }
         ObjectNode output=(ObjectNode)mapper.readTree(event.originalJson());
         ObjectNode processing=output.has("processing") ? (ObjectNode)output.get("processing") : output.putObject("processing");
-        // Preserve the prior normalized contract while enrichment remains pending.
+        // Keep compatibility metadata and append the canonical DA-05 result.
         var enrichment=processing.putObject("enrichment");
-        enrichment.put("status","PENDING_RULES"); enrichment.put("engine","event-processor");
-        enrichment.put("processedAt",Instant.now().toString());
+        enrichment.put("status",context.enrichment().status().name());enrichment.put("engine","event-processor");
+        enrichment.put("processedAt",Instant.now().toString());enrichment.set("result",mapper.valueToTree(context.enrichment()));
         var details=processing.putObject("processor"); details.put("processingId",context.processingId());
         details.put("status","INCREMENTAL");
         details.put("ruleSnapshotChecksum",context.ruleSnapshot().checksum()); details.put("canonicalStatus",event.status().name());
@@ -62,6 +64,7 @@ public class AcceptedEventProcessor implements Processor {
         ObjectNode evidence=mapper.createObjectNode(); evidence.put("processingId",context.processingId());
         evidence.put("eventId",event.eventId()); evidence.put("directive",context.directive().name());
         evidence.set("stages",mapper.valueToTree(context.stages()));
+        evidence.set("enrichment",mapper.valueToTree(context.enrichment()));
         evidence.set("source",source(exchange));
         try {
             store.accept(context.processingId(),StableIdentity.of("payload-v1",body),event.eventId(),event.tenant(),

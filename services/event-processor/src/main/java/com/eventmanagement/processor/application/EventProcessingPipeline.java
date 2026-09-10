@@ -33,6 +33,10 @@ public final class EventProcessingPipeline implements ProcessEventUseCase, Simul
                 StableIdentity.of("processing-v1", event.tenant(), event.eventId()), mode).withSnapshot(snapshots.snapshot(event.tenant())).at(clock.instant());
         for (var stage : stages) {
             // Suppression never short-circuits recovery/state or hides later failures.
+            if(stage.stage()==StageResult.Stage.ContextEnrichment && context.directive()!=StageResult.Directive.DEAD_LETTER) {
+                var enrichment=new EnrichmentEngine().evaluate(event,context.ruleSnapshot(),context.evaluatedAt(),new SnapshotInventory(context.ruleSnapshot()));
+                context=context.enriched(enrichment);
+            }
             StageResult result = context.directive() == StageResult.Directive.DEAD_LETTER && stage.stage() != StageResult.Stage.ProcessingAudit
                     ? StageResult.pending(stage.stage(), "NOT_EXECUTED_AFTER_FAILURE")
                     : stage.evaluate(context);
@@ -55,9 +59,10 @@ public final class EventProcessingPipeline implements ProcessEventUseCase, Simul
                         return switch(stage) {
                             case ContractValidation -> StageResult.success(stage, "GATEWAY_CONTRACT_VALIDATED");
                             case Normalization -> StageResult.success(stage, "COMPATIBLE_INTERNAL_VIEW");
+                            case ContextEnrichment -> new EnrichmentEngine().stage(context.enrichment(),context.ruleSnapshot().checksum());
                             case IdentityFingerprint -> StageResult.pending(stage, "GATEWAY_KEY_PRESERVED_FINGERPRINT_POLICY_PENDING");
                             case Blackout -> context.ruleSnapshot().evaluateBlackouts(context.event(),context.evaluatedAt());
-                            case PolicyEvaluation -> context.ruleSnapshot().evaluate(context.event());
+                            case PolicyEvaluation -> context.ruleSnapshot().evaluate(context.event(),context.enrichment().facts());
                             case ProcessingAudit -> StageResult.success(stage, "ORDERED_EVIDENCE_PREPARED");
                             default -> StageResult.pending(stage, "FROZEN_ARTIFACT_OR_CAPABILITY_PENDING");
                         };

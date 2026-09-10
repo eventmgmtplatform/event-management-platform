@@ -18,6 +18,7 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
     private final ObjectMapper mapper;
     private final JsonSchema schema;
     private final JsonSchema blackoutSchema;
+    private final JsonSchema inventorySchema;
     public record Compiled(Rule rule, String canonicalJson) {}
     public RuleCompiler() {
         mapper=new ObjectMapper(JsonFactory.builder().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
@@ -26,6 +27,9 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
         mapper.enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN);
         try(var input=RuleCompiler.class.getResourceAsStream("/contracts/rule-v1.schema.json")) {
             schema=JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(input));
+            try(var inventory=RuleCompiler.class.getResourceAsStream("/contracts/inventory-record-v1.schema.json")) {
+                inventorySchema=JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(inventory));
+            }
             try(var blackout=RuleCompiler.class.getResourceAsStream("/contracts/blackout-v1.schema.json")) {
                 blackoutSchema=JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(blackout));
             }
@@ -40,12 +44,13 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
         try {
             JsonNode source=mapper.readTree(json);
             bound(source,0,new int[]{0});
+            if(source.path("type").asText().equals("INVENTORY"))return inventory(source);
             if(Set.of("IMMEDIATE","SCHEDULED","RECURRING").contains(source.path("type").asText()))return blackout(source);
             if(!schema.validate(source).isEmpty()) throw invalid("RULE_SCHEMA_INVALID");
             String id=source.path("id").asText(); text(id,128);
             if(!id.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) throw invalid("INVALID_RULE_ID");
             if(!source.path("version").canConvertToInt() || !source.path("priority").canConvertToInt()) throw invalid("INTEGER_RANGE");
-            if(!source.path("type").asText().equals("POLICY")) throw invalid("RULE_TYPE_NOT_IMPLEMENTED");
+            if(!Set.of("POLICY","ENRICHMENT").contains(source.path("type").asText())) throw invalid("RULE_TYPE_NOT_IMPLEMENTED");
             var metadata=source.path("metadata");
             metadata.fieldNames().forEachRemaining(k->{if(!Set.of("owner","description","tags").contains(k))throw invalid("METADATA_NOT_SUPPORTED");});
             text(metadata.path("owner").asText(),128);
@@ -53,8 +58,18 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
             if(metadata.has("tags")) { if(metadata.path("tags").size()>32)throw invalid("TAG_LIMIT"); for(var tag:metadata.path("tags"))text(tag.asText(),128); }
             var condition=condition(source.path("condition"));
             var actions=new ArrayList<Directive>();
+            com.eventmanagement.processor.domain.enrichment.EnrichmentPlan plan=null;
+            if(source.path("type").asText().equals("ENRICHMENT")) {
+                if(source.path("actions").size()!=1)throw invalid("ONE_INVENTORY_LOOKUP_REQUIRED");
+                var action=source.path("actions").get(0);var parameters=action.path("parameters");
+                if(!action.path("type").asText().equals("LOOKUP_INVENTORY") || action.has("target") || !parameters.isObject()
+                        || parameters.size()!=1 || !parameters.path("required").isBoolean())throw invalid("INVALID_INVENTORY_LOOKUP");
+                if(usesFacts(condition))throw invalid("ENRICHMENT_CONDITION_CANNOT_DEPEND_ON_ENRICHMENT");
+                plan=new com.eventmanagement.processor.domain.enrichment.EnrichmentPlan(parameters.path("required").booleanValue());
+            }
             if(source.path("actions").isEmpty() || source.path("actions").size()>16)throw invalid("ACTION_COUNT");
             for(var action:source.path("actions")) {
+                if(plan!=null)break;
                 if(action.has("target") || (action.has("parameters") && !action.path("parameters").isEmpty())) throw invalid("ACTION_PARAMETERS_NOT_SUPPORTED");
                 Directive directive;
                 try { directive=Directive.valueOf(action.path("type").asText()); } catch(Exception e) { throw invalid("UNKNOWN_ACTION"); }
@@ -65,9 +80,36 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
             String canonical=mapper.writeValueAsString(sorted(source));
             String checksum=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
             return new Compiled(new Rule(id,source.path("version").intValue(),source.path("priority").intValue(),
-                    source.path("enabled").booleanValue(),checksum,condition,actions),canonical);
+                    source.path("enabled").booleanValue(),checksum,condition,actions,null,plan,null),canonical);
         } catch(IllegalArgumentException e) { throw e; }
         catch(Exception e) { throw invalid("RULE_INVALID"); }
+    }
+    private static boolean usesFacts(Rule.Condition condition) {
+        if(condition instanceof Rule.Predicate p)return p.field().path.startsWith("enrichment.");
+        if(condition instanceof Rule.Negation n)return usesFacts(n.child());
+        return ((Rule.Group)condition).children().stream().anyMatch(RuleCompiler::usesFacts);
+    }
+    private Compiled inventory(JsonNode source)throws Exception {
+        if(!inventorySchema.validate(source).isEmpty())throw invalid("INVENTORY_SCHEMA_INVALID");
+        String id=source.path("id").asText();text(id,128);
+        if(!id.matches("[A-Za-z0-9][A-Za-z0-9._-]*") || !source.path("version").canConvertToInt() || !source.path("priority").canConvertToInt())throw invalid("INVENTORY_ID_OR_RANGE_INVALID");
+        text(source.path("metadata").path("owner").asText(),128);
+        var scope=new TreeMap<String,String>();
+        source.path("scope").fields().forEachRemaining(e->{
+            if(!Set.of("customerCode","node","nodeAlias","component","instanceId","monitoringSolution").contains(e.getKey()))throw invalid("INVENTORY_SCOPE_UNSUPPORTED");
+            text(e.getValue().asText(),4096);scope.put(e.getKey(),e.getValue().asText());
+        });
+        if(scope.isEmpty() || scope.keySet().stream().allMatch(k->k.equals("customerCode")))throw invalid("INVENTORY_RESOURCE_SCOPE_REQUIRED");
+        var facts=new TreeMap<String,Object>();
+        source.path("facts").fields().forEachRemaining(e->{
+            Rule.Field field=Rule.Field.from("enrichment."+e.getKey());Object fact=value(field,e.getValue());
+            if(fact instanceof String s && s.isBlank())throw invalid("EMPTY_INVENTORY_FACT");
+            facts.put(e.getKey(),fact);
+        });
+        String canonical=mapper.writeValueAsString(sorted(source));
+        String checksum=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
+        return new Compiled(new Rule(id,source.path("version").intValue(),source.path("priority").intValue(),source.path("enabled").booleanValue(),checksum,
+                new Rule.Group(true,List.of()),List.of(),null,null,new com.eventmanagement.processor.domain.enrichment.InventoryRecord(scope,facts)),canonical);
     }
     private Compiled blackout(JsonNode source)throws Exception {
         if(!blackoutSchema.validate(source).isEmpty())throw invalid("BLACKOUT_SCHEMA_INVALID");
@@ -122,7 +164,7 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
                 for(var v:value)values.add(value(field,v));
             } else values.add(value(field,value));
             if(Set.of(Rule.Operator.GT,Rule.Operator.GTE,Rule.Operator.LT,Rule.Operator.LTE,Rule.Operator.BETWEEN).contains(operator)) {
-                if(field.type==String.class)throw invalid("ORDERED_TYPE_REQUIRED");
+                if(field.type==String.class || field.type==Boolean.class)throw invalid("ORDERED_TYPE_REQUIRED");
                 if(operator==Rule.Operator.BETWEEN && (values.size()!=2 || Rule.compare(values.get(0),values.get(1))>0))throw invalid("INVALID_RANGE");
             }
             if(Set.of(Rule.Operator.CONTAINS,Rule.Operator.STARTS_WITH,Rule.Operator.ENDS_WITH,Rule.Operator.REGEX).contains(operator)) {
@@ -133,7 +175,8 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
         return new Rule.Predicate(field,operator,values,regex);
     }
     private Object value(Rule.Field field,JsonNode value) {
-        if(field.type==BigDecimal.class) { if(!value.isNumber())throw invalid("NUMBER_REQUIRED"); return value.decimalValue(); }
+        if(field.type==Boolean.class){if(!value.isBoolean())throw invalid("BOOLEAN_REQUIRED");return value.booleanValue();}
+        if(field.type==BigDecimal.class) { if(!value.isNumber())throw invalid("NUMBER_REQUIRED"); return value.decimalValue().stripTrailingZeros(); }
         if(!value.isTextual())throw invalid("STRING_REQUIRED");
         String text=value.textValue(); if(text.length()>4096)throw invalid("VALUE_SIZE_LIMIT");
         if(field.type==Instant.class) { try{return Instant.parse(text);}catch(Exception e){throw invalid("INSTANT_REQUIRED");} }

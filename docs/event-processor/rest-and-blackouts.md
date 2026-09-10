@@ -13,7 +13,7 @@ La decisión de diferir seguridad está en [Defect Prevention](defect-prevention
 - `POST /api/v1/rules/validate`: cuerpo `{rule: {...}}`.
 - `POST /api/v1/rules`: cuerpo `{rule: {...}, reason: "..."}`.
 - `POST /api/v1/rules/{id}/enable|disable|retire`: `{version: 1, reason: "..."}`.
-- `POST /api/v1/simulations`: `{event: {...}, candidateRule?: {...}, evaluatedAt?: "..."}`.
+- `POST /api/v1/simulations`: `{event: {...}, candidateRule?: {...}, candidateRules?: [...], evaluatedAt?: "..."}`.
 - `GET /api/v1/explain/{processingId}`: evidencia persistida; no recalcula el pasado.
 
 Las mutaciones requieren `Idempotency-Key` y `If-Match: "revision"` (cero para un
@@ -73,3 +73,6 @@ no emite comandos. En ejecución usa un Clock y captura un instante por evento.
 La migración 012 agrega recibos y auditoría administrativa. El despliegue conserva
 backup e imagen anterior, aplica 011/012 y verifica disponibilidad. El alias
 `/api/v1/enrichment` sigue funcionando.
+
+El registro también admite planes ENRICHMENT e INVENTORY local. `candidateRules`
+permite simular un conjunto sin escrituras; consultar [su contrato](enrichment-and-inventory.md).

@@ -3,7 +3,7 @@
 ## Alcance implementado
 
 El primer incremento implementa el envelope `rule-v1`, validación JSON Schema y
-semántica, AST tipada y evaluación de reglas `POLICY`. Los otros nueve tipos del
+semántica, AST tipada y evaluación de reglas `POLICY` y planes `ENRICHMENT`. Los otros ocho tipos del
 schema están reservados y se rechazan como `RULE_TYPE_NOT_IMPLEMENTED` hasta que
 sus capacidades existan. No se presenta una regla aceptada pero inoperante.
 
@@ -14,7 +14,7 @@ objeto, campos desconocidos y valores incompatibles antes de admitir una versió
 
 ## Campos, operadores y acciones
 
-Contrato `policy-fields-v1`:
+Campos originales conservados en `policy-fields-v2`:
 
 | Campo | Tipo / origen |
 |---|---|
@@ -25,8 +25,9 @@ Contrato `policy-fields-v1`:
 | event.receivedAt | Instant / timestamp recibido del Gateway |
 | tenant.customerCode | String / tenant del envelope aceptado |
 
-No se resuelven rutas mediante reflexión. Los namespaces de enriquecimiento y
-estado se habilitarán al implementar sus puertos; actualmente fallan validación.
+No se resuelven rutas mediante reflexión. Se agregan resource.node, resource.component
+y los hechos tipados descritos en [enrichment e inventory](enrichment-and-inventory.md).
+El namespace de estado aún no está habilitado.
 
 Se soportan los 15 operadores del diseño, ALL/ANY/NOT y comparaciones temporales
 normalizadas. IN/NOT_IN exige colección homogénea; BETWEEN tiene exactamente dos
@@ -63,7 +64,7 @@ Los triggers impiden UPDATE/DELETE sobre versiones e historial. Foreign keys
 impiden activar referencias inexistentes o de otro tenant. Tenant es ámbito del
 registro, separado del JSON cerrado rule-v1; nunca se toma de metadata.owner.
 La administración interna exige tenant, actor y motivo no vacíos. No equivale a
-autenticación: no se expone REST de mutación hasta integrar principal/RBAC.
+autenticación: REST está habilitado sin identidad/RBAC por decisión expresa del usuario.
 
 Crear versión valida y exige el siguiente entero. `enabled:true` en una definición
 sólo permite habilitarla; crearla no modifica la versión activa. La activación
@@ -128,5 +129,5 @@ RuleCompilerTest cubre tipos, operadores, complejidad, regex y determinismo.
 WorkerContractTest y el consumidor real comparten un fixture de envelope.
 
 Este incremento no certifica release v1.0.0 completo. Administración REST/RBAC,
-reglas especializadas, enrichment/lifecycle/correlación, emisión de comandos,
+reglas especializadas, fuentes externas de enrichment, lifecycle/correlación, emisión de comandos,
 paridad histórica y gates operativos restantes permanecen PENDING.

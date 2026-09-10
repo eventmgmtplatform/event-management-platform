@@ -53,6 +53,28 @@ def main():
         status, result = request('/simulations', payload)
         assert status == 200 and result['directive'] == 'CONTINUE'
         report['checks'].append('end boundary excludes blackout')
+        inventory = {'id': 'inventory-smoke', 'version': 1, 'type': 'INVENTORY', 'enabled': False,
+                     'priority': 10, 'scope': {'node': 'router-1'},
+                     'facts': {'assignment.group': 'network', 'resource.managed': True},
+                     'metadata': {'owner': 'certification'}}
+        plan = {'id': 'enrichment-smoke', 'version': 1, 'type': 'ENRICHMENT', 'enabled': False,
+                'priority': 10, 'condition': {'field': 'resource.node', 'operator': 'EXISTS'},
+                'actions': [{'type': 'LOOKUP_INVENTORY', 'parameters': {'required': True}}],
+                'metadata': {'owner': 'certification'}}
+        policy = {'id': 'policy-smoke', 'version': 1, 'type': 'POLICY', 'enabled': False,
+                  'priority': 10, 'condition': {'field': 'enrichment.resource.managed', 'operator': 'EQ', 'value': True},
+                  'actions': [{'type': 'STATE_ONLY'}], 'metadata': {'owner': 'certification'}}
+        payload = {'event': event, 'candidateRules': [inventory, plan, policy]}
+        status, result = request('/simulations', payload)
+        assert status == 200 and result['directive'] == 'STATE_ONLY'
+        assert result['enrichment']['status'] == 'SUCCESS'
+        assert result['enrichment']['facts']['assignment.group'] == 'network'
+        assert result['enrichment']['provenance'][0]['source'] == 'inventory:inventory-smoke'
+        payload['candidateRules'] = [plan, policy]
+        status, result = request('/simulations', payload)
+        assert status == 200 and result['directive'] == 'DEAD_LETTER'
+        assert result['enrichment']['status'] == 'FAILED' and result['stages'][11]['status'] == 'SUCCESS'
+        report['checks'].append('versioned inventory feeds enrichment and policy; missing required inventory fails explicitly')
         assert request('/rules') == before
         report['checks'].append('candidate simulation leaves configuration unchanged')
         report['status'] = 'PASS'

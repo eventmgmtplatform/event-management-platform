@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:event-management:enrichment-result-v1",
+  "title": "Event Processor Enrichment Result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "facts",
+    "lookups",
+    "provenance",
+    "conflicts",
+    "degraded"
+  ],
+  "properties": {
+    "status": {
+      "enum": [
+        "SUCCESS",
+        "PARTIAL",
+        "NOT_FOUND",
+        "FAILED"
+      ]
+    },
+    "facts": {
+      "type": "object"
+    },
+    "lookups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source",
+          "status"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "FOUND",
+              "NOT_FOUND",
+              "ERROR",
+              "SKIPPED"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "executionMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "errorCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "field",
+          "source"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourceVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "observedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "degraded": {
+      "type": "boolean"
+    }
+  }
+}

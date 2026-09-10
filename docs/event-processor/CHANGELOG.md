@@ -39,3 +39,9 @@
 - Simulación sin escrituras y consulta de evidencia persistida.
 - Blackouts inmediatos/programados con scope exacto, ventana y reloj explícitos, integrados con PolicyEvaluation.
 - Identidad y RBAC diferidos por decisión del usuario; próximos motores en Defect Prevention.
+
+## 2026-09-09 — enrichment e inventory local
+
+- Consulta tipada de inventario versionado desde planes ENRICHMENT, en un mismo snapshot.
+- Hechos con procedencia, conflictos explícitos y criticalidad por consulta; consumo por policy.
+- Simulación conjunta y resultado DA-05 en auditoría/salida; DLQ atribuida a su etapa real.

@@ -140,6 +140,44 @@ class AdminApiIT {
         assertEquals(422,request("POST","/api/v1/rules",tenant,unique(),1L,body).statusCode());
         assertEquals(1,count("rule_version",tenant,"true"));
     }
+    @Test void inventoryPlanAndPolicyShareVersionedSnapshotAndSimulateWithoutWrites()throws Exception {
+        String tenant=unique();
+        var definitions=List.of(com.eventmanagement.processor.adapters.rules.EnrichmentTest.inventory("ci-1",10,"network"),
+                com.eventmanagement.processor.adapters.rules.EnrichmentTest.plan("lookup",true),
+                com.eventmanagement.processor.adapters.rules.RuleCompilerTest.definition("policy",1,1,
+                        com.eventmanagement.processor.adapters.rules.RuleCompilerTest.leaf("enrichment.assignment.group","EQ","\"network\""),"STATE_ONLY"));
+        var candidates=mapper.createArrayNode();
+        for(String definition:definitions) {
+            var rule=mapper.readTree(definition);candidates.add(rule);
+            var body=mapper.createObjectNode().put("reason","Inventory integration test").set("rule",rule);
+            assertEquals(201,request("POST","/api/v1/rules",tenant,unique(),0L,body).statusCode());
+            assertEquals(200,request("POST","/api/v1/rules/"+rule.path("id").asText()+"/enable",tenant,unique(),1L,transition()).statusCode());
+        }
+        var event=mapper.createObjectNode().put("schemaVersion","1.1").put("eventId",unique()).put("eventKey",unique())
+                .put("lifecycleAction","OPEN").put("effectiveSeverity",3);
+        event.putObject("tenant").put("code",tenant);event.putObject("timestamps").put("receivedAt","2026-09-09T10:00:00Z");
+        event.putObject("resource").put("name","router-1");
+        var body=mapper.createObjectNode().set("event",event);
+        var active=request("POST","/api/v1/simulations",tenant,null,null,body);assertEquals(200,active.statusCode(),active.body());
+        var result=mapper.readTree(active.body());assertEquals("STATE_ONLY",result.path("directive").asText());
+        assertEquals("SUCCESS",result.path("enrichment").path("status").asText());
+        assertEquals("inventory:ci-1",result.path("enrichment").path("provenance").get(0).path("source").asText());
+        // Canonical enrichment obeys the supplied DA-05 schema, including its closed root.
+        try(var schemaFile=getClass().getResourceAsStream("/contracts/enrichment-result-v1.schema.json")) {
+            var schema=com.networknt.schema.JsonSchemaFactory.getInstance(com.networknt.schema.SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(schemaFile));
+            assertTrue(schema.validate(result.path("enrichment")).isEmpty());
+        }
+        ((ObjectNode)body).set("candidateRules",candidates);
+        var simulation=request("POST","/api/v1/simulations",tenant,null,null,body);assertEquals(200,simulation.statusCode(),simulation.body());
+        assertEquals(result.path("enrichment"),mapper.readTree(simulation.body()).path("enrichment"));
+        assertEquals(0,count("processing_record",tenant,"true"));assertEquals(3,count("rule_version",tenant,"true"));
+        // Activation controls inventory visibility; an unmet required plan produces an explicit failure.
+        assertEquals(200,request("POST","/api/v1/rules/ci-1/disable",tenant,unique(),2L,transition()).statusCode());
+        ((ObjectNode)body).remove("candidateRules");
+        var missing=mapper.readTree(request("POST","/api/v1/simulations",tenant,null,null,body).body());
+        assertEquals("FAILED",missing.path("enrichment").path("status").asText());assertEquals("DEAD_LETTER",missing.path("directive").asText());
+        assertEquals("SUCCESS",missing.path("stages").get(11).path("status").asText());
+    }
     private long count(String table,String tenant,String extra)throws Exception {
         try(var c=dataSource.getConnection();var s=c.prepareStatement("SELECT count(*) FROM event_processor."+table+" WHERE tenant=? AND "+extra)){
             s.setString(1,tenant);try(var r=s.executeQuery()){r.next();return r.getLong(1);}

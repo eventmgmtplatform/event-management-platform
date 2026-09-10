@@ -39,17 +39,18 @@ public record RuleSnapshot(String tenant, List<Rule> rules) {
                 primary==null?StageResult.Directive.CONTINUE:StageResult.Directive.SUPPRESS_INTEGRATIONS,
                 primary==null?"NO_MATCHING_BLACKOUT":"BLACKOUT_MATCH",primary==null?null:primary.id(),primary==null?null:primary.version(),0,evidence);
     }
-    public StageResult evaluate(Event event) {
+    public StageResult evaluate(Event event) {return evaluate(event,Map.of());}
+    public StageResult evaluate(Event event,Map<String,Object> facts) {
         if(!tenant.equals(event.tenant())) throw new IllegalArgumentException("SNAPSHOT_TENANT_MISMATCH");
         if(tenant.isBlank()) return StageResult.pending(StageResult.Stage.PolicyEvaluation,"TENANT_REQUIRED_FOR_RULES");
         var evidence=new LinkedHashMap<String,String>(); evidence.put("snapshotChecksum",checksum());
-        evidence.put("fieldContractVersion","policy-fields-v1");
-        evidence.put("ruleCount",Long.toString(rules.stream().filter(r->r.blackout()==null).count()));
+        evidence.put("fieldContractVersion","policy-fields-v2");
+        evidence.put("ruleCount",Long.toString(rules.stream().filter(r->r.capability().equals("POLICY")).count()));
         var directive=StageResult.Directive.CONTINUE; boolean matched=false; int i=0;
         for(var rule:rules) {
-            if(rule.blackout()!=null)continue;
+            if(!rule.capability().equals("POLICY"))continue;
             var trace=new ArrayList<String>(); boolean match;
-            try { match=rule.condition().matches(event,trace); }
+            try { match=rule.condition().matches(event,facts,trace); }
             catch(IllegalArgumentException failure) {
                 evidence.put("failedRuleId",rule.id());evidence.put("failedRuleVersion",Integer.toString(rule.version()));
                 evidence.put("failedRuleChecksum",rule.checksum());evidence.put("errorCode","RULE_INPUT_LIMIT");

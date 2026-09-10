@@ -53,19 +53,25 @@ public final class AdminService {
         return simulate(actor,event,candidate,requestId,event.receivedAt());
     }
     public ProcessingContext simulate(AdminActor actor,Event event,String candidate,String requestId,java.time.Instant evaluatedAt) {
+        return simulateCandidates(actor,event,candidate==null?null:List.of(candidate),requestId,evaluatedAt);
+    }
+    public ProcessingContext simulateCandidates(AdminActor actor,Event event,List<String> candidates,String requestId,java.time.Instant evaluatedAt) {
 
         if(!actor.tenant().equals(event.tenant())) {
             repository.rejected(actor,requestId,"SIMULATE","simulations");
             throw new AdminFailure(AdminFailure.Kind.INVALID,"TENANT_MISMATCH");
         }
         RuleSnapshot snapshot;
-        if(candidate==null)snapshot=snapshots.snapshot(actor.tenant());
+        if(candidates==null)snapshot=snapshots.snapshot(actor.tenant());
         else {
-            var rule=validator.validate(candidate).rule();
-            // Explicit candidates simulate their conditions/actions independently of activation eligibility.
-            var candidateRule=new com.eventmanagement.processor.domain.rules.Rule(rule.id(),rule.version(),rule.priority(),true,
-                    rule.checksum(),rule.condition(),rule.actions(),rule.blackout());
-            snapshot=new RuleSnapshot(actor.tenant(),List.of(candidateRule));
+            if(candidates.isEmpty() || candidates.size()>256)throw new AdminFailure(AdminFailure.Kind.INVALID,"CANDIDATE_LIMIT");
+            var compiled=new java.util.ArrayList<com.eventmanagement.processor.domain.rules.Rule>();
+            for(String candidate:candidates) {
+                var rule=validator.validate(candidate).rule();
+                compiled.add(new com.eventmanagement.processor.domain.rules.Rule(rule.id(),rule.version(),rule.priority(),true,
+                        rule.checksum(),rule.condition(),rule.actions(),rule.blackout(),rule.enrichmentPlan(),rule.inventory()));
+            }
+            snapshot=new RuleSnapshot(actor.tenant(),compiled);
         }
         return EventProcessingPipeline.configured(tenant->snapshot,java.time.Clock.fixed(evaluatedAt,java.time.ZoneOffset.UTC)).simulate(event);
     }

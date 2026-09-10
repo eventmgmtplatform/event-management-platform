@@ -67,14 +67,19 @@ public class AdminResource {
     }
     @POST @Path("/simulations")
     public Object simulate(String body) {
-        var actor=identity.actor();var parsed=body(body,Set.of("event","candidateRule","evaluatedAt"));required(parsed,"event");
+        var actor=identity.actor();var parsed=body(body,Set.of("event","candidateRule","candidateRules","evaluatedAt"));required(parsed,"event");
         var event=gateway.decode(parsed.get("event").toString());
-        var result=service.simulate(actor,event,
-                parsed.has("candidateRule")?parsed.get("candidateRule").toString():null,identity.requestId(),
+        List<String> candidates=null;
+        if(parsed.has("candidateRules")) {
+            if(parsed.has("candidateRule") || !parsed.path("candidateRules").isArray() || parsed.path("candidateRules").isEmpty() || parsed.path("candidateRules").size()>256)
+                throw new ApiFailure(400,"INVALID_CANDIDATE_SET");
+            candidates=new ArrayList<>();for(var candidate:parsed.path("candidateRules"))candidates.add(candidate.toString());
+        }else if(parsed.has("candidateRule"))candidates=List.of(parsed.get("candidateRule").toString());
+        var result=service.simulateCandidates(actor,event,candidates,identity.requestId(),
                 parsed.has("evaluatedAt")?java.time.Instant.parse(text(parsed,"evaluatedAt")):event.receivedAt());
         return Map.of("processingId",result.processingId(),"mode",result.mode(),"directive",result.directive(),
-                "configurationSource",parsed.has("candidateRule")?"CANDIDATE":"ACTIVE",
-                "snapshotChecksum",result.ruleSnapshot().checksum(),"stages",result.stages(),"candidates",result.candidates());
+                "configurationSource",candidates!=null?"CANDIDATE":"ACTIVE",
+                "snapshotChecksum",result.ruleSnapshot().checksum(),"stages",result.stages(),"candidates",result.candidates(),"enrichment",result.enrichment());
     }
     @GET @Path("/explain/{processingId}")
     public JsonNode explain(@PathParam("processingId")String id)throws Exception {

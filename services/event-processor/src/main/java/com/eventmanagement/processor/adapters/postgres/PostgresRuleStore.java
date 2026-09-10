@@ -38,7 +38,9 @@ public class PostgresRuleStore implements RuleSnapshots {
                 if(status.equals("RETIRED"))throw new IllegalArgumentException("RULE_RETIRED");
                 if(rule.blackout()!=null && rule.blackout().scope().containsKey("customerCode") && !tenant.equals(rule.blackout().scope().get("customerCode")))
                     throw new IllegalArgumentException("BLACKOUT_TENANT_MISMATCH");
-                if(latest>0 && (load(c,tenant,rule.id(),latest).blackout()==null)!=(rule.blackout()==null))throw new IllegalArgumentException("RULE_CAPABILITY_IMMUTABLE");
+                if(rule.inventory()!=null && rule.inventory().scope().containsKey("customerCode") && !tenant.equals(rule.inventory().scope().get("customerCode")))
+                    throw new IllegalArgumentException("INVENTORY_TENANT_MISMATCH");
+                if(latest>0 && !load(c,tenant,rule.id(),latest).capability().equals(rule.capability()))throw new IllegalArgumentException("RULE_CAPABILITY_IMMUTABLE");
                 if(rule.version()!=latest+1)throw new IllegalArgumentException("NEXT_VERSION_REQUIRED");
                 try(var s=c.prepareStatement("INSERT INTO event_processor.rule_version(tenant,rule_id,version,checksum,definition,actor,reason) VALUES (?,?,?,?,?::jsonb,?,?)")) {
                     s.setString(1,tenant);s.setString(2,rule.id());s.setInt(3,rule.version());s.setString(4,rule.checksum());

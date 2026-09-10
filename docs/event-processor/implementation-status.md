@@ -10,7 +10,7 @@ ADR-001 confirmado por el usuario el 2026-09-09. No es certificación de release
 | 02 | 12 etapas deterministas, directivas, simulación por mismo pipeline, entrada durable | PENDING: algoritmos y escenarios funcionales posteriores |
 | 03 | Evidencia/outbox transaccionales, replay concurrente, reintentos persistentes y orden de filas por topic/key | PENDING: configuración especializada y proyección/rebuild; registro POLICY implementado |
 | 04 | DSL tipada POLICY, validación y administración REST versionada | PENDING: capacidades especializadas y administración pública autorizada |
-| 05 | Contrato de enrichment anterior conservado con PENDING_RULES | PENDING: implementar enrichment-result y puertos; fuentes de diseño recibidas |
+| 05 | EnrichmentResult tipado, InventoryPort/local versionado, procedencia/conflictos y evaluación policy | PENDING: fuentes externas, SearchPort y catálogo ampliado |
 | 06 | eventKey anterior e identidad de replay conservadas; no nueva autoridad lifecycle | PENDING: StatePort/atomicidad y política de identidad/occurrences |
 | 07 | Blackouts IMMEDIATE/SCHEDULED versionados, reloj, scopes exactos y evidencia por match | PENDING: recurrencia, selectores adicionales y auto-suppression |
 | 08 | Sin relaciones ni búsquedas de candidatos simuladas | PENDING: implementar schemas suministrados y coordinación de ownership |
@@ -46,3 +46,11 @@ Implementados [REST y blackouts](rest-and-blackouts.md). Seguridad diferida por 
 expresa; [pendientes funcionales](defect-prevention.md) identificados sin declarar
 el componente completo. Inventory, correlation, auto-suppression y comandos siguen
 pendientes. La evidencia de ejecución permanece bajo evidence/os-02-event-processor/.
+
+## Enrichment e inventory local, 2026-09-09
+
+Implementados planes ENRICHMENT y registros INVENTORY sobre el registro versionado,
+snapshot común y hechos tipados consumidos por policy. Simulación conjunta de
+configuraciones y salidas normalizadas/DLQ con resultado DA-05. Ver
+[contrato y límites](enrichment-and-inventory.md). Correlación, auto-suppression
+y comandos permanecen pendientes; no se declara completado el componente.
