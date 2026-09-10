@@ -96,3 +96,21 @@ candidatas se evalúan aunque tengan enabled=false, sin modificar el registro.
 Persistencia, simulación, esquema de resultado, precedencia, ausencia/error,
 consumo por policy y entrega normalizada/DLQ cuentan con pruebas. Inventory remoto,
 CMDB, SearchPort, sincronización y catálogos de mayor capacidad siguen pendientes.
+
+## Integración administrativa revisada, 2026-09-10
+
+El catálogo anterior `/api/catalog/views/inventory-services` no es la fuente de
+SnapshotInventory. Se agregan lecturas `/api/catalog/views/inventory-records` y
+`/api/catalog/views/enrichment-plans`, ambas sobre el registro versionado ejecutable.
+No se agrega una copia de datos ni sincronización implícita. Escrituras permanecen
+sobre `/api/v1/rules`, con revisiones/recibos/activación existentes.
+
+La certificación reproducible `testing/certifications/processor-inventory-enrichment-certification.py`
+requiere Processor 8082, catálogo por proxy 8090, Gateway 8081 y PostgreSQL/Kafka locales.
+Usa tenant/eventos sintéticos, comprueba CRUD versionado, precedencia, policy, entrega
+normalizada y DLQ requerida, y desactiva sus propias reglas. La evidencia se conserva
+en `evidences/inventory-enrichment/`. No es una prueba de proveedor externo ni de navegador.
+
+Entrega de frontend: [prompt de Inventory/Enrichment](frontend-handoffs/inventory-enrichment.md).
+La falta/error de adaptadores externos permanece cubierta como comportamiento del
+puerto en pruebas; implementar esos adaptadores y sincronización sigue en DP-EP-03.

@@ -9,7 +9,8 @@ RULE_SQL="""SELECT d.rule_id AS id,d.tenant,COALESCE(v.definition->>'name',d.rul
  ON v.tenant=d.tenant AND v.rule_id=d.rule_id AND v.version=COALESCE(d.active_version,d.latest_version)
  WHERE v.definition->>'type'=ANY(%s) ORDER BY d.tenant,d.rule_id LIMIT 2001"""
 # Blackout is a capability; its stored type is the window mode.
-RULE_TYPES={'blackouts':['SCHEDULED','IMMEDIATE'],'policies':['POLICY'],'auto-suppression':['SUPPRESSION']}
+RULE_TYPES={'blackouts':['SCHEDULED','IMMEDIATE'],'policies':['POLICY'],'auto-suppression':['SUPPRESSION'],
+            'inventory-records':['INVENTORY'],'enrichment-plans':['ENRICHMENT']}
 def snapshot(conn,kind):
     if kind in QUERIES: rows=conn.execute(QUERIES[kind]).fetchall()
     elif kind in RULE_TYPES:
