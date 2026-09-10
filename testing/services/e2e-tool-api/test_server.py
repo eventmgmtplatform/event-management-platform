@@ -36,10 +36,12 @@ class ToolTests(unittest.TestCase):
             with patch.object(threading.Thread, 'start'):
                 first = runs.start()
                 self.assertEqual(runs.start()['runId'], first['runId'])
+                self.assertEqual(runs.wait(first['runId'], seconds=0)['status'], 'RUNNING')
             runs.lease.close()
             restored = api.Runs(Path(directory))
             try:
                 self.assertEqual(restored.get(first['runId'])['status'], 'INTERRUPTED')
+                self.assertEqual(restored.wait(first['runId'])['status'], 'INTERRUPTED')
                 self.assertEqual(restored.start()['status'], 'BLOCKED')
                 with self.assertRaises(FileNotFoundError):
                     restored.get('../../secret')

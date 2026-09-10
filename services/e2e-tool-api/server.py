@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import threading
+import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -14,8 +15,8 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 STORE = ROOT / 'evidences/testing/openwebui'
-COMMAND = [sys.executable, str(ROOT / 'testing/run.py'), 'happy-path']
-SCOPE = 'UC-001: laboratorio os11-lifecycle; proveedores mock; no certifica proveedores reales ni UI de navegador'
+COMMAND = [sys.executable, str(ROOT / 'testing/run.py'), 'happy-path', '--runtime', 'shared']
+SCOPE = 'UC-001: runtime compartido (shared), tenant sintético y proveedores mock; no certifica proveedores reales ni UI de navegador'
 
 
 def result_from_log(log, code):
@@ -70,6 +71,14 @@ class Runs:
             threading.Thread(target=self.execute, args=(run_id,), daemon=False).start()
             return self.get(run_id)
 
+    def wait(self, run_id, seconds=20):
+        deadline = time.monotonic() + seconds
+        while True:
+            data = self.get(run_id)
+            if data['status'] != 'RUNNING' or time.monotonic() >= deadline:
+                return data
+            time.sleep(0.2)
+
     def execute(self, run_id):
         data = self.get(run_id)
         log_path = self.directory / (run_id + '.log')
@@ -95,7 +104,7 @@ def schema():
             'components': {'securitySchemes': {'bearerAuth': {'type': 'http', 'scheme': 'bearer'}}},
             'paths': {
                 '/runs': {'post': {'operationId': 'ejecutar_validacion_e2e',
-                    'summary': 'Ejecuta la prueba de validación E2E UC-001 en laboratorio aislado',
+                    'summary': 'Ejecuta la prueba de validación E2E UC-001 en runtime shared con mocks',
                     'description': 'Ejecuta el caso completo cuando el usuario lo solicite. Devuelve runId. RUNNING no significa aprobado. Consulta consultar_validacion_e2e hasta estado terminal. No reintentes automáticamente un fallo.',
                     'responses': {'200': response}}},
                 '/runs/{run_id}': {'get': {'operationId': 'consultar_validacion_e2e',
@@ -131,7 +140,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(200, schema())
         if path.startswith('/runs/'):
             try:
-                return self.reply(200, self.server.runs.get(path[6:]))
+                return self.reply(200, self.server.runs.wait(path[6:]))
             except FileNotFoundError:
                 pass
         self.reply(404, {'error': 'Not found'})
@@ -147,7 +156,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(400, {'error': 'Esta herramienta no acepta parámetros'})
         if self.rfile.read(int(length)) not in (b'', b'{}'):
             return self.reply(400, {'error': 'Esta herramienta no acepta parámetros'})
-        self.reply(200, self.server.runs.start())
+        data = self.server.runs.start()
+        if data['status'] == 'RUNNING':
+            data = self.server.runs.wait(data['runId'])
+        self.reply(200, data)
 
 
 def main():

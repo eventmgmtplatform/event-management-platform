@@ -1,18 +1,42 @@
 # Validación E2E desde OpenWebUI
 
 La frase **«ejecuta la prueba de validación E2E»** se conecta mediante un servidor
-OpenAPI a `python3 testing/run.py happy-path`. Usa UC-001 en `os11-lifecycle`:
+OpenAPI a `python3 testing/run.py happy-path --runtime shared`. Usa UC-001 en el runtime compartido, con tenant sintético y proveedores mock:
 Gateway → Kafka → Processor → Worker → ServiceNow/GNM/NEXT → ESS/OpenSearch,
 incluyendo recuperación, cierres, duplicados y confirmaciones de proveedores mock.
 No certifica proveedores reales ni interacciones de navegador.
 
+## Uso configurado
+
+Abrir [Validación E2E](http://localhost:3000/?models=validacion-e2e) y escribir
+**ejecuta la prueba de validación E2E**. El preset privado incluye `qwen3:1.7b`,
+la herramienta `server:validacion-e2e`, modo Native, contexto Ollama de 16384 tokens
+y herramientas internas desactivadas. Su instrucción exige una llamada real y
+reportar el runtime devuelto. No es necesario activar manualmente la herramienta
+cuando se utiliza este preset.
+La instrucción exacta guardada está en [system-prompt.txt](system-prompt.txt).
+Limita la respuesta a campos del reporte para evitar duraciones calculadas o
+interpretaciones incorrectas de las comprobaciones.
+
+El comando fija `--runtime shared`: no depende del valor por defecto del runner.
+La prueba exige la configuración sintética del Worker; genera eventos y reglas
+propios y conserva sus evidencias. No solicita reinicios de servicios.
+
 ## Preparación del servidor
 
-Requiere Python 3.10+, Docker CLI/Compose y acceso al laboratorio OS_11 ya preparado.
+Requiere Python 3.10+, Docker CLI/Compose y acceso al runtime shared configurado para proveedores mock.
 Ejecutar en el host del repositorio; el caso utiliza sus puertos loopback y Docker.
 La cuenta operativa debe poder ejecutar el runner. No montar el socket Docker en OpenWebUI.
 
-1. Preparar el laboratorio si falta, según [testing](../../testing/README.md#orquestación-os_11).
+En este host, `python3 scripts/e2e-tool-deploy.py` instala el servicio de usuario
+`eventmanagement-e2e-tool.service`, habilita su arranque con la sesión y verifica
+el esquema. Descubre la puerta de enlace de `open-webui_default` y escucha sólo
+en esa interfaz (despliegue verificado: `http://172.18.0.1:8095`). Guarda el token,
+el entorno y la conexión importable bajo `.local/e2e-tool/`, con permisos privados
+y exclusión de Git. No imprime el secreto. Requiere acceso al Docker y systemd
+del usuario; no usar `sudo` para crear archivos pertenecientes a root.
+
+1. Verificar la [activación shared](../../docs/cacf/shared-activation.md). El runner exige endpoints mock y configuración sintética antes de ejecutar.
 2. Configurar `E2E_TOOL_TOKEN` con un secreto aleatorio de al menos 32 caracteres,
    mediante el mecanismo de secretos del supervisor. No guardarlo en Git ni en chats.
 3. Ejecutar `python3 services/e2e-tool-api/server.py` desde este checkout.
@@ -25,7 +49,7 @@ La cuenta operativa debe poder ejecutar el runner. No montar el socket Docker en
 
 ## Configuración en OpenWebUI
 
-Con cuenta administradora, abrir **Admin Settings → External Tools** y añadir un
+Con cuenta administradora, abrir **Admin Panel → Settings → Integrations → External Tool Servers** y añadir un
 servidor OpenAPI. La ubicación exacta depende de la versión instalada; consultar
 la [integración oficial](https://docs.openwebui.com/features/extensibility/plugin/tools/openapi-servers/open-webui/).
 
@@ -33,6 +57,10 @@ la [integración oficial](https://docs.openwebui.com/features/extensibility/plug
 - Esquema: `/openapi.json`.
 - Autenticación: Bearer con el mismo `E2E_TOOL_TOKEN`, incluido al cargar el esquema.
 - Habilitar sólo para los operadores de validación.
+- En este host se puede importar `.local/e2e-tool/connection.json` en el formulario
+  de conexión. Mantener **Access: Private**, verificar conexión y guardar.
+- Recargar la página después de guardar. En el chat, abrir **Integrations → Tools**
+  y activar **Validación E2E**: guardar una conexión no la activa en el chat.
 - Seleccionar un modelo ya configurado con soporte de herramientas, activar las
   herramientas del servidor y la llamada de funciones nativa.
 
@@ -47,7 +75,7 @@ su runId y permite al usuario pedir «consulta el resultado E2E»; no inicies ot
 ejecución. No inventes comprobaciones ni resultados. Sólo informa aprobado si la
 herramienta devuelve PASS. Resume alcance, checks, identidades y reportPath.
 Ante FAIL, BLOCKED o INTERRUPTED, informa el error y no reintentes automáticamente.
-Aclara que UC-001 utiliza el laboratorio aislado con proveedores mock.
+Aclara que UC-001 utiliza el runtime compartido con tenant sintético y proveedores mock; informa el campo runtime del reporte. No describas este entorno como infraestructura aislada.
 ```
 
 ## Aceptación del procedimiento
@@ -66,6 +94,8 @@ comandos, rutas ni parámetros del modelo. Solicitudes de inicio concurrentes
 reutilizan el caso en curso. Tras finalizar, un nuevo inicio crea otra ejecución.
 No debe exponerse como una herramienta que reintenta POST automáticamente.
 La consulta continúa disponible después de reiniciar el servidor.
+Cada llamada espera hasta 20 segundos por un resultado terminal; si sigue en curso,
+devuelve RUNNING y se consulta con el mismo runId, sin lanzar otra prueba.
 
 Si el servidor se interrumpe con un caso activo, lo marca INTERRUPTED y bloquea
 nuevos casos. Un operador debe comprobar que el runner haya terminado, inspeccionar
