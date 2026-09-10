@@ -1,0 +1,32 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/internal/aiops/assessments",
+    "headers": {
+      "X-Tenant-Id": {
+        "matches": ".+"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.resource"
+      },
+      {
+        "matchesJsonPath": "$.summary"
+      },
+      {
+        "matchesJsonPath": "$.severity"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "recommendation": "INVESTIGATE",
+      "confidence": 0.75
+    }
+  }
+}

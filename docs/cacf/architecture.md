@@ -1,5 +1,8 @@
 # Arquitectura CACF — generación local 2026-09-08
 
+> OS_11: el perfil optativo y la coordinación de resultados/cierres se documentan en
+> [Lifecycle orchestration](../event-processor/lifecycle-orchestration.md). El alcance inicial descrito abajo permanece para rutas sin ese perfil.
+
 CACF reside en integration-worker (Java 21, Quarkus y Apache Camel). Reutiliza
 PostgreSQL y los tópicos integration.commands, integration.results y events.dlq.
 La admisión propia separa el commit Kafka del consumidor histórico. ServiceNow

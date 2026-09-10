@@ -1,0 +1,19 @@
+{
+  "priority": 100,
+  "request": {
+    "method": "GET",
+    "urlPath": "/rest/incidents/453003085618991/2713046552385248",
+    "queryParameters": {
+      "mockState": {
+        "equalTo": "open"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "incident-open.json"
+  }
+}

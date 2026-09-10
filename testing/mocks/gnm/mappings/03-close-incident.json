@@ -1,0 +1,35 @@
+{
+  "priority": 100,
+  "request": {
+    "method": "PUT",
+    "urlPath": "/rest/incidents/453003085618991/2713046552385248",
+    "queryParameters": {
+      "mockState": {
+        "equalTo": "open"
+      }
+    },
+    "headers": {
+      "Content-Type": {
+        "contains": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.incidentAction == 'CloseWithNotification')]"
+      },
+      {
+        "matchesJsonPath": "$[?(@.incidentPhases[0].phaseTemplate.templateId == '8101205968426652')]"
+      },
+      {
+        "matchesJsonPath": "$[?(@.incidentPhases[0].phaseTemplate.broadcastTemplate.broadcastSettings.confirm == 'false')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "close-success.json"
+  }
+}

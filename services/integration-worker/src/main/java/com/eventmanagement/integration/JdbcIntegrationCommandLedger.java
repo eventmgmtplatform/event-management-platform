@@ -173,6 +173,7 @@ public class JdbcIntegrationCommandLedger
         String sql = """
                 UPDATE event_management.integration_command_execution
                 SET execution_status = 'COMPLETED',
+                    result_published_at = NULL,
                     result_payload = ?::jsonb,
                     completed_at = CURRENT_TIMESTAMP,
                     updated_at = CURRENT_TIMESTAMP,

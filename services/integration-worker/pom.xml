@@ -11,6 +11,7 @@
     <packaging>quarkus</packaging>
 
     <properties>
+        <testing.reportsDirectory>${project.basedir}/../../evidences/testing/maven/integration-worker</testing.reportsDirectory>
         <compiler-plugin.version>3.15.0</compiler-plugin.version>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -94,6 +95,11 @@
     </dependencies>
 
     <build>
+        <!-- Shared testing workspace; Maven still runs from this service. -->
+        <testSourceDirectory>${project.basedir}/../../testing/services/integration-worker/java</testSourceDirectory>
+        <testResources>
+            <testResource><directory>${project.basedir}/../../testing/services/integration-worker/resources</directory></testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
@@ -112,6 +118,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <configuration>
+                    <reportsDirectory>${testing.reportsDirectory}/surefire</reportsDirectory>
                     <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
@@ -131,6 +138,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <reportsDirectory>${testing.reportsDirectory}/failsafe</reportsDirectory>
                     <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
                         <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>

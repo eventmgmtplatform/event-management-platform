@@ -1,0 +1,39 @@
+{
+  "templateVersion": "1.0.0",
+  "scope": "local integration.results -> PostgreSQL -> OpenSearch; gateway/processor/worker with ServiceNow mock",
+  "result": {
+    "schemaVersion": "1.0",
+    "resultId": "ess-test-result",
+    "eventId": "ess-test-event",
+    "eventKey": "ess-test:key",
+    "tenant": "ess-test",
+    "integrationType": "SERVICENOW",
+    "operation": "CREATE_TICKET",
+    "status": "SUCCESS",
+    "externalId": "INC-ESS-TEST",
+    "completedAt": "2026-09-10T00:00:00Z"
+  },
+  "expected": {
+    "lifecycleStatus": "OPEN",
+    "version": 1,
+    "ticketNumber": "INC-ESS-TEST"
+  },
+  "requiredChecks": [
+    "cli",
+    "readiness",
+    "gateway-processor-worker-state-search",
+    "identical-redelivery",
+    "second-integration",
+    "invalid-message-quarantine",
+    "restart-redelivery"
+  ],
+  "targetChecksPending": [
+    "OPEN-CLOSE-reopen state requests",
+    "transactional outbox",
+    "lifecycle publication",
+    "stale result",
+    "projection rebuild",
+    "tenant-scoped query API",
+    "quarantine topic publication and retention policy"
+  ]
+}

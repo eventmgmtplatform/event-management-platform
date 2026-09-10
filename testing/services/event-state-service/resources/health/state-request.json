@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "messageId": "lifecycle-message-1",
+  "eventId": "lifecycle-event-1",
+  "eventKey": "lifecycle-test:key",
+  "tenantId": "lifecycle-test",
+  "correlationId": "processing-test-1",
+  "causationId": "lifecycle-event-1",
+  "transition": "OPEN",
+  "occurredAt": "2026-09-10T00:00:00Z",
+  "sourceSeverity": 3,
+  "effectiveSeverity": 3,
+  "decisions": {"directive": "CONTINUE", "correlation": {}, "routing": {}},
+  "event": {"summary": "Synthetic lifecycle test"}
+}

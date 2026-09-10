@@ -65,6 +65,13 @@ public class OpenSearchStateClient {
 
         document.put("eventKey", state.eventKey);
         document.put("eventId", state.eventId);
+        if (state.lastStateAt != null) {
+            document.put("sourceSeverity", state.sourceSeverity);
+            document.put("effectiveSeverity", state.effectiveSeverity);
+            document.put("tally", state.tally);
+            document.put("lastStateAt", state.lastStateAt.toString());
+            document.set("stateRequest", state.statePayload);
+        }
         document.put("tenant", state.tenant);
 
         document.put(

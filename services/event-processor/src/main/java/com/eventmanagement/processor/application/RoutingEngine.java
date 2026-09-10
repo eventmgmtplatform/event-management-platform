@@ -27,8 +27,14 @@ public final class RoutingEngine {
                 if(resource==null || resource.isBlank() || resource.length()>4096 || summary==null || summary.isBlank() || summary.length()>4096) {
                     failed=true;decisions.add(new RoutingResult.Decision(rule.id(),rule.version(),route.correlationRuleId(),"COMMAND_PAYLOAD_FIELDS_REQUIRED",id));continue;
                 }
+                if(!route.lifecycle().isEmpty() && (resource.length()>255 || context.event().tenant().length()>64 || context.event().tenant().contains(":"))) {
+                    failed=true;decisions.add(new RoutingResult.Decision(rule.id(),rule.version(),route.correlationRuleId(),"LIFECYCLE_IDENTITY_NOT_SUPPORTED",id));continue;
+                }
+                var payload=new java.util.HashMap<String,Object>();
+                payload.put("resource",resource);payload.put("summary",summary);payload.put("severity",context.event().severity());
+                if(!route.lifecycle().isEmpty())payload.put("lifecycle",route.lifecycle());
                 commands.put(id,new ProcessingContext.CommandIntent(id,id,route.integration(),route.operation(),route.configuration(),cycle,
-                        Map.of("resource",resource,"summary",summary,"severity",context.event().severity())));
+                        payload));
                 decisions.add(new RoutingResult.Decision(rule.id(),rule.version(),route.correlationRuleId(),"COMMAND_ELIGIBLE",id));
             }
         }

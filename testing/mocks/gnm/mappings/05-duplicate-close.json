@@ -1,0 +1,24 @@
+{
+  "priority": 90,
+  "request": {
+    "method": "PUT",
+    "urlPath": "/rest/incidents/453003085618991/2713046552385248",
+    "queryParameters": {
+      "mockState": {
+        "equalTo": "closed"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.incidentAction == 'CloseWithNotification')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "duplicate-close.json"
+  }
+}

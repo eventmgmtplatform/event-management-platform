@@ -11,6 +11,7 @@
     <packaging>quarkus</packaging>
 
     <properties>
+        <testing.reportsDirectory>${project.basedir}/../../evidences/testing/maven/event-state-service</testing.reportsDirectory>
         <compiler-plugin.version>3.15.0</compiler-plugin.version>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,6 +20,7 @@
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.38.0</quarkus.platform.version>
         <skipITs>true</skipITs>
+        <argLine></argLine>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
     </properties>
 
@@ -86,6 +88,11 @@
     </dependencies>
 
     <build>
+        <!-- Shared testing workspace; Maven still runs from this service. -->
+        <testSourceDirectory>${project.basedir}/../../testing/services/event-state-service/java</testSourceDirectory>
+        <testResources>
+            <testResource><directory>${project.basedir}/../../testing/services/event-state-service/resources</directory></testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
@@ -104,6 +111,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <configuration>
+                    <reportsDirectory>${testing.reportsDirectory}/surefire</reportsDirectory>
                     <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
@@ -123,6 +131,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <reportsDirectory>${testing.reportsDirectory}/failsafe</reportsDirectory>
                     <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
                         <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>

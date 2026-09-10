@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:event-management:lifecycle-profile-v1",
+  "title": "Opt-in CREATE_TICKET lifecycle parameters",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["notificationGroup", "originalAssignmentGroup", "holdingAssignmentGroup", "resolvedState", "closeCode"],
+  "properties": {
+    "notificationGroup": {"type": "string", "minLength": 1, "maxLength": 255},
+    "originalAssignmentGroup": {"type": "string", "minLength": 1, "maxLength": 255},
+    "holdingAssignmentGroup": {"type": "string", "minLength": 1, "maxLength": 255},
+    "resolvedState": {"type": "string", "minLength": 1, "maxLength": 255},
+    "closeCode": {"type": "string", "minLength": 1, "maxLength": 255}
+  }
+}

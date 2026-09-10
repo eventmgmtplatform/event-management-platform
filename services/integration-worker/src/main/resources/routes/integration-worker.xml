@@ -64,6 +64,16 @@
                 </when>
 
                 <when>
+                    <simple>${exchangeProperty.integrationProvider} == 'SERVICENOW' &amp;&amp; ${exchangeProperty.operation} == 'RESOLVE_TICKET'</simple>
+                    <process ref="integrationCommandClaimProcessor"/>
+                    <choice>
+                        <when><simple>${exchangeProperty.integrationIdempotencyDecision} == 'IN_PROGRESS'</simple><stop/></when>
+                        <when><simple>${exchangeProperty.integrationIdempotencyDecision} == 'REPLAY'</simple></when>
+                        <otherwise><process ref="serviceNowResolveProcessor"/><process ref="integrationResultProcessor"/></otherwise>
+                    </choice>
+                </when>
+
+                <when>
                     <simple>${exchangeProperty.integrationProvider} == 'GNM'</simple>
 
                     <!--
@@ -347,6 +357,7 @@
             Persist the owned terminal result before Kafka publication.
             REPLAY and unresolved claims are intentionally ignored.
         -->
+        <process ref="gnmResultEnvelopeProcessor"/>
         <process ref="integrationCommandCompletionProcessor"/>
 
         <!--

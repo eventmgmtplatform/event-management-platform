@@ -201,6 +201,8 @@ public class IntegrationResultProcessor implements Processor {
                 serviceNowResponse.deepCopy()
         );
 
+        if("RESOLVED_CONFIRMED".equals(exchange.getProperty("ticketLifecycleState",String.class)))
+            integrationResult.put("ticketLifecycleState","RESOLVED_CONFIRMED");
         String resultJson =
                 objectMapper.writeValueAsString(integrationResult);
 

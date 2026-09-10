@@ -100,3 +100,6 @@ __pycache__/
 
 # Generated local identity bootstrap credentials and realm import
 /.local/processor-identity/
+
+# All new test executions and reports (never source-controlled)
+/evidences/
