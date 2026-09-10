@@ -32,6 +32,7 @@ START_ORDER=(
     kafka
     kafka-init
     servicenow-mock
+    aiops-mock
     gnm-mock
     event-gateway
     event-processor
@@ -54,6 +55,7 @@ STOP_ORDER=(
     event-state-service
     gnm-mock
     servicenow-mock
+    aiops-mock
     kafka-init
     kafka
     opensearch

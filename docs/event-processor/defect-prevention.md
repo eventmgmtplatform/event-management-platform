@@ -14,5 +14,7 @@ Este registro no convierte capacidades pendientes en PASS.
 | DP-EP-07 | API especializada `/blackouts` y `/correlations` | Contratos administrativos dedicados. Este incremento administra todas las capacidades implementadas mediante el registro compartido `/rules`; IDs comparten namespace por tenant. |
 | DP-EP-08 | Escalamiento y recuperación ampliada | Separar capacidad activa de historial del ciclo, pruebas de carga, backup/restore de relaciones+ledger con datos y replay de configuración/grupos más allá de límites iniciales. |
 
-DP-EP-03..08 registran límites o extensiones pendientes; no convierten el subconjunto implementado en certificación de todo v1.
+| DP-EP-09 | AIOps real y automatización | CRUD persistente y consumo HTTP de mock interno implementados. Pendientes adaptador certificado de Kyndryl Bridge, su autenticación, historial de evaluaciones y eventual incorporación al pipeline/contratos. Ver aiops-engine.md. |
+
+DP-EP-03..09 registran límites o extensiones pendientes; no convierten el subconjunto implementado en certificación de todo v1.
 DP-EP-01 queda fuera del incremento funcional por decisión del usuario.

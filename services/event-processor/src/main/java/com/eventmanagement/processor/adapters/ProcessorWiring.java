@@ -22,4 +22,10 @@ public class ProcessorWiring {
             com.eventmanagement.processor.ports.out.RuleSnapshots snapshots) {
         return new com.eventmanagement.processor.application.AdminService(repository,validator,snapshots);
     }
+    @Produces @Singleton
+    com.eventmanagement.processor.application.AiopsEngine aiopsEngine(
+            com.eventmanagement.processor.ports.out.AiopsConfigurations configurations,
+            com.eventmanagement.processor.ports.out.AiopsProvider provider) {
+        return new com.eventmanagement.processor.application.AiopsEngine(configurations,provider);
+    }
 }

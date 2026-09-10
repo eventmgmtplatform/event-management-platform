@@ -1,5 +1,8 @@
 # Event Processor changelog
 
+- Add independent AIOps configuration CRUD, immutable audit and explicit HTTP assessment via local mock; event/rule contracts unchanged.
+- Record minimum local v1 acceptance gaps and defer the real provider adapter.
+
 ## Unreleased — local deployment and configuration recovery, 2026-09-09
 
 - Local deployment script preserves prior image and schema backup; applies migration 011 before replacement.

@@ -1,6 +1,7 @@
 # Alcance y trazabilidad incremental
 
-Base: 425ecd3; rama feature/os-06-core-event-processor.
+Rama: feature/os-06-core-event-processor. Estado actual resumido en minimum-v1-checklist.md.
+Las secciones fechadas siguientes describen incrementos históricos; sus pendientes pueden haber sido resueltos después.
 Fuente: OS_02_EVENT_PROCESSOR_CODEX_MASTER_PROMPT_v1.0.0.md suministrado por el usuario.
 ADR-001 confirmado por el usuario el 2026-09-09. No es certificación de release v1.0.0.
 
@@ -27,7 +28,7 @@ DA-10 y DA-15: NOT_APPLICABLE al alcance confirmado; no reconstruidos.
 Los schemas de diseño ya fueron recibidos; disponibilidad documental no implica implementación ni certificación.
 No hay afirmaciones de paridad legacy, GKE, proveedor real, disaster recovery o production readiness.
 
-## Configuración y reglas, 2026-09-09
+## Histórico: configuración y reglas, 2026-09-09
 
 Implementados compilador tipado POLICY, validación estructural/semántica, registro
 PostgreSQL versionado y evaluación por snapshot. Consultar [contratos y límites](rules-and-contracts.md).
@@ -40,14 +41,14 @@ Migración 011 y despliegue local ejecutados el 2026-09-09 sobre la implementaci
 Salud local, replay/reinicio/DLQ y backup/restore con versiones de reglas: PASS.
 Cero reglas activas en el ambiente principal. Activación productiva pendiente.
 
-## REST y mantenimiento, 2026-09-09
+## Histórico: REST y mantenimiento, 2026-09-09
 
 Implementados [REST y blackouts](rest-and-blackouts.md). Seguridad diferida por solicitud
 expresa; [pendientes funcionales](defect-prevention.md) identificados sin declarar
 el componente completo. Inventory, correlation, auto-suppression y comandos siguen
 pendientes. La evidencia de ejecución permanece bajo evidence/os-02-event-processor/.
 
-## Enrichment e inventory local, 2026-09-09
+## Histórico: enrichment e inventory local, 2026-09-09
 
 Implementados planes ENRICHMENT y registros INVENTORY sobre el registro versionado,
 snapshot común y hechos tipados consumidos por policy. Simulación conjunta de
@@ -61,3 +62,12 @@ Correlación ATTRIBUTE/GROUP, auto-suppression local y routing/CREATE_TICKET por
 implementados. Validación: 85 pruebas Processor y 5 de compatibilidad Worker PASS,
 sin omisiones; empaquetado PASS. Ver [alcance](correlation-suppression-commands.md).
 La seguridad continúa diferida y no se declara completo DA-06 ni el release v1.
+
+## AIOps independiente, 2026-09-09
+
+CRUD REST persistente, revisiones, auditoría inmutable y evaluación explícita por HTTP
+contra mock interno. No forma parte de los contratos actuales ni del pipeline automático.
+Ver [módulo AIOps](aiops-engine.md) y [cierre mínimo pendiente](minimum-v1-checklist.md).
+
+Validación del incremento AIOps: 91 pruebas Processor PASS (0 fallos/errores/omisiones),
+empaquetado PASS. La prueba de arquitectura mantiene dominio/aplicación sin framework.

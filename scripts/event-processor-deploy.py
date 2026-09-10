@@ -69,13 +69,14 @@ def main():
         sql(migration.read_text())
         for name, field in [('012-processor-administration.sql', 'adminMigrationSha256'),
                             ('013-processor-correlation.sql', 'correlationMigrationSha256'),
-                            ('014-processor-command-ledger.sql', 'commandMigrationSha256')]:
+                            ('014-processor-command-ledger.sql', 'commandMigrationSha256'),
+                            ('015-processor-aiops.sql', 'aiopsMigrationSha256')]:
             migration = ROOT / 'infrastructure/postgres/init' / name
             sql(migration.read_text())
             report[field] = hashlib.sha256(migration.read_bytes()).hexdigest()
         assert sql("SELECT count(*) FROM information_schema.tables WHERE table_schema='event_processor' "
-                   "AND table_name IN ('rule_definition','rule_version','rule_change','admin_request','admin_audit','correlation_group','integration_command')") == '7'
-        report['checks'].append('migrations 011/012/013/014 applied; configuration tables verified')
+                   "AND table_name IN ('rule_definition','rule_version','rule_change','admin_request','admin_audit','correlation_group','integration_command','aiops_configuration','aiops_change')") == '9'
+        report['checks'].append('migrations 011/012/013/014/015 applied; configuration tables verified')
         report['activeRules'] = int(sql("SELECT count(*) FROM event_processor.rule_definition WHERE status='ENABLED'"))
         print('Migration applied; replacing only event-processor', flush=True)
         replacement_started = True

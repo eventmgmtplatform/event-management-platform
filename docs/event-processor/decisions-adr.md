@@ -73,3 +73,13 @@ ledger y outbox juntos. El primer envelope es inmutable y su identidad sobrevive
 la limpieza de salidas. Simulación usa estado propio por petición y el mismo dominio.
 Los límites y capacidades pendientes están en
 [correlación, supresión y comandos](correlation-suppression-commands.md).
+
+## ADR-006 — AIOps independiente y proveedor simulado
+
+Solicitud del usuario: esqueleto operable al nivel de los motores, CRUD REST y consumo
+HTTP de un mock; Bridge real después, sin incluir AIOps en los contratos actuales.
+Decisión: dominio/puertos/aplicación/adaptadores dentro de Processor, administración
+separada `/api/v1/aiops`, persistencia y auditoría propias. Evaluación explícita, sin
+etapa nueva ni efectos sobre eventos/comandos. WireMock comparte el patrón local de
+ServiceNow. El protocolo es interno; no simula un contrato de Bridge no recibido.
+Seguridad continúa diferida. Ver aiops-engine.md y minimum-v1-checklist.md.
