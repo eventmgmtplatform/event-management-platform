@@ -64,3 +64,5 @@ No se concede a identidades runtime, operadores ni Cloud Build.
 La amplitud del rol se acepta porque el deployer debe administrar el ciclo de
 vida completo de buckets y sus configuraciones mediante Terraform. El acceso
 se realiza por impersonación y no mediante llaves permanentes.
+
+[Historial de cambios del componente](CHANGELOG.md).

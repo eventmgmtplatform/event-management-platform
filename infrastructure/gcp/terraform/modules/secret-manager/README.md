@@ -20,3 +20,5 @@ Módulo reusable para administrar contenedores de secretos en Google Secret Mana
 
 Los valores deberán cargarse mediante un procedimiento operacional separado,
 autenticado y auditable.
+
+[Historial de cambios del componente](CHANGELOG.md).

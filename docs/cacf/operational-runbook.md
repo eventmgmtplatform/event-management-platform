@@ -1,5 +1,9 @@
 # Runbook local y mantenimiento
 
+Actualización: CACF/GNM con mocks ya está activo y certificado en el runtime
+compartido. Véase [activación y evidencia](shared-activation.md). El procedimiento
+siguiente conserva la operación del laboratorio separado.
+
 ## Preparación
 
 Requisitos: Docker Engine/Compose, puertos 15439/18083/18183/18184 disponibles,
@@ -8,8 +12,8 @@ requiere imágenes y dependencias disponibles; mvn -o exige caché Maven poblada
 Ejecutar desde la raíz del repositorio.
 
 ```sh
-docker compose -p cacf-certification -f infrastructure/docker-compose.cacf-test.yml up -d postgres next-mock servicenow-mock kafka kafka-init
-docker compose -p cacf-certification -f infrastructure/docker-compose.cacf-test.yml stop integration-worker
+docker compose -p cacf-certification -f testing/environments/cacf.compose.yml up -d postgres next-mock servicenow-mock kafka kafka-init
+docker compose -p cacf-certification -f testing/environments/cacf.compose.yml stop integration-worker
 ```
 
 Desde services/integration-worker ejecutar:
@@ -21,8 +25,8 @@ mvn -o test -Dcacf.test.jdbc.url=jdbc:postgresql://localhost:15439/cacf_test
 Volver a la raíz y ejecutar:
 
 ```sh
-docker compose -p cacf-certification -f infrastructure/docker-compose.cacf-test.yml up -d --build integration-worker
-python3 scripts/cacf-local-certification.py
+docker compose -p cacf-certification -f testing/environments/cacf.compose.yml up -d --build integration-worker
+python3 testing/certifications/cacf-local-certification.py
 ```
 
 El script crea ejecuciones sintéticas y reinicia el worker aislado. No elimina
@@ -36,8 +40,8 @@ broker no lo está. No usar down -v para una pausa operativa.
 ```sh
 curl --fail http://127.0.0.1:18083/health/ready
 curl --fail -H 'X-CACF-Token: cacf-local-test' http://127.0.0.1:18083/metrics
-docker compose -p cacf-certification -f infrastructure/docker-compose.cacf-test.yml ps
-docker compose -p cacf-certification -f infrastructure/docker-compose.cacf-test.yml logs --tail 100 integration-worker
+docker compose -p cacf-certification -f testing/environments/cacf.compose.yml ps
+docker compose -p cacf-certification -f testing/environments/cacf.compose.yml logs --tail 100 integration-worker
 ```
 
 Las métricas son gauges: cacf_executions, cacf_results, cacf_callbacks_duplicate,
@@ -71,7 +75,8 @@ FROM event_management.automation_outbox WHERE NOT published ORDER BY sequence_id
 
 ## Migración y activación en runtime principal
 
-Esta generación no se aplicó al runtime principal. El overlay CACF requiere el
+El procedimiento histórico de esta generación utilizaba un overlay separado;
+la activación compartida vigente usa Compose base y se documenta en shared-activation.md. El overlay CACF requiere el
 Compose base del repositorio y .env del operador. README.md contiene los comandos
 acotados de migración y activación. Comprobar backup según política local antes de
 aplicar migraciones sobre datos existentes. No se distribuyen .env ni secretos.

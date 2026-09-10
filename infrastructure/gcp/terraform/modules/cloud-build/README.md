@@ -58,3 +58,5 @@ Only the Secret Manager resource-version reference is configured.
 
 The host connection is authorized interactively once and subsequently adopted
 into Terraform state. Repository links are created declaratively by Terraform.
+
+[Historial de cambios del componente](CHANGELOG.md).

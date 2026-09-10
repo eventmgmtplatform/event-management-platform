@@ -5,6 +5,22 @@ set -Eeuo pipefail
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Kafka-specific read operations and isolated installer. Existing lifecycle remains below.
+if [[ "${1:-}" == "kafka" ]]; then
+    case "${2:-}" in
+        prepare|install|config|inventory|topics|groups|verify|inspect)
+            shift
+            exec python3 "${SCRIPT_DIR}/kafka-admin.py" "$@"
+            ;;
+    esac
+fi
+
+# Specialized operations surface; preserve the existing global service lifecycle.
+if [[ "${1:-}" == "ui" && "${2:-}" == "oem-dashboards" ]]; then
+    shift 2
+    exec bash "${SCRIPT_DIR}/oem-dashboards.sh" "$@"
+fi
+
 if [[ -f "${SCRIPT_DIR}/../infrastructure/docker-compose.yml" ]]; then
     readonly PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 elif [[ -f "${SCRIPT_DIR}/infrastructure/docker-compose.yml" ]]; then
@@ -34,26 +50,36 @@ START_ORDER=(
     servicenow-mock
     aiops-mock
     gnm-mock
+    next-mock
     event-gateway
     event-processor
     integration-worker
     event-state-service
     kafka-ui
     opensearch-dashboards
+    product-observability
     itsm-ticketing-dashboard
+    servicenow-console-mock
+    frontend-management-api
+    console-catalog-api
     event-management-console
 )
 
 STOP_ORDER=(
     event-management-console
+    frontend-management-api
+    console-catalog-api
+    servicenow-console-mock
     itsm-ticketing-dashboard
     kafka-ui
     opensearch-dashboards
+    product-observability
     event-gateway
     event-processor
     integration-worker
     event-state-service
     gnm-mock
+    next-mock
     servicenow-mock
     aiops-mock
     kafka-init
@@ -63,13 +89,12 @@ STOP_ORDER=(
 )
 
 # CACF retains the isolated topology and fixtures defined by OS-05.
-readonly RUNTIME="${EVENTMANAGEMENT_RUNTIME:-ecosystem}"
+readonly RUNTIME="${EVENTMANAGEMENT_RUNTIME:-local}"
 case "${RUNTIME}" in
     local|ecosystem) ;;
     cacf-certification)
-        COMPOSE=(docker compose -p cacf-certification -f "${PROJECT_ROOT}/infrastructure/docker-compose.cacf-test.yml")
-        START_ORDER=(postgres kafka kafka-init next-mock servicenow-mock integration-worker)
-        STOP_ORDER=(integration-worker servicenow-mock next-mock kafka-init kafka postgres)
+        echo "ERROR: laboratorio archivado; consulte docs/environment-consolidation.md para recuperación explícita." >&2
+        exit 2
         ;;
     *) echo "ERROR: EVENTMANAGEMENT_RUNTIME inválido: ${RUNTIME}" >&2; exit 2 ;;
 esac
@@ -97,6 +122,14 @@ Acciones globales:
 
 Acciones por servicio:
   start | stop | restart | reload | status | health | logs
+  admin      Consulta administrativa ESS del tenant indicado por ESS_ADMIN_TENANT.
+  test       Certificación integral repetible de event-state-service (mocks locales).
+
+Kafka:
+  kafka config | inventory | topics | groups | verify | inspect
+  kafka prepare --directory <nuevo-directorio> [--project em-kafka-candidate]
+  kafka install --directory <paquete-preparado>
+  Documentación: docs/kafka/README.md y docs/kafka/cli.md
 
 Ejemplos:
   ${SCRIPT_NAME} validate
@@ -106,7 +139,7 @@ Ejemplos:
   ${SCRIPT_NAME} integration-worker restart
 
 Variables opcionales:
-  EVENTMANAGEMENT_RUNTIME        ecosystem (default) | local | cacf-certification.
+  EVENTMANAGEMENT_RUNTIME        local (default) | ecosystem (alias local).
   EVENTMANAGEMENT_WAIT_TIMEOUT   Espera máxima por servicio; default ${WAIT_TIMEOUT}s.
   EVENTMANAGEMENT_LOG_TAIL       Líneas de logs; default ${LOG_TAIL}.
   EVENTMANAGEMENT_STOP_TIMEOUT   Espera graceful; default ${STOP_TIMEOUT}s.
@@ -139,8 +172,13 @@ require_runtime() {
         done
         (( found == 1 )) || die "servicio fuera del orden administrado: $service"
     done <<< "$configured"
+    # Reuse the validated inventory instead of spawning Compose for every entry.
     for service in "${START_ORDER[@]}" "${STOP_ORDER[@]}"; do
-        service_exists "$service" || die "servicio del orden ausente en Compose: $service"
+        found=0
+        while IFS= read -r ordered; do
+            [[ "$ordered" != "$service" ]] || found=1
+        done <<< "$configured"
+        (( found == 1 )) || die "servicio del orden ausente en Compose: $service"
     done
 }
 
@@ -415,32 +453,26 @@ main() {
 
     case "${action}" in
         -h|--help|help) usage; exit 0 ;;
-        validate|services|start|stop|restart|reload|status|health|logs|down) ;;
+        validate|services|start|stop|restart|reload|status|health|logs|down|test|admin) ;;
         *) usage; die "acción no válida: ${action}" ;;
     esac
 
     if [[ "${RUNTIME}" == ecosystem ]]; then
-        # Preserve per-service calls against the principal runtime. CACF services
-        # can be selected explicitly with EVENTMANAGEMENT_RUNTIME.
-        if [[ "${service}" != all ]]; then
-            EVENTMANAGEMENT_RUNTIME=local bash "${SCRIPT_DIR}/eventmanagement-services.sh" "$@"
-            return
-        fi
-        local runtime failed=0
-        # Check every inventory before any lifecycle mutation.
-        for runtime in local cacf-certification; do
-            EVENTMANAGEMENT_RUNTIME="$runtime" bash "${SCRIPT_DIR}/eventmanagement-services.sh" validate
-        done
-        for runtime in local cacf-certification; do
-            echo "=== EventManagementOpenSource: $runtime / $action ==="
-            if EVENTMANAGEMENT_RUNTIME="$runtime" bash "${SCRIPT_DIR}/eventmanagement-services.sh" "$action"; then
-                :
-            else
-                failed=1
-                case "$action" in status|health|logs) ;; *) return 1 ;; esac
-            fi
-        done
-        return "$failed"
+        EVENTMANAGEMENT_RUNTIME=local bash "${SCRIPT_DIR}/eventmanagement-services.sh" "$@"
+        return
+    fi
+
+    if [[ "${action}" == admin ]]; then
+        [[ "${service}" == event-state-service && "${RUNTIME}" == local ]] || die "admin requiere event-state-service local."
+        python3 "${SCRIPT_DIR}/event-state-admin.py" events
+        return
+    fi
+
+    if [[ "${action}" == test ]]; then
+        [[ "${service}" == event-state-service && "${RUNTIME}" == local ]] ||
+            die "test requiere event-state-service en runtime local."
+        python3 "${SCRIPT_DIR}/event-state-certification.py" --verify
+        return
     fi
 
     require_runtime

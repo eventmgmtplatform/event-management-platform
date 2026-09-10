@@ -15,7 +15,7 @@ services:
       next-mock: {condition: service_started}
   next-mock:
     image: wiremock/wiremock:3.13.1
-    volumes: ["./mock-integrations/next:/home/wiremock:ro"]
+    volumes: ["../testing/mocks/next:/home/wiremock:ro"]
     ports: ["127.0.0.1:8183:8080"]
     networks: [event-management-net]
   cacf-migrate:

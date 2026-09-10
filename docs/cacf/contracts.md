@@ -1,5 +1,8 @@
 # Contratos de código y de integración
 
+> OS_11: el perfil optativo y la coordinación de resultados/cierres se documentan en
+> [Lifecycle orchestration](../event-processor/lifecycle-orchestration.md). El alcance inicial descrito abajo permanece para rutas sin ese perfil.
+
 ## API REST
 
 Todas las rutas CACF requieren X-CACF-Token; deshabilitado devuelve 404 y token
@@ -45,7 +48,7 @@ no normalizan todo el árbol JSON. correlationId del fixture no se propaga como
 campo de resultado. eventKey del envelope tiene máximo 128, con fallback eventId;
 event.eventKey es un campo distinto usado por la descripción NEXT.
 
-El fixture reproducible está en ../../services/integration-worker/src/test/resources/cacf/request.json.
+El fixture reproducible está en ../../testing/services/integration-worker/resources/cacf/request.json.
 
 ## Kafka
 

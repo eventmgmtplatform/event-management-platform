@@ -310,3 +310,5 @@ Continuous Delivery Contract
 ```
 
 The runtime layer will be introduced after the Continuous Delivery contract has been fully certified.
+
+[Historial de cambios del componente](CHANGELOG.md).

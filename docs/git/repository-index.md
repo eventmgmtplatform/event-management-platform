@@ -108,3 +108,32 @@ correctas. Suite worker Maven offline: 171 pruebas, 0 fallos, 0 errores,
 7 omitidas por falta de configuración JDBC del laboratorio aislado (164 ejecutadas).
 La ejecución inicial restringida falló por sockets; la repetición fuera del
 sandbox terminó BUILD SUCCESS. No se ejecutó la prueba maestra que reinicia servicios.
+
+## Event State Service — 2026-09-10
+
+- Workstream: `OS_05_ESS.IMP`, ESS-01 baseline y certificación reutilizable.
+- Rama: `feature/os-05-core-event-state-service`.
+- Origen: `feature/os-06-core-event-processor` en
+  `887baeaf51f1c9274786388dc36b175dce30b3bb`, igual a upstream al inicio.
+- Rama local creada por solicitud del usuario; publicación/upstream pendientes.
+- No se modificaron main, develop ni referencias certificadas.
+- Implementación y comandos: `docs/event-state-service/README.md`.
+
+## Unidad de testing
+
+[Base centralizada](../../testing/README.md), [catálogo de casos](../../testing/cases/catalog.json)
+y [changelog de testing](../../testing/CHANGELOG.md). Las ejecuciones nuevas escriben
+únicamente en `evidences/`, excluido de Git.
+
+## Historial por componente — 2026-09-10
+
+El [índice canónico de changelogs](../changelogs/README.md) reúne los servicios,
+integraciones y componentes de plataforma. Separar Unreleased de los commits
+históricos; los resultados de ejecución se guardan en `evidences/`.
+
+## Consolidación del workspace, 2026-09-10
+
+El trabajo acumulado se conserva en `integration/event-management-current-state`.
+Ver [alcance, preservación y validaciones](current-workspace-consolidation.md).
+Las ramas nominales de ESS y Processor mantienen sus commits publicados; esta
+consolidación no promueve main ni altera releases.

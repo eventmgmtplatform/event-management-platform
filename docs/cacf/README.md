@@ -101,7 +101,7 @@ los labels del contrato recuperado. El catálogo desconocido usa UNKNOWN seguro.
 | CACF_XML_MAX_BYTES | 1048576 |
 
 La contraseña NEXT y el token no forman parte de payloads, resultados ni logs.
-Las credenciales fijas de `docker-compose.cacf-test.yml` son exclusivamente fixtures
+Las credenciales fijas de `testing/environments/cacf.compose.yml` son exclusivamente fixtures
 públicos del laboratorio aislado, no credenciales reales.
 
 ## Entorno aislado de certificación
@@ -109,14 +109,14 @@ públicos del laboratorio aislado, no credenciales reales.
 Desde la raíz:
 
 ```sh
-docker compose -p cacf-certification -f infrastructure/docker-compose.cacf-test.yml up -d postgres next-mock servicenow-mock kafka kafka-init
+docker compose -p cacf-certification -f testing/environments/cacf.compose.yml up -d postgres next-mock servicenow-mock kafka kafka-init
 ```
 
 Antes de las pruebas JDBC, el worker de ese proyecto debe estar detenido para que
 sus publicadores no compitan con las transacciones controladas de los tests:
 
 ```sh
-docker compose -p cacf-certification -f infrastructure/docker-compose.cacf-test.yml stop integration-worker
+docker compose -p cacf-certification -f testing/environments/cacf.compose.yml stop integration-worker
 cd services/integration-worker
 mvn -o test -Dcacf.test.jdbc.url=jdbc:postgresql://localhost:15439/cacf_test
 ```
@@ -124,8 +124,8 @@ mvn -o test -Dcacf.test.jdbc.url=jdbc:postgresql://localhost:15439/cacf_test
 Luego, desde la raíz:
 
 ```sh
-docker compose -p cacf-certification -f infrastructure/docker-compose.cacf-test.yml up -d --build integration-worker
-python3 scripts/cacf-local-certification.py
+docker compose -p cacf-certification -f testing/environments/cacf.compose.yml up -d --build integration-worker
+python3 testing/certifications/cacf-local-certification.py
 ```
 
 La prueba E2E reinicia únicamente el worker del proyecto aislado. Incluye
@@ -155,3 +155,5 @@ No certifica NEXT ni ServiceNow productivos. Falta validar contra sus credencial
 y contratos operativos reales. No porta CLEAR, failover legacy, IPCenter ni DB2.
 TKTUPDATE_CLOSE y cierre ITSM automático permanecen fuera hasta confirmar su
 necesidad y política. La evidencia desconocida queda persistida para revisión.
+
+[Historial de cambios del componente](CHANGELOG.md).

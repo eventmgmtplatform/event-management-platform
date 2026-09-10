@@ -4,12 +4,19 @@ set -euo pipefail
 
 KAFKA_BOOTSTRAP_SERVER="${KAFKA_BOOTSTRAP_SERVER:-kafka:29092}"
 KAFKA_TOPICS_COMMAND="/opt/kafka/bin/kafka-topics.sh"
+MODE="${1:-create}"
+case "$MODE" in
+    create|--inventory) ;;
+    *) echo "Uso: $0 [create|--inventory]" >&2; exit 2 ;;
+esac
 
+if [[ "$MODE" != --inventory ]]; then
 echo "============================================================"
 echo "EVENT MANAGEMENT - KAFKA TOPIC INITIALIZATION"
 echo "============================================================"
 echo "Bootstrap server: ${KAFKA_BOOTSTRAP_SERVER}"
 echo "============================================================"
+fi
 
 topic_exists() {
     local requested_topic="$1"
@@ -32,6 +39,11 @@ create_topic() {
     local replication_factor="$3"
     local cleanup_policy="$4"
     local retention_ms="$5"
+
+    if [[ "$MODE" == --inventory ]]; then
+        printf '%s\t%s\t%s\t%s\t%s\n' "$topic_name" "$partitions" "$replication_factor" "$cleanup_policy" "$retention_ms"
+        return 0
+    fi
 
     echo
     echo "Validando topic: ${topic_name}"
@@ -66,11 +78,14 @@ RETENTION_DLQ="1209600000"
 create_topic "events.raw"              3 1 "delete"  "${RETENTION_STANDARD}"
 create_topic "events.normalized"       3 1 "delete"  "${RETENTION_STANDARD}"
 create_topic "events.lifecycle"        3 1 "delete"  "${RETENTION_HISTORY}"
+create_topic "events.state.requested"  3 1 "delete" "${RETENTION_HISTORY}"
 create_topic "integration.commands"    6 1 "delete"  "${RETENTION_STANDARD}"
 create_topic "integration.results"     6 1 "delete"  "${RETENTION_HISTORY}"
 create_topic "integration.callbacks"   3 1 "delete"  "${RETENTION_STANDARD}"
 create_topic "event.journal"           3 1 "delete"  "${RETENTION_HISTORY}"
 create_topic "events.dlq"              1 1 "delete"  "${RETENTION_DLQ}"
+
+[[ "$MODE" != --inventory ]] || exit 0
 
 echo
 echo "============================================================"

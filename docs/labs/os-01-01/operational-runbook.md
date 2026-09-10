@@ -34,11 +34,11 @@ Resultado certificado: 8 pruebas, 0 fallas, 0 errores.
 
 ```bash
 curl -fsS -H 'Content-Type: application/json' --data-binary \
-  @services/event-gateway/test/events/sdc/zabbix-messagebus-problem.json \
+  @testing/fixtures/events/sdc/zabbix-messagebus-problem.json \
   http://localhost:8081/api/v1/events | jq .
 
 curl -fsS -H 'Content-Type: application/json' --data-binary \
-  @services/event-gateway/test/events/sdc/zabbix-messagebus-recovery.json \
+  @testing/fixtures/events/sdc/zabbix-messagebus-recovery.json \
   http://localhost:8081/api/v1/events | jq .
 ```
 

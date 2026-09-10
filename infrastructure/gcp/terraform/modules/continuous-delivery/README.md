@@ -126,3 +126,5 @@ Future Runtime
 ```
 
 The future runtime must consume this contract rather than redefining artifact identity, health semantics, dependencies, or rollback provenance.
+
+[Historial de cambios del componente](CHANGELOG.md).

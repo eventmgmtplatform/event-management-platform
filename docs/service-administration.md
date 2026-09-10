@@ -1,8 +1,22 @@
 # Administración local de EventManagementOpenSource
 
+Actualización de consolidación: sólo el runtime principal queda operativo.
+Las instrucciones históricas de laboratorios siguientes requieren recuperación
+explícita; véase [consolidación](environment-consolidation.md).
+`happy-path` usa shared por defecto y `emctl` ya no arranca CACF aislado.
+
+
+Kafka dispone de [administración y paquete reproducible](kafka/README.md),
+[manual CLI del producto](kafka/cli.md) y [Web UI/configuración](kafka/configuration-and-webui.md).
+Las acciones `emctl kafka prepare/install` utilizan un paquete aislado explícito;
+`config/inventory/topics/groups/verify/inspect` agregan diagnóstico a las acciones existentes.
+
 Rama: `codex/eventmanagement-service-administration`. Base CACF disponible:
 `3d45006`. Se amplía el controlador existente `scripts/eventmanagement-services.sh`;
 `scripts/emctl` continúa siendo su enlace simbólico, sin duplicar implementación.
+
+El [inventario de APIs administrativas](administration-api-inventory.md) distingue
+control de contenedores, administración funcional y salud por componente.
 
 ## Alcance
 
@@ -14,8 +28,8 @@ Las acciones globales administran los dos proyectos Compose existentes:
   del laboratorio definido por OS-05. Conserva sus puertos, datos y aislamiento.
 
 CACF está implementado dentro de integration-worker; no existe un microservicio
-CACF separado. La administración conjunta no activa el overlay CACF en la base
-principal ni suministra credenciales NEXT productivas. Para esa activación siguen
+CACF separado. La base principal ahora configura CACF/GNM con mocks locales; véase
+[activación compartida](cacf/shared-activation.md). No suministra credenciales NEXT productivas. Para esa activación siguen
 aplicando `docs/cacf/operational-runbook.md` y su migración explícita.
 
 ```bash
@@ -25,7 +39,7 @@ bash scripts/emctl status
 bash scripts/emctl stop
 bash scripts/emctl start
 bash scripts/emctl health
-python3 scripts/eventmanagement-test.py
+python3 testing/certifications/eventmanagement-test.py
 ```
 
 Las llamadas por servicio conservan el runtime principal como destino:
@@ -57,9 +71,9 @@ contrato existente `--no-build`; reconstruir con `reload` cuando cambie el códi
 5. Comprueba HTTP 202, ambos eventId en `events.normalized`, lifecycle, eventKey
    compartida y marca `PENDING_RULES` conservada por la base Event Processor. Lee particiones
    desde offsets previos; no modifica grupos consumidores de aplicaciones.
-6. Reutiliza `scripts/cacf-local-certification.py`: CREATE, ACK, TKTUPDATE,
+6. Reutiliza `testing/certifications/cacf-local-certification.py`: CREATE, ACK, TKTUPDATE,
    reinicio, duplicados, timeout, callback tardío, UNKNOWN, Kafka y ServiceNow.
-7. Revalida salud y escribe `artifacts/service-administration/<UTC>/report.json`.
+7. Revalida salud y escribe `evidences/testing/lifecycle/<UTC>/report.json`.
 
 Un fallo termina con código distinto de cero y reporte FAIL; no continúa enviando
 simulaciones después de un fallo de arranque. Los datos sintéticos se conservan.
@@ -67,8 +81,10 @@ No se eliminan volúmenes ni se administran contenedores de otros proyectos.
 
 ## Límites del diseño existente
 
-DP-13: aún no existe orquestador de `events.normalized` a `integration.commands`.
-Por eso se certifican los recorridos gateway/event-processor y CACF separadamente.
+OS_11 ya implementa ticket → GNM → CACF → cierres y tiene evidencia en su
+laboratorio aislado. Eso no acredita su promoción al runtime compartido. La especificación está en
+[UC-001](../testing/cases/UC-001-happy-path.md); esta prueba maestra histórica
+certifica los recorridos Gateway/Processor y CACF separadamente.
 DP-22: la suite CACF existente no certifica proyección en event-state-service.
 Las consolas, PostgreSQL y OpenSearch reciben verificación de salud; el resultado
 no equivale a certificar cada función de negocio ni integraciones productivas.
@@ -80,3 +96,10 @@ Event Processor reemplaza enrichment-engine en 8082. El controlador administra
 offsets. Aplicar primero la migración aditiva 009 a bases existentes. Véase
 [runbook del processor](../services/event-processor/README.md). El contenedor
 anterior detenido puede aparecer como orphan mientras se conserva para rollback.
+
+## Certificación recurrente de Event State Service
+
+`bash scripts/emctl event-state-service test` ejecuta el escenario integral con
+un tenant sintético y ServiceNow mock. Emite PASS/FAIL, checks y ruta al reporte
+JSON. Para añadir reinicio y replay: `python3 testing/certifications/event-state-certification.py --restart`.
+Fixture compartida, prerrequisitos y límites en `docs/event-state-service/README.md`.

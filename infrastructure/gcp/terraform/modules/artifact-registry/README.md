@@ -48,3 +48,5 @@ module "artifact_registry" {
     purpose     = "container-images"
   }
 }
+
+[Historial de cambios del componente](CHANGELOG.md).

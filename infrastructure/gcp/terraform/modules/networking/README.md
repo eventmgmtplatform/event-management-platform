@@ -70,3 +70,5 @@ The initial version does not create:
 - VPN or Interconnect.
 - Load balancers.
 - Public ingress rules.
+
+[Historial de cambios del componente](CHANGELOG.md).

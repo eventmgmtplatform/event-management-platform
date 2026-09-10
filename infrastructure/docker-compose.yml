@@ -1,6 +1,18 @@
 name: event-management
 
 services:
+  next-mock:
+    image: wiremock/wiremock:3.13.1
+    container_name: event-next-mock
+    restart: unless-stopped
+    ports: ["127.0.0.1:8184:8080"]
+    volumes: ["../testing/mocks/next:/home/wiremock:ro"]
+    networks: [event-management-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/__admin/health >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
   # ==========================================================
   # SERVICENOW MOCK
   # ==========================================================
@@ -38,10 +50,22 @@ services:
       INTEGRATION_PULL_RESTART_BATCH_SIZE: 100
 
       GNM_DIAGNOSTIC_GET_ENABLED: ${GNM_DIAGNOSTIC_GET_ENABLED:-false}
+      # Local synthetic providers; real provider activation uses a separate configuration.
+      GNM_BASE_URL: http://gnm-mock:8080
+      GNM_PROVIDER_REGISTRY_RESOURCE: file:/gnm-registry.json
+      CACF_ENABLED: "true"
+      NEXT_BASE_URL: http://next-mock:8080
+      NEXT_USERNAME: synthetic
+      NEXT_PASSWORD: synthetic
+      CACF_API_TOKEN: synthetic-lifecycle-only
+
 
       HTTP_PORT: 8083
       INTEGRATION_READINESS_TIMEOUT_MS: 5000
       INTEGRATION_READINESS_STABILIZATION_MS: 15000
+
+    volumes:
+      - ../testing/fixtures/lifecycle/shared-gnm-registry.json:/gnm-registry.json:ro
 
     ports:
       - "8083:8083"
@@ -63,6 +87,8 @@ services:
       servicenow-mock:
         condition: service_started
       gnm-mock:
+        condition: service_healthy
+      next-mock:
         condition: service_healthy
 
     stop_signal: SIGTERM
@@ -97,6 +123,10 @@ services:
 
       QUARKUS_HTTP_PORT: 8084
       QUARKUS_LOG_LEVEL: INFO
+      ESS_ADMIN_CREDENTIALS_FILE: /run/ess-admin-tokens.json
+
+    volumes:
+      - ../.local/ess-admin/tokens.json:/run/ess-admin-tokens.json:ro
 
     ports:
       - "8084:8084"
@@ -144,7 +174,7 @@ services:
       - "8181:8080"
 
     volumes:
-      - ./mock-integrations/servicenow:/home/wiremock:ro
+      - ../testing/mocks/servicenow:/home/wiremock:ro
 
     healthcheck:
       test:
@@ -168,7 +198,7 @@ services:
     ports:
       - "8183:8080"
     volumes:
-      - ./mock-integrations/aiops:/home/wiremock:ro
+      - ../testing/mocks/aiops:/home/wiremock:ro
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/__admin/health >/dev/null || exit 1"]
       interval: 10s
@@ -196,7 +226,7 @@ services:
       - "8182:8080"
 
     volumes:
-      - ./mock-integrations/gnm:/home/wiremock:ro
+      - ../testing/mocks/gnm:/home/wiremock:ro
 
     healthcheck:
       test:
@@ -565,6 +595,26 @@ services:
   # ==========================================================
   # OPENSEARCH DASHBOARDS
   # ==========================================================
+  product-observability:
+    build:
+      context: ..
+      dockerfile: services/product-observability/Dockerfile
+    image: event-management/product-observability:0.1.0
+    container_name: event-product-observability
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    networks:
+      - event-management-net
+
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION}
     container_name: event-opensearch-dashboards
@@ -602,17 +652,81 @@ services:
   # ==========================================================
   # EVENT MANAGEMENT CONSOLE
   # ==========================================================
+  servicenow-console-mock:
+    build: ../testing/mocks/servicenow-console
+    image: event-management/servicenow-console-mock:0.1.0
+    container_name: event-servicenow-console-mock
+    restart: unless-stopped
+    read_only: true
+    volumes:
+      - console-snow-data:/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - event-management-net
+
+  console-catalog-api:
+    build: ../services/console-catalog-api
+    image: event-management/console-catalog-api:0.1.0
+    container_name: console-catalog-api
+    restart: unless-stopped
+    read_only: true
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB}
+      ESS_ADMIN_CREDENTIALS_FILE: /run/secrets/ess_admin_tokens
+      ESS_ALLOWED_TENANTS: vit,os11-synthetic
+      ESS_OPERATOR_QUARANTINE: "true"
+    volumes:
+      - ../.local/ess-admin/tokens.json:/run/secrets/ess_admin_tokens:ro
+      - ../.local/console-catalog/db-password:/run/secrets/catalog_password:ro
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - event-management-net
+
+  frontend-management-api:
+    build: ../services/frontend-management-api
+    image: event-management/frontend-management-api:0.1.0
+    container_name: frontend-management-api
+    restart: unless-stopped
+    read_only: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../scripts:/opt/event-management-platform/scripts:ro
+      - ../infrastructure:/opt/event-management-platform/infrastructure:ro
+      - ../.env:/opt/event-management-platform/.env:ro
+      - ../.local/gateway-collection:/opt/event-management-platform/.local/gateway-collection:ro
+      - console-control-data:/data
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+    networks:
+      - event-management-net
+
   event-management-console:
     build:
-      context: ../services/event-management-console
-      dockerfile: Dockerfile
+      context: ../services
+      dockerfile: event-management-console/Dockerfile.shared
     image: event-management/event-management-console:1.0.0
     container_name: event-management-console
     hostname: event-management-console
     restart: unless-stopped
 
     ports:
-      - "8090:8080"
+      - "127.0.0.1:8090:8080"
+      - "127.0.0.1:8091:8091"
 
     healthcheck:
       test:
@@ -635,6 +749,12 @@ services:
 # VOLUMES
 # ============================================================
 volumes:
+  console-control-data:
+    name: event-management-console-control-data
+
+  console-snow-data:
+    name: event-management-console-snow-data
+
   kafka-data:
     name: event-management-kafka-data
 

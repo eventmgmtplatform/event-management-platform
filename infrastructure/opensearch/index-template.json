@@ -1,0 +1,67 @@
+{
+  "index_patterns": [
+    "product-observability-current"
+  ],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "kind": {
+          "type": "keyword"
+        },
+        "id": {
+          "type": "keyword"
+        },
+        "service": {
+          "type": "keyword"
+        },
+        "name": {
+          "type": "keyword"
+        },
+        "category": {
+          "type": "keyword"
+        },
+        "status": {
+          "type": "keyword"
+        },
+        "reason": {
+          "type": "keyword"
+        },
+        "version": {
+          "type": "keyword"
+        },
+        "runtime": {
+          "type": "keyword"
+        },
+        "health": {
+          "type": "keyword"
+        },
+        "endpoint": {
+          "type": "keyword"
+        },
+        "@timestamp": {
+          "type": "date"
+        },
+        "checkedAt": {
+          "type": "date"
+        },
+        "port": {
+          "type": "long"
+        },
+        "restartCount": {
+          "type": "long"
+        },
+        "httpStatus": {
+          "type": "long"
+        },
+        "latencyMs": {
+          "type": "long"
+        }
+      }
+    }
+  }
+}

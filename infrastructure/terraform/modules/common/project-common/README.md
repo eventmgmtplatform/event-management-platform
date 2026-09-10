@@ -101,3 +101,4 @@ La versión inicial de desarrollo es:
 
 0.1.0
 
+[Historial de cambios del componente](CHANGELOG.md).

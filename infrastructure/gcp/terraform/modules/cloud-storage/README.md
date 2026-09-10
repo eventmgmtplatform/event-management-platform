@@ -152,3 +152,5 @@ El módulo está diseñado para reutilizarse en:
 La creación, modificación y eliminación de buckets debe realizarse únicamente mediante Terraform.
 
 No debe utilizarse `gcloud storage buckets create` ni la consola de Google Cloud para crear recursos administrados por este módulo.
+
+[Historial de cambios del componente](CHANGELOG.md).

@@ -46,3 +46,5 @@ At capture time: `SYNC_FAILURES=0`, `UNREACHABLE_LOCAL_TIPS=0`, no non-ignored u
 ## Explicitly pending policy
 
 This baseline does **not** invent decisions that repository history does not prove. Formal promotion (`integration -> develop -> main`), PR policy, merge/rebase/squash policy, GitHub branch protection, CODEOWNERS, global release tagging and product-wide semantic versioning remain pending decisions.
+
+[Historial de cambios del componente](CHANGELOG.md).

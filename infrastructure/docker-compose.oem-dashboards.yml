@@ -1,0 +1,19 @@
+# Additive transition: existing ITSM :8088 and Console :8090 remain available.
+services:
+  oem-dashboards-api:
+    build: ../services/oem-dashboards-api
+    image: event-management/oem-dashboards-api:0.1.0
+    restart: unless-stopped
+    environment:
+      OEM_DASHBOARD_CONFIG: /config/config.json
+      OEM_POSTGRES_DSN: ${OEM_POSTGRES_DSN:-}
+      OEM_INTERNAL_API_URL: ${OEM_INTERNAL_API_URL:-}
+      OEM_INTERNAL_API_TOKEN: ${OEM_INTERNAL_API_TOKEN:-}
+    volumes:
+      - oem-dashboard-config:/config
+    networks:
+      - event-management-net
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  oem-dashboard-config:
