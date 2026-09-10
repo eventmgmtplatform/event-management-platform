@@ -6,6 +6,30 @@ motores ni incorporar seguridad. Certificar desde navegador; pruebas API no sust
 esta aceptación. Los comandos son resultados inmutables del motor, no registros CRUD
 editables ni un botón para enviar solicitudes arbitrarias al Worker.
 
+## Punto de partida y entrega
+
+Este es el prompt completo para ejecutar en el chat de frontend. Backend base
+certificado en ca5eaa8; recorrido integrado certificado en a78b337. El alcance
+mínimo y las dos revisiones diferidas están registrados en 39be64d. Consultar
+`docs/event-processor/routing-backend.md` y `minimum-v1-checklist.md` si hace falta
+contrastar una capacidad. No asumir que una intención de comando prueba éxito remoto.
+
+Revisar y reutilizar los archivos actuales de la consola:
+
+- `services/event-management-console/src/modules/blackouts/blackouts.api.ts`: cliente
+  administrativo, ETag, mutaciones e historial.
+- `services/event-management-console/src/modules/policy/ConditionEditor.tsx` y
+  `PolicySimulation.tsx`: condiciones tipadas y presentación de simulación.
+- `services/event-management-console/src/modules/correlation/CorrelationSimulation.tsx`
+  y `correlation.model.ts`: secuencias y definiciones de Correlación.
+- Router y registro de navegación existentes; integrar la entrada Routing/comandos
+  con los patrones actuales, traducciones español/inglés y tema de la consola.
+
+Implementar el módulo mínimo bajo `src/modules/routing/`. Conservar cambios de los
+otros chats; no reemplazar router, traducciones o navegación completos. Revisar el
+estado de Git antes de editar archivos compartidos. No crear otro cliente HTTP,
+backend o catálogo si los existentes cubren este contrato.
+
 ## API existente
 
 Proxy same-origin `/api/processor/v1` hacia `event-processor:8082/api/v1`.
@@ -94,5 +118,30 @@ un candidato; ruta sin grupo con cero; secuencia de dos miembros con un comando
 semántico; recuperación sin CREATE; configuración inválida rechazada. Elegir tenant
 antes de escritura. Conservar evidencia HTTP y capturas en evidences.
 
-DP-EP-01/06/08: seguridad, extensiones de operaciones y escalamiento quedan pendientes.
+## Entrega verificable para cerrar frontend
+
+Al terminar, dejar `services/event-management-console/validation-routing.md` con:
+
+- Resultado PASS/FAIL/PENDING por caso de aceptación, URL/ruta desplegada y versión
+  o commit probado. Distinguir interacción real de navegador y corroboración HTTP.
+- Enlaces a `evidences/routing/frontend-<fecha>/`: respuestas, capturas y escenarios
+  sintéticos. No agregar esas evidencias generadas a commits.
+- Comprobación de persistencia tras recarga y de que una versión guardada no sustituye
+  a la activa; resultado del conflicto entre dos pestañas, conservando el borrador.
+- Secuencia simulada con dos miembros y un único comando semántico, recuperación sin
+  CREATE y ruta sin correlación sin comando. No enviar tickets reales para probar UI.
+- Manejo de perfil lifecycle existente sin pérdida de parámetros ni edición simplificada
+  destructiva; campo inválido/503 visible y selección obligatoria de tenant.
+- Validación TypeScript/build y pruebas pertinentes del módulo, con resultado explícito;
+  cobertura visual en español/inglés y con la apariencia actual.
+- Limpieza de reglas sintéticas (desactivar/retirar las propias) y relación de archivos
+  cambiados. Publicar sólo el alcance propio si el chat tiene autorización de Git.
+
+Actualizar el índice de handoffs únicamente cuando exista esa evidencia. Si un caso
+no puede ejecutarse, marcarlo PENDING con causa; no convertir la existencia del módulo
+en aceptación. La consolidación en main, tag y entrega formal se realizará después
+con el conjunto final de cambios; no mezclar trabajos ajenos en el commit del módulo.
+
+DP-EP-01/04/06/08: seguridad, revisión final DA-06, extensiones y backup/restore con
+replay permanecen diferidos. No ejecutar esas revisiones como requisito de este formulario.
 La integración a ServiceNow real y el perfil Lifecycle no se certifican con este formulario.
