@@ -44,7 +44,10 @@ def wait(fetch, label, timeout=60):
     raise AssertionError('Timeout: ' + label)
 
 
-def run(output, report):
+def run(output, report, capability="BLACKOUT"):
+    require(capability in ("BLACKOUT", "SUPPRESSION"), "Unsupported capability")
+    stage_name = "Blackout" if capability == "BLACKOUT" else "AutoSuppression"
+    report["capability"] = capability
     tenant = 'testing-' + uuid.uuid4().hex[:16]
     node = tenant + '-node'
     rule_id = tenant + '-blackout'
@@ -58,6 +61,9 @@ def run(output, report):
             'validFrom': (now-dt.timedelta(minutes=1)).isoformat(),
             'validTo': (now+dt.timedelta(minutes=15)).isoformat()},
         'priority': 10, 'reason': 'UC-002 synthetic maintenance', 'metadata': {'owner': 'testing'}}
+    if capability == 'SUPPRESSION':
+        rule.update(type='SUPPRESSION', source='CHANGE', externalStatus='APPROVED')
+        rule['metadata']['externalReference'] = 'synthetic-change'
     (output / 'rule.json').write_text(json.dumps(rule, indent=2)+'\n')
     created = []
     correlation_id = tenant + '-correlation'
@@ -94,7 +100,7 @@ def run(output, report):
         require(status == 200 and explained == record, 'Explain differs from persisted decision')
         (output / (label+'.json')).write_text(json.dumps({'input': event, 'accepted': accepted, 'processing': record}, indent=2)+'\n')
         require(len(record['stages']) == 12, 'Incomplete processing stages')
-        stage = next(s for s in record['stages'] if s['stage'] == 'Blackout')
+        stage = next(s for s in record['stages'] if s['stage'] == stage_name)
         return record, stage
 
     try:

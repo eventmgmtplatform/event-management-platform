@@ -10,6 +10,7 @@ que sólo invoquen la API.
 |---|---|---|
 | Blackouts | [Prompt de integración](blackouts.md) | Entrega posterior documentada en services/event-management-console/validation-blackouts.md |
 | Inventory/Enrichment | [Prompt de integración](inventory-enrichment.md) | PENDING: conexión de formularios y aceptación desde navegador |
+| Auto-suppression | [Prompt de integración](auto-suppression.md) | PENDING: formulario y aceptación desde navegador |
 
 Los siguientes motores tendrán su documento después de revisar/cerrar su backend.
 No se presume que compartan el mismo contrato ni que sus vistas actuales permitan escritura.
