@@ -25,7 +25,7 @@ La versión es la etiqueta de la imagen ejecutada; las imágenes sin etiqueta ex
 
 ## Frontera local
 
-La consola escucha únicamente en loopback `127.0.0.1:8090`. El BFF tiene filesystem de solo lectura, capacidades eliminadas salvo DAC_OVERRIDE (lectura del .env protegido montado en solo lectura) y no-new-privileges. No permite shell, comandos Docker ni rutas de inspección arbitrarias; solo GET para los nombres fijos del catálogo. No devuelve variables de entorno, logs de healthcheck, montajes ni credenciales.
+La consola publica `0.0.0.0:8090` para acceso local y desde la LAN. El BFF tiene filesystem de solo lectura, capacidades eliminadas salvo DAC_OVERRIDE (lectura del .env protegido montado en solo lectura) y no-new-privileges. No permite shell, comandos Docker ni rutas de inspección arbitrarias; solo GET para los nombres fijos del catálogo. No devuelve variables de entorno, logs de healthcheck, montajes ni credenciales.
 
 El montaje `docker.sock:ro` no convierte la API de Docker en una API de solo lectura: el proceso del BFF conserva acceso privilegiado al daemon. La restricción de lectura está implementada en su código. Este despliegue es local; antes de abrirlo a otros usuarios se requiere una frontera de autorización de Docker y autenticación de la consola.
 

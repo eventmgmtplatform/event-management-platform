@@ -137,3 +137,17 @@ El trabajo acumulado se conserva en `integration/event-management-current-state`
 Ver [alcance, preservación y validaciones](current-workspace-consolidation.md).
 Las ramas nominales de ESS y Processor mantienen sus commits publicados; esta
 consolidación no promueve main ni altera releases.
+
+## Remediación de acceso LAN a consolas — 2026-09-10
+
+- Rama: `remediation/os-06-01-console-lan-access`.
+- Base sincronizada: `integration/event-management-current-state`,
+  `ca5eaa8c768793e6c2004a6702564bcdc7d16bb9`.
+- Alcance: publicación IPv4 de 8090/8091, enlaces y etiquetas con el hostname
+  del navegador, y redirecciones relativas de ITSM legacy en 8088.
+- Open WebUI: ajuste operativo externo a `0.0.0.0:3000:8080`, documentado
+  en el README de la consola; su Compose y sus datos no forman parte de Git.
+- Validación del runtime: build TypeScript/Vite correcto; enlaces visibles con
+  la IP local; HTTP 200 en la consola, las cinco herramientas y las cinco
+  vistas ITSM. Console, Open WebUI e ITSM legacy reportaron healthy.
+- Publicación en rama nominal, sin promoción de main, develop o releases.

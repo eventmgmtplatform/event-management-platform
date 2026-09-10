@@ -36,6 +36,8 @@ El endpoint está conectado mediante Nginx a `frontend-management-api`, dentro d
 
 La consola existente está instalada en `http://localhost:8090/administration`. La fuente predeterminada es la API real, y no hay fallback automático a demostración.
 
+Compose publica el puerto 8090 en todas las interfaces IPv4 (`0.0.0.0:8090:8080`) para permitir acceso desde la red local. El dashboard está disponible en `http://192.168.0.78:8090/dashboard` mientras esa sea la IP del servidor; localhost continúa funcionando.
+
 ## Idiomas
 
 Selector Español / English en el encabezado. Traduce el shell de navegación y todo el módulo Administración / Inventario, incluidos filtros, estados, diagnósticos, detalle, errores y fechas. Guarda la preferencia en `console.language` y actualiza el atributo HTML `lang`. Español es el idioma inicial. La base React Context está en `src/shared/i18n`; el catálogo inglés es `en.json`, con español como texto fuente. Las pantallas de otros dominios mantienen su contenido previo y se incorporarán al catálogo al trabajar en esos módulos.
@@ -95,3 +97,7 @@ Administration → Estado de eventos · ESS (`/administration/ess`) reads the ru
 ## Manual Blackouts v1
 
 `/blackouts` now supports manual creation/versioning, validation, activation, deactivation, retirement, history and simulation through the existing Processor API. Select a tenant before writing. Legacy catalog rows remain read-only. See [validation-blackouts.md](validation-blackouts.md) for browser acceptance evidence and limitations.
+
+### Acceso por red local a herramientas especializadas
+
+Los enlaces y las etiquetas usan el hostname del navegador, incluyendo las cinco vistas de ITSM y Administrar Kafka. Puertos: ITSM Dashboard 8091, Kafka UI 8085, OpenSearch Dashboards 5601, Open WebUI 3000 e ITSM legacy 8088. Los puertos 8090 y 8091 se publican en todas las interfaces IPv4. Open WebUI se administra en `/home/lgalindo/AI-Lab/containers/open-webui/compose.yaml`, con `0.0.0.0:3000:8080`. ITSM legacy conserva el puerto externo mediante redirecciones relativas.

@@ -34,3 +34,13 @@ Gobierno de ramas, convenciones de commit, publicación e índice del repositori
 
 - Cambio registrado: feat(os-00-04): establish Git governance baseline.
 - Alcance en este componente: `docs/git/CHANGELOG.md`, `docs/git/README.md`, `docs/git/branch-strategy.md`, `docs/git/commit-convention.md` y 5 archivo(s) adicional(es).
+
+## 2026-09-10 — Remediación de acceso LAN
+
+- Rama `remediation/os-06-01-console-lan-access` desde el checkpoint
+  sincronizado `ca5eaa8c768793e6c2004a6702564bcdc7d16bb9`.
+- Acceso LAN a Console/ITSM, URLs según el hostname del navegador y
+  corrección de la redirección de ITSM legacy. Ajuste externo de Open WebUI
+  documentado sin versionar configuración local ni datos persistidos.
+- Alcance aislado de otros cambios del workspace; referencias certificadas
+  preservadas. Validación funcional y HTTP resumida en el índice.
