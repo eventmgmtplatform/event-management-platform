@@ -45,3 +45,10 @@
 - Consulta tipada de inventario versionado desde planes ENRICHMENT, en un mismo snapshot.
 - Hechos con procedencia, conflictos explícitos y criticalidad por consulta; consumo por policy.
 - Simulación conjunta y resultado DA-05 en auditoría/salida; DLQ atribuida a su etapa real.
+
+## 2026-09-09 — correlación, supresión y comandos
+
+- Grupos por atributos, pertenencia/ciclos durables y simulación secuencial.
+- Auto-suppression por registro local de mantenimiento/cambio.
+- Routing tipado y CREATE_TICKET por grupo con ledger inmutable, sin ejecución de proveedores en Processor.
+- Unidad de trabajo atómica para relaciones, evidencia, comandos y outbox; replay previo a reevaluación.

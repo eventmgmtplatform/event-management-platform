@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:event-management:auto-suppression-v1",
+  "title": "Auto Suppression v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "type",
+    "enabled",
+    "scope",
+    "schedule",
+    "priority",
+    "reason",
+    "metadata",
+    "source",
+    "externalStatus"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "type": {
+      "const": "SUPPRESSION"
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "priority": {
+      "type": "integer"
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "customerCode": {
+          "type": "string"
+        },
+        "node": {
+          "type": "string"
+        },
+        "nodeAlias": {
+          "type": "string"
+        },
+        "component": {
+          "type": "string"
+        },
+        "instanceId": {
+          "type": "string"
+        },
+        "monitoringSolution": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "attributes": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "schedule": {
+      "type": "object",
+      "required": [
+        "timezone"
+      ],
+      "properties": {
+        "timezone": {
+          "type": "string"
+        },
+        "validFrom": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "validTo": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "recurrence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "owner"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string"
+        },
+        "externalReference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "source": {
+      "enum": [
+        "MANUAL",
+        "MAINTENANCE",
+        "CHANGE"
+      ]
+    },
+    "externalStatus": {
+      "enum": [
+        "ACTIVE",
+        "APPROVED",
+        "CANCELLED",
+        "COMPLETED"
+      ]
+    }
+  }
+}

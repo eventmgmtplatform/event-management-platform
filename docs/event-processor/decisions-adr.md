@@ -59,3 +59,17 @@ Blackouts inmediatos/programados reutilizan el registro inmutable y el snapshot
 coherente por evento, con su propio schema y evaluación en la etapa Blackout.
 La API especializada se registra pendiente; no se crea otra autoridad de lifecycle.
 La recurrencia y selectores no implementados se rechazan al compilar.
+
+## ADR-005 — relaciones y comandos transaccionales, 2026-09-09
+
+Se concreta el ownership pendiente de ADR-002: Processor es dueño de la pertenencia
+y los ciclos de correlación; Event State Service sigue siendo dueño del lifecycle
+del evento y de resultados de integración. Los comandos iniciales representan
+grupos, con referencias explícitas al evento fuente. No se crea un lifecycle DA-06
+paralelo ni se interpreta el eventId como ciclo de comandos.
+
+La unidad de trabajo PostgreSQL serializa por tenant y confirma relaciones, evidencia,
+ledger y outbox juntos. El primer envelope es inmutable y su identidad sobrevive a
+la limpieza de salidas. Simulación usa estado propio por petición y el mismo dominio.
+Los límites y capacidades pendientes están en
+[correlación, supresión y comandos](correlation-suppression-commands.md).

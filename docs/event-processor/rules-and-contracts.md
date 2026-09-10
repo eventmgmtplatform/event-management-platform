@@ -3,7 +3,7 @@
 ## Alcance implementado
 
 El primer incremento implementa el envelope `rule-v1`, validación JSON Schema y
-semántica, AST tipada y evaluación de reglas `POLICY` y planes `ENRICHMENT`. Los otros ocho tipos del
+semántica, AST tipada y evaluación de reglas `POLICY`, planes `ENRICHMENT` y `ROUTING`. Los demás tipos del
 schema están reservados y se rechazan como `RULE_TYPE_NOT_IMPLEMENTED` hasta que
 sus capacidades existan. No se presenta una regla aceptada pero inoperante.
 
@@ -131,3 +131,6 @@ WorkerContractTest y el consumidor real comparten un fixture de envelope.
 Este incremento no certifica release v1.0.0 completo. Administración REST/RBAC,
 reglas especializadas, fuentes externas de enrichment, lifecycle/correlación, emisión de comandos,
 paridad histórica y gates operativos restantes permanecen PENDING.
+
+Las capacidades especializadas activas y los límites actuales se detallan en
+[correlación, supresión y comandos](correlation-suppression-commands.md).

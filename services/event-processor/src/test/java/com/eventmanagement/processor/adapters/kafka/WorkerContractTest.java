@@ -35,6 +35,18 @@ class WorkerContractTest {
                 adapter.encode(event("tenant"),"p1","cycle1","target","GNM","CLOSE_NOTIFICATION",payload,Instant.EPOCH)))
             assertNotEquals(original.path("commandId"),other.path("commandId"));
     }
+    @Test void groupCommandFixtureMatchesTheVersionedEnvelopeMapping()throws Exception {
+        var compiler=new com.eventmanagement.processor.adapters.rules.RuleCompiler();
+        var snapshot=new com.eventmanagement.processor.domain.rules.RuleSnapshot("tenant",List.of(
+                compiler.compile(com.eventmanagement.processor.adapters.rules.CorrelationTest.definition("by-node",4)).rule(),
+                compiler.compile(com.eventmanagement.processor.adapters.rules.RoutingTest.definition("route","by-node")).rule()));
+        var event=com.eventmanagement.processor.adapters.rules.RoutingTest.event("event-a","a",0);
+        var context=com.eventmanagement.processor.application.EventProcessingPipeline.configured(t->snapshot,java.time.Clock.fixed(Instant.EPOCH,java.time.ZoneOffset.UTC)).simulate(event);
+        var intent=context.candidates().getFirst();var aggregate=new Event(intent.cycleId(),"correlation:"+intent.cycleId(),"tenant",event.status(),3,Instant.EPOCH,"{}");
+        var envelope=adapter.encode(aggregate,context.processingId(),intent.cycleId(),intent.configuration(),intent.integrationType(),intent.operation(),mapper.valueToTree(intent.payload()),Instant.EPOCH);
+        var metadata=(com.fasterxml.jackson.databind.node.ObjectNode)envelope.path("metadata");metadata.put("sourceEventId",event.eventId());metadata.put("sourceEventKey",event.eventKey());metadata.put("correlationGroupId",intent.cycleId());
+        try(var fixture=getClass().getResourceAsStream("/contracts/processor-group-command.json")){assertEquals(mapper.readTree(fixture),envelope);}
+    }
     @Test void unsupportedOperationsAndMissingLifecycleIdentityFailClosed() {
         assertThrows(IllegalArgumentException.class,()->adapter.encode(event("tenant"),"p","c","t","SERVICENOW","CLOSE_TICKET",mapper.createObjectNode(),Instant.EPOCH));
         assertThrows(IllegalArgumentException.class,()->adapter.encode(event("tenant"),"p","","t","GNM","SEND_NOTIFICATION",mapper.createObjectNode(),Instant.EPOCH));

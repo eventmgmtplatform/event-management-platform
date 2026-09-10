@@ -76,3 +76,7 @@ backup e imagen anterior, aplica 011/012 y verifica disponibilidad. El alias
 
 El registro también admite planes ENRICHMENT e INVENTORY local. `candidateRules`
 permite simular un conjunto sin escrituras; consultar [su contrato](enrichment-and-inventory.md).
+
+También se admiten SUPPRESSION, definición DA-08 ATTRIBUTE/GROUP y ROUTING del
+[subconjunto inicial](correlation-suppression-commands.md). `events` permite simular
+una secuencia con estado de correlación local a la petición, sin producción.

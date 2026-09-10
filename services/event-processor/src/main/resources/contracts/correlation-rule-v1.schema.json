@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:event-management:correlation-rule-v1",
+  "title": "Correlation Rule v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "enabled",
+    "strategy",
+    "priority",
+    "scope",
+    "candidateSelection",
+    "match",
+    "relationship",
+    "metadata"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "strategy": {
+      "enum": [
+        "ATTRIBUTE",
+        "TEMPORAL",
+        "RULE_BASED",
+        "TOPOLOGICAL"
+      ]
+    },
+    "priority": {
+      "type": "integer"
+    },
+    "scope": {
+      "type": "object"
+    },
+    "candidateSelection": {
+      "type": "object",
+      "properties": {
+        "windowSeconds": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "maxCandidates": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "activeOnly": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "match": {
+      "type": "object"
+    },
+    "relationship": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "PARENT_CHILD",
+            "GROUP",
+            "RELATED"
+          ]
+        },
+        "correlationKeyTemplate": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "owner"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

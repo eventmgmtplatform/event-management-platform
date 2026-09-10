@@ -9,16 +9,31 @@ import java.util.regex.Pattern;
 /** Compiled values contain only immutable domain types. No JSON, reflection or provider IO. */
 public record Rule(String id, int version, int priority, boolean enabled, String checksum,
                    Condition condition, List<StageResult.Directive> actions, Blackout blackout, com.eventmanagement.processor.domain.enrichment.EnrichmentPlan enrichmentPlan,
-                   com.eventmanagement.processor.domain.enrichment.InventoryRecord inventory) {
+                   com.eventmanagement.processor.domain.enrichment.InventoryRecord inventory,
+                   com.eventmanagement.processor.domain.correlation.CorrelationRule correlationRule, Suppression suppression, List<com.eventmanagement.processor.domain.routing.RoutingAction> routes) {
     public Rule(String id,int version,int priority,boolean enabled,String checksum,Condition condition,List<StageResult.Directive> actions) {
-        this(id,version,priority,enabled,checksum,condition,actions,null,null,null);
+        this(id,version,priority,enabled,checksum,condition,actions,null,null,null,null,null,List.of());
     }
     public Rule(String id,int version,int priority,boolean enabled,String checksum,Condition condition,List<StageResult.Directive> actions,Blackout blackout) {
-        this(id,version,priority,enabled,checksum,condition,actions,blackout,null,null);
+        this(id,version,priority,enabled,checksum,condition,actions,blackout,null,null,null,null,List.of());
     }
-    public String capability(){return blackout!=null?"BLACKOUT":inventory!=null?"INVENTORY":enrichmentPlan!=null?"ENRICHMENT":"POLICY";}
-    public Rule { actions = List.copyOf(actions);
-        if((blackout==null?0:1)+(inventory==null?0:1)+(enrichmentPlan==null?0:1)>1)throw new IllegalArgumentException("ONE_RULE_CAPABILITY_REQUIRED");
+    public Rule(String id,int version,int priority,boolean enabled,String checksum,Condition condition,List<StageResult.Directive> actions,Blackout blackout,
+            com.eventmanagement.processor.domain.enrichment.EnrichmentPlan plan,com.eventmanagement.processor.domain.enrichment.InventoryRecord inventory) {
+        this(id,version,priority,enabled,checksum,condition,actions,blackout,plan,inventory,null,null,List.of());
+    }
+    public Rule(String id,int version,int priority,boolean enabled,String checksum,Condition condition,List<StageResult.Directive> actions,Blackout blackout,
+            com.eventmanagement.processor.domain.enrichment.EnrichmentPlan plan,com.eventmanagement.processor.domain.enrichment.InventoryRecord inventory,
+            com.eventmanagement.processor.domain.correlation.CorrelationRule correlationRule) {
+        this(id,version,priority,enabled,checksum,condition,actions,blackout,plan,inventory,correlationRule,null,List.of());
+    }
+    public Rule(String id,int version,int priority,boolean enabled,String checksum,Condition condition,List<StageResult.Directive> actions,Blackout blackout,
+            com.eventmanagement.processor.domain.enrichment.EnrichmentPlan plan,com.eventmanagement.processor.domain.enrichment.InventoryRecord inventory,
+            com.eventmanagement.processor.domain.correlation.CorrelationRule correlationRule,Suppression suppression) {
+        this(id,version,priority,enabled,checksum,condition,actions,blackout,plan,inventory,correlationRule,suppression,List.of());
+    }
+    public String capability(){return !routes.isEmpty()?"ROUTING":suppression!=null?"SUPPRESSION":correlationRule!=null?"CORRELATION":blackout!=null?"BLACKOUT":inventory!=null?"INVENTORY":enrichmentPlan!=null?"ENRICHMENT":"POLICY";}
+    public Rule { actions = List.copyOf(actions);routes=List.copyOf(routes);
+        if((blackout==null?0:1)+(inventory==null?0:1)+(enrichmentPlan==null?0:1)+(correlationRule==null?0:1)+(suppression==null?0:1)+(routes.isEmpty()?0:1)>1)throw new IllegalArgumentException("ONE_RULE_CAPABILITY_REQUIRED");
     }
     public enum Operator { EQ, NE, GT, GTE, LT, LTE, IN, NOT_IN, CONTAINS, STARTS_WITH, ENDS_WITH, REGEX, EXISTS, NOT_EXISTS, BETWEEN }
     public enum Field {

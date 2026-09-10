@@ -75,6 +75,37 @@ def main():
         assert status == 200 and result['directive'] == 'DEAD_LETTER'
         assert result['enrichment']['status'] == 'FAILED' and result['stages'][11]['status'] == 'SUCCESS'
         report['checks'].append('versioned inventory feeds enrichment and policy; missing required inventory fails explicitly')
+        correlation = {'id': 'correlation-smoke', 'version': 1, 'enabled': False, 'priority': 10,
+                       'strategy': 'ATTRIBUTE', 'scope': {'field': 'resource.node', 'operator': 'EXISTS'},
+                       'candidateSelection': {'windowSeconds': 60, 'maxCandidates': 4, 'activeOnly': True},
+                       'match': {'fields': ['resource.node']}, 'relationship': {'type': 'GROUP'},
+                       'metadata': {'owner': 'certification'}}
+        route = {'id': 'route-smoke', 'version': 1, 'type': 'ROUTING', 'enabled': False, 'priority': 10,
+                 'condition': {'field': 'event.severity', 'operator': 'GTE', 'value': 2},
+                 'actions': [{'type': 'CREATE_TICKET', 'target': 'SERVICENOW',
+                              'parameters': {'configuration': 'default', 'correlationRuleId': 'correlation-smoke'}}],
+                 'metadata': {'owner': 'certification'}}
+        events = []
+        for index in range(2):
+            item = json.loads(json.dumps(event))
+            item.update(eventId='group-smoke-' + str(index), eventKey='group-member-' + str(index),
+                        lifecycleAction='OPEN', effectiveSeverity=3, summary='Synthetic router unavailable')
+            item['timestamps']['receivedAt'] = '2026-09-09T10:00:0' + str(index) + 'Z'
+            events.append(item)
+        payload = {'events': events, 'candidateRules': [correlation, route]}
+        status, sequence = request('/simulations', payload)
+        assert status == 200
+        first, second = sequence['results']
+        assert len(first['candidates']) == 1 and second['candidates'] == []
+        assert first['correlation']['decisions'][0]['group']['groupId'] == second['correlation']['decisions'][0]['group']['groupId']
+        suppression = json.loads(json.dumps(rule))
+        suppression.update(id='suppression-smoke', type='SUPPRESSION', source='CHANGE', externalStatus='APPROVED')
+        payload['candidateRules'].append(suppression)
+        status, sequence = request('/simulations', payload)
+        assert status == 200 and all(result['candidates'] == [] for result in sequence['results'])
+        assert all(result['directive'] == 'SUPPRESS_INTEGRATIONS' for result in sequence['results'])
+        assert len(sequence['results'][1]['correlation']['decisions'][0]['group']['members']) == 2
+        report['checks'].append('sequence correlation deduplicates group commands; auto-suppression preserves relationships')
         assert request('/rules') == before
         report['checks'].append('candidate simulation leaves configuration unchanged')
         report['status'] = 'PASS'

@@ -1,6 +1,8 @@
 package com.eventmanagement.processor.adapters.kafka;
 
-import com.eventmanagement.processor.ports.in.ProcessEventUseCase;
+import com.eventmanagement.processor.application.EventProcessingPipeline;
+import com.eventmanagement.processor.ports.out.ProcessingUnitOfWork;
+import com.eventmanagement.processor.ports.out.CorrelationPort;
 import com.eventmanagement.processor.domain.*;
 import com.eventmanagement.processor.ports.out.ProcessingStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,11 +21,18 @@ public class AcceptedEventProcessor implements Processor {
     private final GatewayEventAdapter adapter;
     private final ProcessingStore store;
     private final ObjectMapper mapper;
-    private final ProcessEventUseCase pipeline;
+    private final EventProcessingPipeline pipeline;
+    private final ProcessingUnitOfWork transactions;
     @ConfigProperty(name="processor.kafka.output-topic") String outputTopic;
     @ConfigProperty(name="processor.kafka.dlq-topic") String dlqTopic;
-    @Inject public AcceptedEventProcessor(GatewayEventAdapter adapter, ProcessingStore store, ObjectMapper mapper, ProcessEventUseCase pipeline) {
-        this.adapter=adapter; this.store=store; this.mapper=mapper; this.pipeline=pipeline;
+    public AcceptedEventProcessor(GatewayEventAdapter adapter,ProcessingStore store,ObjectMapper mapper,EventProcessingPipeline pipeline) {
+        this(adapter,store,mapper,pipeline,(event,hash,work)->work.run(store,new com.eventmanagement.processor.application.SimulatedCorrelation(),null,new com.eventmanagement.processor.ports.out.CommandOutbox(){
+            public boolean exists(String id){return false;}
+            public void enqueue(Event event,String processingId,Instant time,java.util.List<ProcessingContext.CommandIntent> commands){if(!commands.isEmpty())throw new IllegalStateException("DURABLE_COMMAND_OUTBOX_REQUIRED");}
+        }));
+    }
+    @Inject public AcceptedEventProcessor(GatewayEventAdapter adapter, ProcessingStore store, ObjectMapper mapper, EventProcessingPipeline pipeline,ProcessingUnitOfWork transactions) {
+        this.adapter=adapter; this.store=store; this.mapper=mapper; this.pipeline=pipeline;this.transactions=transactions;
     }
     @Override public void process(Exchange exchange) throws Exception {
         KafkaManualCommit commit=exchange.getMessage().getHeader(KafkaConstants.MANUAL_COMMIT,KafkaManualCommit.class);
@@ -32,7 +41,12 @@ public class AcceptedEventProcessor implements Processor {
         Event event;
         try { event=adapter.decode(body); }
         catch (IllegalArgumentException invalid) { reject(exchange,body,"INVALID_GATEWAY_CONTRACT"); commit.commit(); return; }
-        var context=pipeline.process(event);
+        try {transactions.execute(event,StableIdentity.of("payload-v1",body),(session,correlation,snapshots,commands)->accept(exchange,event,body,session,correlation,snapshots,commands));}
+        catch(IllegalArgumentException collision){if(!"EVENT_ID_COLLISION".equals(collision.getMessage()))throw collision;reject(exchange,body,"EVENT_ID_COLLISION");}
+        commit.commit();
+    }
+    private void accept(Exchange exchange,Event event,String body,ProcessingStore session,CorrelationPort correlation,com.eventmanagement.processor.ports.out.RuleSnapshots snapshots,com.eventmanagement.processor.ports.out.CommandOutbox commands)throws Exception {
+        var context=(snapshots==null?pipeline.usingCorrelation(correlation):pipeline.usingCorrelation(correlation,snapshots)).usingCommands(commands).process(event);
         if(context.directive()==StageResult.Directive.DEAD_LETTER) {
             ObjectNode failure=mapper.createObjectNode();
             failure.put("schemaVersion","1.0");failure.put("dlqId",context.processingId());failure.put("processingId",context.processingId());
@@ -43,13 +57,12 @@ public class AcceptedEventProcessor implements Processor {
             failure.putObject("originalEvent").put("redacted",true).put("payloadHash",hash);
             failure.set("source",source(exchange));failure.set("stages",mapper.valueToTree(context.stages()));
             failure.set("enrichment",mapper.valueToTree(context.enrichment()));
+            failure.set("correlation",mapper.valueToTree(context.correlation()));
+            failure.put("correlationApplied",false);
+            failure.set("routing",mapper.valueToTree(context.routing()));
             String json=mapper.writeValueAsString(failure);
-            try { store.accept(context.processingId(),hash,event.eventId(),event.tenant(),json,dlqTopic,event.eventKey(),json); }
-            catch(IllegalArgumentException collision) {
-                if(!"EVENT_ID_COLLISION".equals(collision.getMessage()))throw collision;
-                reject(exchange,body,"EVENT_ID_COLLISION");
-            }
-            commit.commit();return;
+            session.accept(context.processingId(),hash,event.eventId(),event.tenant(),json,dlqTopic,event.eventKey(),json);
+            return;
         }
         ObjectNode output=(ObjectNode)mapper.readTree(event.originalJson());
         ObjectNode processing=output.has("processing") ? (ObjectNode)output.get("processing") : output.putObject("processing");
@@ -65,16 +78,16 @@ public class AcceptedEventProcessor implements Processor {
         evidence.put("eventId",event.eventId()); evidence.put("directive",context.directive().name());
         evidence.set("stages",mapper.valueToTree(context.stages()));
         evidence.set("enrichment",mapper.valueToTree(context.enrichment()));
+        evidence.set("correlation",mapper.valueToTree(context.correlation()));
+        evidence.put("correlationApplied",true);
+        evidence.set("routing",mapper.valueToTree(context.routing()));
+        processing.set("commands",mapper.valueToTree(context.candidates()));
+        processing.set("correlation",mapper.valueToTree(context.correlation()));
         evidence.set("source",source(exchange));
-        try {
-            store.accept(context.processingId(),StableIdentity.of("payload-v1",body),event.eventId(),event.tenant(),
-                    mapper.writeValueAsString(evidence),outputTopic,event.eventKey(),mapper.writeValueAsString(output));
-        } catch (IllegalArgumentException collision) {
-            if (!"EVENT_ID_COLLISION".equals(collision.getMessage())) throw collision;
-            reject(exchange,body,"EVENT_ID_COLLISION");
-        }
-        // PostgreSQL record + output intent committed. Kafka publication can resume after restart.
-        commit.commit();
+        correlation.apply(event.tenant(),context.correlation());
+        session.accept(context.processingId(),StableIdentity.of("payload-v1",body),event.eventId(),event.tenant(),
+                mapper.writeValueAsString(evidence),outputTopic,event.eventKey(),mapper.writeValueAsString(output));
+        commands.enqueue(event,context.processingId(),context.evaluatedAt(),context.candidates());
     }
     private ObjectNode source(Exchange exchange) {
         ObjectNode source=mapper.createObjectNode();

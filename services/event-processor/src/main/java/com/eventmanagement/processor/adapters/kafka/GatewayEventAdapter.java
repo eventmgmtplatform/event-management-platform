@@ -42,7 +42,7 @@ public class GatewayEventAdapter {
     }
     private static java.util.Map<String,String> selectors(JsonNode json) {
         var result=new java.util.HashMap<String,String>();
-        String[][] fields={{"node","/resource/name"},{"nodeAlias","/resource/address"},{"component","/resource/component"},
+        String[][] fields={{"summary","/summary"},{"node","/resource/name"},{"nodeAlias","/resource/address"},{"component","/resource/component"},
                 {"instanceId","/condition/instanceId"},{"monitoringSolution","/source/system"}};
         for(var field:fields) {
             var value=json.at(field[1]);

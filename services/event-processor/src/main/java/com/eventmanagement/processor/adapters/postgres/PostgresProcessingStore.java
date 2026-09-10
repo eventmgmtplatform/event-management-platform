@@ -13,7 +13,11 @@ public class PostgresProcessingStore implements ProcessingStore {
             String evidence, String topic, String key, String output) throws Exception {
         try (var c = dataSource.getConnection()) {
             c.setAutoCommit(false);
-            try {
+            try {boolean inserted=accept(c,id,hash,eventId,tenant,evidence,topic,key,output);c.commit();return inserted;}
+            catch(Exception e){c.rollback();throw e;}
+        }
+    }
+    static boolean accept(java.sql.Connection c,String id,String hash,String eventId,String tenant,String evidence,String topic,String key,String output)throws Exception {
                 int inserted;
                 try (var s = c.prepareStatement("""
                         INSERT INTO event_processor.processing_record
@@ -31,7 +35,7 @@ public class PostgresProcessingStore implements ProcessingStore {
                                 throw new IllegalArgumentException("EVENT_ID_COLLISION");
                         }
                     }
-                    c.commit(); return false;
+                    return false;
                 }
                 try (var s=c.prepareStatement("""
                         INSERT INTO event_processor.output_outbox
@@ -41,8 +45,6 @@ public class PostgresProcessingStore implements ProcessingStore {
                     s.setString(1,id); s.setString(2,id); s.setString(3,topic);
                     s.setString(4,key); s.setString(5,output); s.executeUpdate();
                 }
-                c.commit(); return true;
-            } catch (Exception e) { c.rollback(); throw e; }
-        }
+        return true;
     }
 }

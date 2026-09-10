@@ -61,6 +61,26 @@ public final class AdminService {
             repository.rejected(actor,requestId,"SIMULATE","simulations");
             throw new AdminFailure(AdminFailure.Kind.INVALID,"TENANT_MISMATCH");
         }
+        var snapshot=candidateSnapshot(actor,candidates);
+        return EventProcessingPipeline.configured(tenant->snapshot,java.time.Clock.fixed(evaluatedAt,java.time.ZoneOffset.UTC)).simulate(event);
+    }
+    public List<ProcessingContext> simulateSequence(AdminActor actor,List<Event> events,List<String> candidates,String requestId) {
+        if(events.isEmpty() || events.size()>64)throw new AdminFailure(AdminFailure.Kind.INVALID,"EVENT_SEQUENCE_LIMIT");
+        if(events.stream().anyMatch(e->!actor.tenant().equals(e.tenant())))throw new AdminFailure(AdminFailure.Kind.INVALID,"TENANT_MISMATCH");
+        var snapshot=candidateSnapshot(actor,candidates);var memory=new SimulatedCorrelation();var commandIds=new java.util.HashSet<String>();
+        var results=new java.util.ArrayList<ProcessingContext>();var seen=new java.util.HashMap<String,Event>();
+        for(var event:events) {
+            if(seen.containsKey(event.eventId()))throw new AdminFailure(AdminFailure.Kind.INVALID,"DUPLICATE_SIMULATION_EVENT_ID");
+            seen.put(event.eventId(),event);
+            var context=EventProcessingPipeline.configured(t->snapshot,java.time.Clock.fixed(event.receivedAt(),java.time.ZoneOffset.UTC)).usingCorrelation(memory).usingCommands(commandIds::contains).simulate(event);
+            if(context.directive()!=StageResult.Directive.DEAD_LETTER) {
+                memory.apply(actor.tenant(),context.correlation());context.candidates().forEach(command->commandIds.add(command.commandId()));
+            }
+            results.add(context);
+        }
+        return List.copyOf(results);
+    }
+    private RuleSnapshot candidateSnapshot(AdminActor actor,List<String> candidates) {
         RuleSnapshot snapshot;
         if(candidates==null)snapshot=snapshots.snapshot(actor.tenant());
         else {
@@ -69,11 +89,11 @@ public final class AdminService {
             for(String candidate:candidates) {
                 var rule=validator.validate(candidate).rule();
                 compiled.add(new com.eventmanagement.processor.domain.rules.Rule(rule.id(),rule.version(),rule.priority(),true,
-                        rule.checksum(),rule.condition(),rule.actions(),rule.blackout(),rule.enrichmentPlan(),rule.inventory()));
+                        rule.checksum(),rule.condition(),rule.actions(),rule.blackout(),rule.enrichmentPlan(),rule.inventory(),rule.correlationRule(),rule.suppression(),rule.routes()));
             }
             snapshot=new RuleSnapshot(actor.tenant(),compiled);
         }
-        return EventProcessingPipeline.configured(tenant->snapshot,java.time.Clock.fixed(evaluatedAt,java.time.ZoneOffset.UTC)).simulate(event);
+        return snapshot;
     }
     private static void page(int limit) {if(limit<1||limit>100)throw new AdminFailure(AdminFailure.Kind.INVALID,"INVALID_PAGE_LIMIT");}
     private static void ruleId(String id) {if(id==null||!id.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,127}"))throw new AdminFailure(AdminFailure.Kind.INVALID,"INVALID_RULE_ID");}

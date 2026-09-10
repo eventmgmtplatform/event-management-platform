@@ -12,9 +12,9 @@ ADR-001 confirmado por el usuario el 2026-09-09. No es certificación de release
 | 04 | DSL tipada POLICY, validación y administración REST versionada | PENDING: capacidades especializadas y administración pública autorizada |
 | 05 | EnrichmentResult tipado, InventoryPort/local versionado, procedencia/conflictos y evaluación policy | PENDING: fuentes externas, SearchPort y catálogo ampliado |
 | 06 | eventKey anterior e identidad de replay conservadas; no nueva autoridad lifecycle | PENDING: StatePort/atomicidad y política de identidad/occurrences |
-| 07 | Blackouts IMMEDIATE/SCHEDULED versionados, reloj, scopes exactos y evidencia por match | PENDING: recurrencia, selectores adicionales y auto-suppression |
-| 08 | Sin relaciones ni búsquedas de candidatos simuladas | PENDING: implementar schemas suministrados y coordinación de ownership |
-| 09 | No se emiten comandos: no hay rutas activas | PENDING: routing/payloads/idempotencia por ciclo y target |
+| 07 | Blackouts y auto-suppression local versionados, reloj, scope/estado y evidencia por match | PENDING: recurrencia, selectores adicionales y sincronización externa |
+| 08 | ATTRIBUTE/GROUP durable, ciclos acotados, concurrencia/rollback y simulación secuencial | PENDING: otras estrategias/relaciones y escalamiento |
+| 09 | Routing tipado y CREATE_TICKET por grupo, ledger inmutable/outbox atómico | PENDING: otras operaciones, perfiles y ciclos sin correlación; no hay rutas de cliente activas |
 | 11 | REST de reglas, simulación y explain; alias legado conservado | PENDING: APIs especializadas; identidad/RBAC diferidos |
 | 12 | Health DB/Kafka y evidencia durable; sin payloads inválidos en logs/DLQ | PENDING: métricas/tracing/explain autorizado |
 | 13 | Tests sintéticos etiquetados; no porcentaje de paridad | PENDING: fixtures históricos y ejecución; fuentes legacy/schema recibidos |
@@ -54,3 +54,10 @@ snapshot común y hechos tipados consumidos por policy. Simulación conjunta de
 configuraciones y salidas normalizadas/DLQ con resultado DA-05. Ver
 [contrato y límites](enrichment-and-inventory.md). Correlación, auto-suppression
 y comandos permanecen pendientes; no se declara completado el componente.
+
+## Motores conectados, 2026-09-09
+
+Correlación ATTRIBUTE/GROUP, auto-suppression local y routing/CREATE_TICKET por grupo
+implementados. Validación: 85 pruebas Processor y 5 de compatibilidad Worker PASS,
+sin omisiones; empaquetado PASS. Ver [alcance](correlation-suppression-commands.md).
+La seguridad continúa diferida y no se declara completo DA-06 ni el release v1.

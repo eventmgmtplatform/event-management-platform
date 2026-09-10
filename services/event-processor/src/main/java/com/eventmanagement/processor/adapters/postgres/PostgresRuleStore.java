@@ -38,6 +38,8 @@ public class PostgresRuleStore implements RuleSnapshots {
                 if(status.equals("RETIRED"))throw new IllegalArgumentException("RULE_RETIRED");
                 if(rule.blackout()!=null && rule.blackout().scope().containsKey("customerCode") && !tenant.equals(rule.blackout().scope().get("customerCode")))
                     throw new IllegalArgumentException("BLACKOUT_TENANT_MISMATCH");
+                if(rule.suppression()!=null && rule.suppression().window().scope().containsKey("customerCode") && !tenant.equals(rule.suppression().window().scope().get("customerCode")))
+                    throw new IllegalArgumentException("SUPPRESSION_TENANT_MISMATCH");
                 if(rule.inventory()!=null && rule.inventory().scope().containsKey("customerCode") && !tenant.equals(rule.inventory().scope().get("customerCode")))
                     throw new IllegalArgumentException("INVENTORY_TENANT_MISMATCH");
                 if(latest>0 && !load(c,tenant,rule.id(),latest).capability().equals(rule.capability()))throw new IllegalArgumentException("RULE_CAPABILITY_IMMUTABLE");
@@ -81,6 +83,12 @@ public class PostgresRuleStore implements RuleSnapshots {
                     }
                 }
                 var rule=load(c,tenant,id,version);
+                if(status==Status.ENABLED && rule.correlationRule()!=null) {
+                    try(var count=c.prepareStatement("SELECT count(*) FROM event_processor.rule_definition d JOIN event_processor.rule_version v ON v.tenant=d.tenant AND v.rule_id=d.rule_id AND v.version=d.active_version WHERE d.tenant=? AND d.status='ENABLED' AND d.rule_id<>? AND jsonb_exists(v.definition,'strategy')")) {
+                        // JDBC treats '?' as a parameter; use jsonb_exists instead of the JSON operator.
+                        count.setString(1,tenant);count.setString(2,id);try(var r=count.executeQuery()){r.next();if(r.getInt(1)>=8)throw new IllegalArgumentException("CORRELATION_RULE_LIMIT");}
+                    }
+                }
                 if(status==Status.ENABLED && !rule.enabled())throw new IllegalArgumentException("VERSION_NOT_ENABLEABLE");
                 try(var s=c.prepareStatement("UPDATE event_processor.rule_definition SET active_version=?,status=?,revision=revision+1 WHERE tenant=? AND rule_id=?")) {
                     if(status==Status.ENABLED)s.setInt(1,version);else s.setNull(1,Types.INTEGER);
@@ -90,10 +98,14 @@ public class PostgresRuleStore implements RuleSnapshots {
         return revision+1;
     }
     @Override public RuleSnapshot snapshot(String tenant) {
+        try(var c=dataSource.getConnection()){return snapshot(c,tenant);}
+        catch(SQLException e){throw new IllegalStateException("RULE_SNAPSHOT_UNAVAILABLE",e);}
+    }
+    public RuleSnapshot snapshot(Connection c,String tenant) {
         if(tenant!=null && tenant.isBlank()) return new RuleSnapshot(tenant,List.of());
         Objects.requireNonNull(tenant,"TENANT_REQUIRED");
         // One SELECT/MVCC statement sees one coherent committed configuration; no per-rule queries.
-        try(var c=dataSource.getConnection();var s=c.prepareStatement("SELECT v.definition::text,v.checksum FROM event_processor.rule_definition d JOIN event_processor.rule_version v ON v.tenant=d.tenant AND v.rule_id=d.rule_id AND v.version=d.active_version WHERE d.tenant=? AND d.status='ENABLED' ORDER BY d.rule_id LIMIT 257")) {
+        try(var s=c.prepareStatement("SELECT v.definition::text,v.checksum FROM event_processor.rule_definition d JOIN event_processor.rule_version v ON v.tenant=d.tenant AND v.rule_id=d.rule_id AND v.version=d.active_version WHERE d.tenant=? AND d.status='ENABLED' ORDER BY d.rule_id LIMIT 257")) {
             s.setString(1,tenant);s.setQueryTimeout(5);
             try(var r=s.executeQuery()) { var rules=new ArrayList<Rule>();while(r.next())rules.add(verified(r));return new RuleSnapshot(tenant,rules); }
         } catch(SQLException e) { throw new IllegalStateException("RULE_SNAPSHOT_UNAVAILABLE",e); }

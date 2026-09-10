@@ -21,7 +21,7 @@ public class AdminApiEnvironment implements QuarkusTestResourceLifecycleManager 
             try(var c=admin.getConnection();var s=c.createStatement()){s.execute("CREATE DATABASE "+database);}
             String testUrl=url.substring(0,url.lastIndexOf('/')+1)+database;
             try(var c=source(testUrl).getConnection();var s=c.createStatement()) {
-                for(String file:List.of("009-event-processor.sql","010-processor-outbox-recovery.sql","011-processor-rule-registry.sql","012-processor-administration.sql","012-processor-administration.sql"))
+                for(String file:List.of("009-event-processor.sql","010-processor-outbox-recovery.sql","011-processor-rule-registry.sql","012-processor-administration.sql","012-processor-administration.sql","013-processor-correlation.sql","013-processor-correlation.sql","014-processor-command-ledger.sql","014-processor-command-ledger.sql"))
                     s.execute(Files.readString(Path.of("../../infrastructure/postgres/init",file)).replace("\\set ON_ERROR_STOP on",""));
             }
             return Map.ofEntries(Map.entry("quarkus.datasource.jdbc.url",testUrl),Map.entry("quarkus.datasource.username","cacf_test"),

@@ -67,19 +67,26 @@ public class AdminResource {
     }
     @POST @Path("/simulations")
     public Object simulate(String body) {
-        var actor=identity.actor();var parsed=body(body,Set.of("event","candidateRule","candidateRules","evaluatedAt"));required(parsed,"event");
-        var event=gateway.decode(parsed.get("event").toString());
+        var actor=identity.actor();var parsed=body(body,Set.of("event","events","candidateRule","candidateRules","evaluatedAt"));
         List<String> candidates=null;
         if(parsed.has("candidateRules")) {
             if(parsed.has("candidateRule") || !parsed.path("candidateRules").isArray() || parsed.path("candidateRules").isEmpty() || parsed.path("candidateRules").size()>256)
                 throw new ApiFailure(400,"INVALID_CANDIDATE_SET");
             candidates=new ArrayList<>();for(var candidate:parsed.path("candidateRules"))candidates.add(candidate.toString());
         }else if(parsed.has("candidateRule"))candidates=List.of(parsed.get("candidateRule").toString());
+        if(parsed.has("events")) {
+            if(parsed.has("event") || parsed.has("evaluatedAt") || !parsed.path("events").isArray() || parsed.path("events").isEmpty() || parsed.path("events").size()>64)
+                throw new ApiFailure(400,"INVALID_EVENT_SEQUENCE");
+            var events=new ArrayList<com.eventmanagement.processor.domain.Event>();for(var event:parsed.path("events"))events.add(gateway.decode(event.toString()));
+            return Map.of("mode","SIMULATION","correlationSource","EMPTY_REQUEST_SCOPED_STATE","results",service.simulateSequence(actor,events,candidates,identity.requestId()));
+        }
+        required(parsed,"event");var event=gateway.decode(parsed.get("event").toString());
         var result=service.simulateCandidates(actor,event,candidates,identity.requestId(),
                 parsed.has("evaluatedAt")?java.time.Instant.parse(text(parsed,"evaluatedAt")):event.receivedAt());
-        return Map.of("processingId",result.processingId(),"mode",result.mode(),"directive",result.directive(),
+        var response=new LinkedHashMap<String,Object>(Map.of("processingId",result.processingId(),"mode",result.mode(),"directive",result.directive(),
                 "configurationSource",candidates!=null?"CANDIDATE":"ACTIVE",
-                "snapshotChecksum",result.ruleSnapshot().checksum(),"stages",result.stages(),"candidates",result.candidates(),"enrichment",result.enrichment());
+                "snapshotChecksum",result.ruleSnapshot().checksum(),"stages",result.stages(),"candidates",result.candidates(),"enrichment",result.enrichment(),"correlation",result.correlation(),"correlationSource","EMPTY_REQUEST_SCOPED_STATE"));
+        response.put("routing",result.routing());return response;
     }
     @GET @Path("/explain/{processingId}")
     public JsonNode explain(@PathParam("processingId")String id)throws Exception {

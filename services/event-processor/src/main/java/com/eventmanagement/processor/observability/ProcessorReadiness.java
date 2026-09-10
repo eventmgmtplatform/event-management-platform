@@ -22,6 +22,8 @@ public class ProcessorReadiness implements HealthCheck {
             statement.executeQuery("SELECT message_id, dispatch_sequence, attempts, next_attempt_at FROM event_processor.output_outbox LIMIT 0");
             statement.executeQuery("SELECT tenant,rule_id,active_version,revision FROM event_processor.rule_definition LIMIT 0");
             statement.executeQuery("SELECT checksum,definition FROM event_processor.rule_version LIMIT 0");
+            statement.executeQuery("SELECT tenant,correlation_key,revision,document FROM event_processor.correlation_group LIMIT 0");
+            statement.executeQuery("SELECT command_id,tenant,envelope FROM event_processor.integration_command LIMIT 0");
             if(adminEnabled) {
                 statement.executeQuery("SELECT request_id,request_hash,response FROM event_processor.admin_request LIMIT 0");
                 statement.executeQuery("SELECT actor,outcome FROM event_processor.admin_audit LIMIT 0");

@@ -178,6 +178,28 @@ class AdminApiIT {
         assertEquals("FAILED",missing.path("enrichment").path("status").asText());assertEquals("DEAD_LETTER",missing.path("directive").asText());
         assertEquals("SUCCESS",missing.path("stages").get(11).path("status").asText());
     }
+    @Test void sequenceSimulationCorrelatesSuppressesAndDeduplicatesCommandsWithoutProductionWrites()throws Exception {
+        String tenant=unique();var body=mapper.createObjectNode();var events=body.putArray("events");
+        for(int i=0;i<2;i++) {
+            var event=events.addObject().put("schemaVersion","1.1").put("eventId","sequence-"+i).put("eventKey","key-"+i)
+                    .put("lifecycleAction","OPEN").put("effectiveSeverity",3).put("summary","Router unavailable");
+            event.putObject("tenant").put("code",tenant);event.putObject("timestamps").put("receivedAt","2026-09-09T10:00:0"+i+"Z");
+            event.putObject("resource").put("name","router-1");
+        }
+        var candidates=body.putArray("candidateRules");
+        candidates.add(mapper.readTree(com.eventmanagement.processor.adapters.rules.CorrelationTest.definition("group",4)));
+        candidates.add(mapper.readTree(com.eventmanagement.processor.adapters.rules.RoutingTest.definition("route","group")));
+        var response=request("POST","/api/v1/simulations",tenant,null,null,body);assertEquals(200,response.statusCode(),response.body());
+        var result=mapper.readTree(response.body()).path("results");assertEquals(1,result.get(0).path("candidates").size());assertEquals(0,result.get(1).path("candidates").size());
+        var first=result.get(0).path("correlation").path("decisions").get(0).path("group");
+        var second=result.get(1).path("correlation").path("decisions").get(0).path("group");
+        assertEquals(first.path("groupId"),second.path("groupId"));assertEquals(2,second.path("members").size());
+        assertEquals(0,count("correlation_group",tenant,"true"));assertEquals(0,count("integration_command",tenant,"true"));assertEquals(0,count("processing_record",tenant,"true"));
+        candidates.add(mapper.readTree(com.eventmanagement.processor.adapters.rules.SuppressionTest.definition("change","APPROVED").replace("\"customerCode\":\"tenant\"","\"customerCode\":\""+tenant+"\"")));
+        var suppressed=mapper.readTree(request("POST","/api/v1/simulations",tenant,null,null,body).body()).path("results");
+        assertEquals("SUPPRESS_INTEGRATIONS",suppressed.get(0).path("directive").asText());assertEquals(0,suppressed.get(0).path("candidates").size());
+        assertEquals(2,suppressed.get(1).path("correlation").path("decisions").get(0).path("group").path("members").size());
+    }
     private long count(String table,String tenant,String extra)throws Exception {
         try(var c=dataSource.getConnection();var s=c.prepareStatement("SELECT count(*) FROM event_processor."+table+" WHERE tenant=? AND "+extra)){
             s.setString(1,tenant);try(var r=s.executeQuery()){r.next();return r.getLong(1);}

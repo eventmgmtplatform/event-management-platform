@@ -19,6 +19,8 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
     private final JsonSchema schema;
     private final JsonSchema blackoutSchema;
     private final JsonSchema inventorySchema;
+    private final JsonSchema correlationSchema;
+    private final JsonSchema suppressionSchema;
     public record Compiled(Rule rule, String canonicalJson) {}
     public RuleCompiler() {
         mapper=new ObjectMapper(JsonFactory.builder().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
@@ -27,6 +29,12 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
         mapper.enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN);
         try(var input=RuleCompiler.class.getResourceAsStream("/contracts/rule-v1.schema.json")) {
             schema=JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(input));
+            try(var suppression=RuleCompiler.class.getResourceAsStream("/contracts/auto-suppression-v1.schema.json")) {
+                suppressionSchema=JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(suppression));
+            }
+            try(var correlation=RuleCompiler.class.getResourceAsStream("/contracts/correlation-rule-v1.schema.json")) {
+                correlationSchema=JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(correlation));
+            }
             try(var inventory=RuleCompiler.class.getResourceAsStream("/contracts/inventory-record-v1.schema.json")) {
                 inventorySchema=JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(inventory));
             }
@@ -44,13 +52,15 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
         try {
             JsonNode source=mapper.readTree(json);
             bound(source,0,new int[]{0});
+            if(source.path("type").asText().equals("SUPPRESSION") && source.has("schedule"))return suppression(source);
+            if(source.has("strategy"))return correlation(source);
             if(source.path("type").asText().equals("INVENTORY"))return inventory(source);
             if(Set.of("IMMEDIATE","SCHEDULED","RECURRING").contains(source.path("type").asText()))return blackout(source);
             if(!schema.validate(source).isEmpty()) throw invalid("RULE_SCHEMA_INVALID");
             String id=source.path("id").asText(); text(id,128);
             if(!id.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) throw invalid("INVALID_RULE_ID");
             if(!source.path("version").canConvertToInt() || !source.path("priority").canConvertToInt()) throw invalid("INTEGER_RANGE");
-            if(!Set.of("POLICY","ENRICHMENT").contains(source.path("type").asText())) throw invalid("RULE_TYPE_NOT_IMPLEMENTED");
+            if(!Set.of("POLICY","ENRICHMENT","ROUTING").contains(source.path("type").asText())) throw invalid("RULE_TYPE_NOT_IMPLEMENTED");
             var metadata=source.path("metadata");
             metadata.fieldNames().forEachRemaining(k->{if(!Set.of("owner","description","tags").contains(k))throw invalid("METADATA_NOT_SUPPORTED");});
             text(metadata.path("owner").asText(),128);
@@ -58,6 +68,7 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
             if(metadata.has("tags")) { if(metadata.path("tags").size()>32)throw invalid("TAG_LIMIT"); for(var tag:metadata.path("tags"))text(tag.asText(),128); }
             var condition=condition(source.path("condition"));
             var actions=new ArrayList<Directive>();
+            var routes=new ArrayList<com.eventmanagement.processor.domain.routing.RoutingAction>();
             com.eventmanagement.processor.domain.enrichment.EnrichmentPlan plan=null;
             if(source.path("type").asText().equals("ENRICHMENT")) {
                 if(source.path("actions").size()!=1)throw invalid("ONE_INVENTORY_LOOKUP_REQUIRED");
@@ -70,6 +81,14 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
             if(source.path("actions").isEmpty() || source.path("actions").size()>16)throw invalid("ACTION_COUNT");
             for(var action:source.path("actions")) {
                 if(plan!=null)break;
+                if(source.path("type").asText().equals("ROUTING")) {
+                    var parameters=action.path("parameters");
+                    if(!action.path("type").asText().equals("CREATE_TICKET") || !action.path("target").asText().equals("SERVICENOW")
+                            || !parameters.isObject() || parameters.size()!=2 || !parameters.path("configuration").asText().equals("default"))throw invalid("ROUTING_OPERATION_NOT_IMPLEMENTED");
+                    String correlationId=parameters.path("correlationRuleId").asText();
+                    if(!correlationId.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,127}"))throw invalid("CORRELATION_RULE_REFERENCE_REQUIRED");
+                    routes.add(new com.eventmanagement.processor.domain.routing.RoutingAction("SERVICENOW","CREATE_TICKET","default",correlationId));continue;
+                }
                 if(action.has("target") || (action.has("parameters") && !action.path("parameters").isEmpty())) throw invalid("ACTION_PARAMETERS_NOT_SUPPORTED");
                 Directive directive;
                 try { directive=Directive.valueOf(action.path("type").asText()); } catch(Exception e) { throw invalid("UNKNOWN_ACTION"); }
@@ -80,9 +99,48 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
             String canonical=mapper.writeValueAsString(sorted(source));
             String checksum=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
             return new Compiled(new Rule(id,source.path("version").intValue(),source.path("priority").intValue(),
-                    source.path("enabled").booleanValue(),checksum,condition,actions,null,plan,null),canonical);
+                    source.path("enabled").booleanValue(),checksum,condition,actions,null,plan,null,null,null,routes),canonical);
         } catch(IllegalArgumentException e) { throw e; }
         catch(Exception e) { throw invalid("RULE_INVALID"); }
+    }
+    private Compiled suppression(JsonNode source)throws Exception {
+        if(!suppressionSchema.validate(source).isEmpty())throw invalid("SUPPRESSION_SCHEMA_INVALID");
+        var window=(ObjectNode)source.deepCopy();window.put("type","SCHEDULED");window.remove(List.of("source","externalStatus"));
+        var base=blackout(window).rule();
+        String canonical=mapper.writeValueAsString(sorted(source));
+        String checksum=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
+        return new Compiled(new Rule(base.id(),base.version(),base.priority(),base.enabled(),checksum,base.condition(),List.of(),null,null,null,null,
+                new com.eventmanagement.processor.domain.rules.Suppression(base.blackout(),source.path("source").asText(),source.path("externalStatus").asText(),
+                        source.path("metadata").path("externalReference").asText(""))),canonical);
+    }
+    private Compiled correlation(JsonNode source)throws Exception {
+        if(!correlationSchema.validate(source).isEmpty())throw invalid("CORRELATION_SCHEMA_INVALID");
+        if(!source.path("strategy").asText().equals("ATTRIBUTE") || !source.path("relationship").path("type").asText().equals("GROUP"))throw invalid("CORRELATION_STRATEGY_NOT_IMPLEMENTED");
+        var selection=source.path("candidateSelection");
+        if(selection.size()!=3 || !selection.path("windowSeconds").canConvertToInt() || !selection.path("maxCandidates").canConvertToInt()
+                || !selection.path("activeOnly").isBoolean() || !selection.path("activeOnly").booleanValue())throw invalid("INVALID_CANDIDATE_SELECTION");
+        int window=selection.path("windowSeconds").intValue(),max=selection.path("maxCandidates").intValue();
+        if(window<1 || window>86400 || max<1 || max>32)throw invalid("CORRELATION_WINDOW_OR_LIMIT");
+        if(source.path("relationship").size()!=1)throw invalid("CORRELATION_RELATIONSHIP_EXTENSION_UNSUPPORTED");
+        var match=source.path("match");
+        if(match.size()!=1 || !match.path("fields").isArray() || match.path("fields").isEmpty() || match.path("fields").size()>4)throw invalid("CORRELATION_FIELDS_REQUIRED");
+        var fields=new ArrayList<Rule.Field>();
+        for(var field:match.path("fields")) {
+            var typed=Rule.Field.from(field.asText());
+            if(typed.type!=String.class || !(typed.path.startsWith("resource.") || typed.path.startsWith("enrichment.")) || fields.contains(typed))throw invalid("CORRELATION_FIELD_UNSUPPORTED");
+            fields.add(typed);
+        }
+        fields.sort(java.util.Comparator.comparing(field->field.path));
+        // Validate the entire scope AST against the frozen condition grammar before semantic compilation.
+        var wrapper=mapper.createObjectNode();
+        for(String name:List.of("id","version","enabled","priority"))wrapper.set(name,source.path(name));
+        wrapper.put("type","POLICY");wrapper.set("condition",source.path("scope"));wrapper.putArray("actions").addObject().put("type","CONTINUE");
+        wrapper.set("metadata",source.path("metadata"));
+        var base=compile(wrapper.toString()).rule();
+        String canonical=mapper.writeValueAsString(sorted(source));
+        String checksum=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
+        return new Compiled(new Rule(base.id(),base.version(),base.priority(),base.enabled(),checksum,base.condition(),List.of(),null,null,null,
+                new com.eventmanagement.processor.domain.correlation.CorrelationRule(fields,window,max)),canonical);
     }
     private static boolean usesFacts(Rule.Condition condition) {
         if(condition instanceof Rule.Predicate p)return p.field().path.startsWith("enrichment.");

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "commandId": "db841561887df5e5b266945627d164004787009f71bf8e96d0cfce67601e79e9",
+  "eventId": "773841981c42241c5ba6e246d02c1c460a6029f4010746bf879955456b6fb396",
+  "eventKey": "correlation:773841981c42241c5ba6e246d02c1c460a6029f4010746bf879955456b6fb396",
+  "tenant": "tenant",
+  "processingId": "fe487202311ebb4affefbcd76cc7aea7b6d1c5215a0c544216bd219092ff38c3",
+  "createdAt": "1970-01-01T00:00:00Z",
+  "integrationType": "SERVICENOW",
+  "operation": "CREATE_TICKET",
+  "configuration": "default",
+  "payload": {
+    "resource": "router-1",
+    "summary": "Router unavailable",
+    "severity": 3
+  },
+  "metadata": {
+    "idempotencyKey": "db841561887df5e5b266945627d164004787009f71bf8e96d0cfce67601e79e9",
+    "sourceEventId": "event-a",
+    "sourceEventKey": "a",
+    "correlationGroupId": "773841981c42241c5ba6e246d02c1c460a6029f4010746bf879955456b6fb396"
+  }
+}

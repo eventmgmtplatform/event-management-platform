@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Instant;
 import java.util.*;
 
-/** Output compatibility boundary. No routing activation or provider execution.
+/** Output compatibility boundary. No provider execution. Used after typed routing and inside the durable command transaction.
  * Encode only the first intent; retries MUST reuse the persisted envelope, including timestamps
  * and processingId. The Worker rejects changed content with the same semantic command identity.
  */
