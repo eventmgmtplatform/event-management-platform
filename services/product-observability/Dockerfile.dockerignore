@@ -1,0 +1,7 @@
+**
+!services/
+!services/product-observability/
+!services/product-observability/collector.py
+!infrastructure/
+!infrastructure/opensearch/
+!infrastructure/opensearch/index-template.json

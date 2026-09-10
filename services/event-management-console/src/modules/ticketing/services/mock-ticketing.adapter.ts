@@ -1,2 +1,2 @@
-import type { TicketingRepository } from "./ticketing.port";
-export const mockTicketingRepository:TicketingRepository={search:()=>({items:[{id:"INC-MOCK-0001",status:"Open",priority:"High",summary:"Evento simulado para validar el scaffold"}],total:1})};
+// Compatibility export: the isolated mock now runs behind the ServiceNow HTTP adapter.
+export { snowTicketingRepository as mockTicketingRepository } from "./snow-ticketing.adapter";

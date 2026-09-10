@@ -1,0 +1,1 @@
+../../../testing/services/event-management-console/platform.test.mjs
