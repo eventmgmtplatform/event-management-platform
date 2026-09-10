@@ -102,3 +102,12 @@ Secrets, credentials, tokens and passwords must not be embedded in:
 
 Cloud Build pipelines and Artifact Registry publication are outside the scope
 of OS_08_12.1. They will be implemented in OS_08_12.2.
+
+[Historial de cambios del componente](CHANGELOG.md).
+
+## Administración de reglas
+
+El mismo servicio incorpora una [API de reglas](../../docs/event-gateway/rules-api.md)
+para admisión, normalización, validación adicional y enriquecimiento base, con
+persistencia PostgreSQL, historial, control de revisión y simulación sin publicación.
+El documento incluye endpoints, ejemplos y pasos de activación.

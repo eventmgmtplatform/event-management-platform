@@ -330,6 +330,8 @@ services:
     restart: unless-stopped
 
     depends_on:
+      postgres:
+        condition: service_healthy
       kafka:
         condition: service_healthy
       kafka-init:
@@ -338,7 +340,14 @@ services:
     ports:
       - "8081:8081"
 
+    env_file:
+      - path: ../.local/gateway-collection/runtime.env
+        required: false
+      - path: ../.local/gateway-rules/runtime.env
+        required: false
+
     environment:
+      GATEWAY_POSTGRES_JDBC_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       EVENT_GATEWAY_KAFKA_BROKERS: kafka:29092
       EVENT_GATEWAY_KAFKA_TOPIC: events.raw
 
@@ -357,7 +366,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -qO- http://localhost:8081/api/v1/gateway >/dev/null 2>&1 || exit 1"
+          "wget -qO- http://localhost:8081/api/v1/gateway/ready >/dev/null 2>&1 || exit 1"
         ]
       interval: 10s
       timeout: 5s

@@ -100,3 +100,8 @@ __pycache__/
 
 # Generated local identity bootstrap credentials and realm import
 /.local/processor-identity/
+
+# Gateway credentials and generated test evidence
+/.local/gateway-collection/
+/.local/gateway-rules/
+/evidences/

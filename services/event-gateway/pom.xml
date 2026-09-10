@@ -11,6 +11,7 @@
     <packaging>quarkus</packaging>
 
     <properties>
+        <testing.reportsDirectory>${project.basedir}/../../evidences/testing/maven/event-gateway</testing.reportsDirectory>
         <compiler-plugin.version>3.15.0</compiler-plugin.version>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -42,6 +43,8 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-jdbc-postgresql</artifactId></dependency>
+        <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-agroal</artifactId></dependency>
         <dependency>
             <groupId>org.apache.camel.quarkus</groupId>
             <artifactId>camel-quarkus-platform-http</artifactId>
@@ -66,6 +69,11 @@
     </dependencies>
 
     <build>
+        <!-- Shared testing workspace; Maven still runs from this service. -->
+        <testSourceDirectory>${project.basedir}/../../testing/services/event-gateway/java</testSourceDirectory>
+        <testResources>
+            <testResource><directory>${project.basedir}/../../testing/services/event-gateway/resources</directory></testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
@@ -84,6 +92,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire-plugin.version}</version>
                 <configuration>
+                    <reportsDirectory>${testing.reportsDirectory}/surefire</reportsDirectory>
                     <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
@@ -103,6 +112,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <reportsDirectory>${testing.reportsDirectory}/failsafe</reportsDirectory>
                     <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
                         <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>

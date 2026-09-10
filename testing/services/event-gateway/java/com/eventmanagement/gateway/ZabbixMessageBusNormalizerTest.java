@@ -338,7 +338,7 @@ class ZabbixMessageBusNormalizerTest {
                 objectMapper.readTree(
                         Files.readString(
                                 Path.of(
-                                        "test/events/" +
+                                        "../../testing/fixtures/events/" +
                                         "zabbix-problem.json"
                                 )
                         )
@@ -352,7 +352,7 @@ class ZabbixMessageBusNormalizerTest {
             throws Exception {
 
         Path path = Path.of(
-                "test/events/sdc",
+                "../../testing/fixtures/events/sdc",
                 filename
         );
 

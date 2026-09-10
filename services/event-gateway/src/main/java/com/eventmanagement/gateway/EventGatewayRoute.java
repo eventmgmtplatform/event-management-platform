@@ -1,6 +1,7 @@
 package com.eventmanagement.gateway;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.kafka.KafkaConstants;
@@ -8,38 +9,18 @@ import org.apache.camel.component.kafka.KafkaConstants;
 @ApplicationScoped
 public class EventGatewayRoute extends RouteBuilder {
 
+    @Inject GatewayReceiptStore receipts;
+    @Inject GatewayCollectionFailure failures;
+    @Inject GatewayRulePipeline rules;
+
     @Override
     public void configure() {
 
-        /*
-         * Errores de validación.
-         */
-        onException(IllegalArgumentException.class)
-            .handled(true)
-            .process("gatewayExceptionHandler");
+        onException(Exception.class).handled(true).process(failures::respond);
 
-        /*
-         * Errores de infraestructura, por ejemplo:
-         * broker Kafka no disponible.
-         */
-        onException(Exception.class)
-            .handled(true)
-            .setHeader(
-                Exchange.HTTP_RESPONSE_CODE,
-                constant(503)
-            )
-            .setHeader(
-                Exchange.CONTENT_TYPE,
-                constant("application/json")
-            )
-            .setBody(
-                simple(
-                    "{\"accepted\":false,"
-                    + "\"errorCode\":\"EVENT_DELIVERY_FAILED\","
-                    + "\"message\":\"No fue posible publicar el evento\","
-                    + "\"timestamp\":\"${date:now:yyyy-MM-dd'T'HH:mm:ssXXX}\"}"
-                )
-            );
+        from("platform-http:/api/v1/gateway/ready?httpMethodRestrict=GET")
+            .routeId("event-gateway-storage-readiness")
+            .process(receipts::ready);
 
         /*
          * Estado del Event Gateway.
@@ -68,13 +49,15 @@ public class EventGatewayRoute extends RouteBuilder {
          */
         from("platform-http:/api/v1/events?httpMethodRestrict=POST")
             .routeId("event-gateway-ingress")
+            .convertBodyTo(byte[].class)
+            .process(receipts::capture)
             .convertBodyTo(String.class)
-            .log("Evento original recibido: ${body}")
 
             /*
              * Valida y sustituye el body por el evento normalizado.
              */
-            .process("eventValidationProcessor")
+            .process(rules::process)
+            .process(receipts::validated)
 
             /*
              * Conservamos los datos que necesitaremos para construir
@@ -115,6 +98,9 @@ public class EventGatewayRoute extends RouteBuilder {
                 + "&requestRequiredAcks=all"
             )
 
+            .setProperty("gatewayKafkaAcknowledged",constant(true))
+            .process(e -> receipts.mark(e,"PUBLISHED",null))
+
             .log(
                 "Evento publicado en Kafka. "
                 + "eventId=${exchangeProperty.publishedEventId}"
@@ -125,6 +111,7 @@ public class EventGatewayRoute extends RouteBuilder {
              * expuestos como headers HTTP.
              */
             .removeHeaders("*")
+            .setHeader("X-Gateway-Receipt-Id",exchangeProperty("gatewayReceiptId"))
 
             .setHeader(
                 Exchange.CONTENT_TYPE,
