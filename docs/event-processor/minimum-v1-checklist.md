@@ -43,19 +43,21 @@ Callback y clear duplicados no duplican efectos. Se verifican outboxes drenados.
 El nuevo ciclo tiene certificación por motor; este escenario integrado no repite
 una segunda cadena completa de proveedores.
 
-## Gates que siguen abiertos
+## Cierre del alcance acordado
 
-1. **DA-06: alcance funcional final.** El [contrato ESS](../event-state-service/lifecycle-contract.md)
-   define OPEN/CLOSE, tally, identidad, duplicados de transporte y eventos tardíos.
-   Tally cuenta OPEN distintos aceptados; no significa deduplicación semántica por
-   contenido. El recorrido confirma recuperación/proyección. Falta cerrar explícitamente
-   la aceptación de ese subconjunto para v1 y contrastar los casos restantes; no inferir
-   paridad completa a partir de la deduplicación de comandos.
-2. **Backup/restore ampliado.** Restaurar relaciones, ledger, configuración y auditoría
-   AIOps poblados, seguido de replay sin duplicados. Reiniciar y leer configuración no
-   sustituye restauración desde backup. Gate PENDING, sin RPO/RTO certificado.
-3. **Cierre global.** Vincular esos gates a evidencias y mantener PASS/FAIL/PENDING.
-   El backend por motor está aprobado; la release mínima completa sigue PENDING.
+Decisión del usuario, 2026-09-10: mover la revisión final de DA-06 a DP-EP-04 y
+backup/restore con replay a DP-EP-08. Ambos quedan DIFERIDOS y no bloquean el corte
+mínimo local; no se consideran pruebas aprobadas ni se ejecutan en este incremento.
+
+Con ese alcance, no quedan brechas funcionales de backend identificadas para este
+corte: las capacidades de la matriz y su recorrido integrado están en PASS. Esto
+no certifica producción, restauración, RPO/RTO ni paridad completa de DA-06.
+
+Para la entrega del producto permanece la aceptación de frontend por su chat, usando
+los prompts por motor y sus evidencias de navegador. Los estados de los handoffs
+son una entrega histórica, no sustituyen las validaciones posteriores de la consola.
+La publicación formal de release (merge a main/tag/despliegue de versión) es un paso
+separado de las certificaciones; no se realiza por mover estos pendientes a DP.
 
 ## Defect Prevention y límites
 
