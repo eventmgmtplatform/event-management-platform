@@ -1,5 +1,8 @@
 # Correlación, auto-suppression y comandos — contrato inicial
 
+> OS_11: el perfil optativo y la coordinación de resultados/cierres se documentan en
+> [Lifecycle orchestration](lifecycle-orchestration.md). El alcance inicial descrito abajo permanece para rutas sin ese perfil.
+
 ## Transacción y autoridad
 
 Processor conserva grupos/miembros de correlación; Event State Service conserva el

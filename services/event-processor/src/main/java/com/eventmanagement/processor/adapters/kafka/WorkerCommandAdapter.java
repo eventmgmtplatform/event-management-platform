@@ -14,7 +14,7 @@ import java.util.*;
  */
 public final class WorkerCommandAdapter {
     private static final Map<String,Set<String>> OPERATIONS=Map.of(
-            "SERVICENOW",Set.of("CREATE_TICKET"),
+            "SERVICENOW",Set.of("CREATE_TICKET","RESOLVE_TICKET"),
             "GNM",Set.of("SEND_NOTIFICATION","CLOSE_NOTIFICATION"),
             "CACF",Set.of("AUTOMATION_REQUESTED"));
     private final ObjectMapper mapper;

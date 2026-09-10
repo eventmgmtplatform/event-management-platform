@@ -11,7 +11,7 @@ import urllib.request
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('processor_certification', ROOT / 'scripts/event-processor-certification.py')
+spec = importlib.util.spec_from_file_location('processor_certification', ROOT / 'testing/certifications/event-processor-certification.py')
 cert = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cert)
 

@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "1.0",
+  "cases": [
+    {
+      "id": "UC-001",
+      "name": "Fatal → ticket → GNM con ticket → CACF REMEDIATED → clear",
+      "level": "e2e",
+      "implementation": "automated",
+      "command": "python3 testing/run.py happy-path",
+      "specification": "UC-001-happy-path.md",
+      "environment": "infrastructure/docker-compose.yml",
+      "runbook": "../../docs/event-processor/lifecycle-orchestration.md"
+    },
+    {
+      "id": "UC-002",
+      "name": "Blackout registrado y evento coincidente",
+      "level": "e2e-processor",
+      "implementation": "automated",
+      "command": "python3 testing/run.py blackout",
+      "specification": "UC-002-blackout.md"
+    },
+    {
+      "id": "UC-003",
+      "name": "CACF devuelve éxito e ignora callback duplicado",
+      "level": "component",
+      "implementation": "automated",
+      "command": "python3 testing/run.py cacf-remediated"
+    },
+    {
+      "id": "UC-004",
+      "name": "Blackout: límites temporales, tenant, desactivación y selectores",
+      "level": "unit/integration",
+      "implementation": "existing",
+      "coverage": [
+        "BlackoutTest",
+        "AdminApiIT"
+      ]
+    },
+    {
+      "id": "UC-005",
+      "name": "CACF timeout, escalamiento, desconocido, callback tardío y ticket diferido",
+      "level": "component",
+      "implementation": "archived-isolated",
+      "command": "python3 testing/legacy/cacf-local-certification.py",
+      "environment": "testing/environments/cacf.compose.yml"
+    },
+    {
+      "id": "UC-006",
+      "name": "Replay, colisión, reinicio y DLQ",
+      "level": "component",
+      "implementation": "existing",
+      "coverage": [
+        "event-processor-certification.py",
+        "OutboxRecoveryTest",
+        "RestoreReplayIT"
+      ]
+    },
+    {
+      "id": "UC-007",
+      "name": "GNM: timeout, reconciliación, cierre duplicado y confirmación",
+      "level": "unit",
+      "implementation": "existing",
+      "coverage": [
+        "GnmReconciliationProcessorTest",
+        "GnmDuplicateCloseReconciliationProcessorTest",
+        "GnmCloseExecutionProcessorTest"
+      ]
+    },
+    {
+      "id": "UC-008",
+      "name": "Ticket fallido: no notificar éxito ni solicitar CACF",
+      "level": "e2e",
+      "implementation": "planned"
+    },
+    {
+      "id": "UC-009",
+      "name": "Clear antes del ticket, durante CACF o fuera de orden",
+      "level": "e2e",
+      "implementation": "planned"
+    },
+    {
+      "id": "UC-010",
+      "name": "Evento repetido: una sola cadena de efectos externos",
+      "level": "e2e",
+      "implementation": "planned"
+    },
+    {
+      "id": "UC-011",
+      "name": "Reapertura tras clear, nuevo ciclo y aislamiento de tenants",
+      "level": "e2e",
+      "implementation": "planned"
+    },
+    {
+      "id": "UC-012",
+      "name": "Proveedor caído, reintentos agotados y recuperación durable",
+      "level": "e2e",
+      "implementation": "planned"
+    },
+    {
+      "id": "UC-013",
+      "name": "Supresión por cambio aprobado y correlación de múltiples miembros",
+      "level": "unit/integration",
+      "implementation": "existing",
+      "coverage": [
+        "SuppressionTest",
+        "CorrelationTransactionTest",
+        "AdminApiIT"
+      ]
+    },
+    {
+      "id": "UC-014",
+      "name": "ESS: resultados duplicados, cuarentena, clear y reapertura",
+      "level": "component",
+      "implementation": "existing",
+      "coverage": [
+        "StateLifecycleIT",
+        "EventStateRepositoryIT",
+        "event-state-certification.py"
+      ]
+    },
+    {
+      "id": "UC-015",
+      "name": "Ciclo completo con reinicio entre NEXT SUBMITTED y ACK",
+      "level": "e2e",
+      "implementation": "automated",
+      "command": "python3 testing/run.py certification --name lifecycle-restart"
+    },
+    {
+      "id": "UC-016",
+      "name": "Dependencias, clear temprano, rollback y confirmaciones terminales",
+      "level": "unit/integration",
+      "implementation": "automated",
+      "coverage": [
+        "LifecycleTransactionTest",
+        "WorkerDeliveryRecoveryTest",
+        "ServiceNowResolveProcessorTest",
+        "GnmResultEnvelopeProcessorTest",
+        "EventStateRepositoryIT"
+      ]
+    }
+  ]
+}

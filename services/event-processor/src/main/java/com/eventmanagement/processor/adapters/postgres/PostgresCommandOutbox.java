@@ -33,6 +33,8 @@ public final class PostgresCommandOutbox implements CommandOutbox {
             try(var s=connection.prepareStatement("INSERT INTO event_processor.output_outbox(message_id,processing_id,topic,message_key,payload) VALUES (?,?,'integration.commands',?,?::jsonb)")) {
                 s.setString(1,intent.commandId());s.setString(2,processingId);s.setString(3,aggregate.eventKey());s.setString(4,json);s.executeUpdate();
             }
+            if(envelope.path("payload").has("lifecycle"))
+                new PostgresLifecycleSession(connection,mapper,tenant).register(event,envelope);
         }
     }
 }

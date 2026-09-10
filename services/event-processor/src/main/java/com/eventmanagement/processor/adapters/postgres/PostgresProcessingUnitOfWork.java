@@ -28,7 +28,20 @@ public class PostgresProcessingUnitOfWork implements ProcessingUnitOfWork {
                     if(persisted[0])throw new IllegalStateException("ONE_INPUT_RECORD_REQUIRED");
                     if(!id.equals(processingId) || !hash.equals(inputHash) || !event.tenant().equals(tenant))throw new IllegalArgumentException("TRANSACTION_SCOPE_MISMATCH");
                     boolean inserted=PostgresProcessingStore.accept(c,processingId,inputHash,eventId,tenant,evidence,topic,key,output);
-                    if(!inserted)throw new IllegalStateException("REPLAY_RACE_RETRY");persisted[0]=true;return true;
+                    if(!inserted)throw new IllegalStateException("REPLAY_RACE_RETRY");
+                    // Only accepted decisions have correlationApplied=true; DLQ never requests state.
+                    var decision=mapper.readTree(evidence);
+                    if(decision.path("correlationApplied").asBoolean(false)) {
+                        var request=new com.eventmanagement.processor.adapters.kafka.StateRequestAdapter(mapper)
+                                .encode(event,processingId,decision);
+                        try(var statement=c.prepareStatement("INSERT INTO event_processor.output_outbox(message_id,processing_id,topic,message_key,payload) VALUES (?,?,'events.state.requested',?,?::jsonb)")) {
+                            statement.setString(1,request.path("messageId").asText());statement.setString(2,processingId);
+                            statement.setString(3,event.eventKey());statement.setString(4,request.toString());statement.executeUpdate();
+                        }
+                    }
+                    if(decision.path("correlationApplied").asBoolean(false))
+                        new PostgresLifecycleSession(c,mapper,event.tenant()).observe(event,decision);
+                    persisted[0]=true;return true;
                 };
                 work.run(session,new PostgresCorrelationSession(c,mapper,event.tenant()),tenant->{if(!event.tenant().equals(tenant))throw new IllegalArgumentException("SNAPSHOT_TENANT_MISMATCH");return rules.snapshot(c,tenant);},new PostgresCommandOutbox(c,mapper,event.tenant()));
                 if(!persisted[0])throw new IllegalStateException("PROCESSING_RECORD_REQUIRED");

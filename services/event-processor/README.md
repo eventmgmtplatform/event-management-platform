@@ -51,7 +51,7 @@ sigue PENDING. El shutdown deja de tomar nuevas filas y permite terminar la actu
 ```bash
 mvn -o -B -f services/event-processor/pom.xml test
 mvn -o -B -f services/event-processor/pom.xml -Dprocessor.test.jdbc.url=jdbc:postgresql://127.0.0.1:15439/cacf_test test
-python3 scripts/eventmanagement-test.py
+python3 testing/certifications/eventmanagement-test.py
 ```
 
 Las pruebas JDBC requieren las migraciones 009 y 010 en la base aislada cacf_test.
@@ -106,3 +106,5 @@ a una certificación de rollback por fallo inyectado.
 El despliegue local de b059aaf pasó el 2026-09-09. No activa reglas ni expone una API
 administrativa. El backup/restore aislado incluye versiones e historial de reglas,
 checksums y evaluación con el adaptador real después de restaurar.
+
+[Historial de cambios del componente](CHANGELOG.md).

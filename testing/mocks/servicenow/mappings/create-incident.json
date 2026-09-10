@@ -1,0 +1,27 @@
+{
+  "name": "Create ServiceNow incident",
+  "priority": 1,
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/now/table/incident",
+    "headers": {
+      "Content-Type": {
+        "contains": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "result": {
+        "sys_id": "snow-sys-id-001",
+        "number": "INC0019284",
+        "state": "1",
+        "short_description": "Event Management simulated incident"
+      }
+    }
+  }
+}

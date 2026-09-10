@@ -85,7 +85,7 @@ def main():
         report['deployedImage'] = run(['docker', 'inspect', '--format', '{{.Image}}', 'event-event-processor']).decode().strip()
         report['checks'].append('new image ready; existing Kafka consumer group retained')
         print('Running replay/restart/DLQ certification', flush=True)
-        logged(['python3', str(ROOT / 'scripts/event-processor-certification.py')], 'runtime-certification.log', 600)
+        logged(['python3', str(ROOT / 'testing/certifications/event-processor-certification.py')], 'runtime-certification.log', 600)
         ready()
         report['checks'].append('runtime replay, restart, ordered audit and sanitized DLQ passed')
         report['status'] = 'PASS'

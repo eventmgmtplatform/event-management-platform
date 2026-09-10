@@ -35,7 +35,7 @@ public class JsonGnmProviderConfigurationRegistry
                 Thread.currentThread().getContextClassLoader();
 
         try (InputStream input =
-                     classLoader.getResourceAsStream(normalized)) {
+                     resource.startsWith("file:") ? java.nio.file.Files.newInputStream(java.nio.file.Path.of(java.net.URI.create(resource))) : classLoader.getResourceAsStream(normalized)) {
 
             if (input == null) {
                 throw new IllegalStateException(

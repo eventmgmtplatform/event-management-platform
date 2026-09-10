@@ -1,0 +1,22 @@
+{
+  "provider": "EVERBRIDGE",
+  "tenants": {
+    "os11-synthetic": {
+      "customerCode": "os11-synthetic",
+      "organizationId": "11001",
+      "incidentTemplate": {
+        "templateId": "11002",
+        "templateName": "OS11-SYNTHETIC"
+      },
+      "recipientGroups": {
+        "synthetic-operations": {
+          "logicalName": "synthetic-operations",
+          "groupIds": [
+            "11003"
+          ]
+        }
+      },
+      "cycleInterval": 15
+    }
+  }
+}

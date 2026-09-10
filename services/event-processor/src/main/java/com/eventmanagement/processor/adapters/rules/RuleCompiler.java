@@ -84,10 +84,21 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
                 if(source.path("type").asText().equals("ROUTING")) {
                     var parameters=action.path("parameters");
                     if(!action.path("type").asText().equals("CREATE_TICKET") || !action.path("target").asText().equals("SERVICENOW")
-                            || !parameters.isObject() || parameters.size()!=2 || !parameters.path("configuration").asText().equals("default"))throw invalid("ROUTING_OPERATION_NOT_IMPLEMENTED");
+                            || !parameters.isObject() || (parameters.size()!=2 && parameters.size()!=3) || !parameters.path("configuration").asText().equals("default"))throw invalid("ROUTING_OPERATION_NOT_IMPLEMENTED");
                     String correlationId=parameters.path("correlationRuleId").asText();
                     if(!correlationId.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,127}"))throw invalid("CORRELATION_RULE_REFERENCE_REQUIRED");
-                    routes.add(new com.eventmanagement.processor.domain.routing.RoutingAction("SERVICENOW","CREATE_TICKET","default",correlationId));continue;
+                    var lifecycle=new java.util.HashMap<String,String>();
+                    if(parameters.size()==3) {
+                        var settings=parameters.path("lifecycle");
+                        var fields=Set.of("notificationGroup","originalAssignmentGroup","holdingAssignmentGroup","resolvedState","closeCode");
+                        if(!settings.isObject() || settings.size()!=fields.size())throw invalid("INVALID_LIFECYCLE_PROFILE");
+                        for(var field:fields) {
+                            var value=settings.path(field);
+                            if(!value.isTextual() || value.asText().isBlank() || value.asText().length()>255)throw invalid("INVALID_LIFECYCLE_PROFILE");
+                            lifecycle.put(field,value.asText());
+                        }
+                    }
+                    routes.add(new com.eventmanagement.processor.domain.routing.RoutingAction("SERVICENOW","CREATE_TICKET","default",correlationId,lifecycle));continue;
                 }
                 if(action.has("target") || (action.has("parameters") && !action.path("parameters").isEmpty())) throw invalid("ACTION_PARAMETERS_NOT_SUPPORTED");
                 Directive directive;

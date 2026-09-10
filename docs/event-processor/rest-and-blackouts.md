@@ -80,3 +80,29 @@ permite simular un conjunto sin escrituras; consultar [su contrato](enrichment-a
 También se admiten SUPPRESSION, definición DA-08 ATTRIBUTE/GROUP y ROUTING del
 [subconjunto inicial](correlation-suppression-commands.md). `events` permite simular
 una secuencia con estado de correlación local a la petición, sin producción.
+
+## Corte backend para integración de formulario, 2026-09-10
+
+La escritura sigue usando la API versionada `/api/v1/rules`; no se agregó una base
+paralela ni se modificó el frontend. El nombre de capacidad BLACKOUT no es un valor
+de `rule.type`: registrar SCHEDULED o IMMEDIATE. La consulta de `console-catalog-api`
+se corrigió para recuperar ambos valores; el filtro anterior BLACKOUT ocultaba las
+reglas válidas. Los registros del catálogo anterior continúan separados por fuente.
+
+Aceptación backend: `python3 testing/certifications/processor-blackout-write-certification.py`
+contra runtime local (Processor 8082, catálogo por proxy 8090 y Docker/PostgreSQL).
+Crea un tenant sintético único y desactiva cualquier regla propia activa al terminar.
+Comprueba escrituras, idempotencia, revisión, historial, versión activa distinta de
+última guardada, alcance/ventana y lectura real del catálogo. No requiere laboratorio
+separado ni reinicia consumidores. Se complementa con `python3 testing/run.py blackout`
+para Gateway/Kafka/Processor, auditoría y ausencia de comandos bajo blackout.
+
+La entrega de interfaz está en [prompt de front](frontend-handoffs/blackouts.md).
+El proxy de escritura y las pruebas de navegador siguen PENDING; la lectura del
+catálogo no equivale a certificar un formulario. Evidencia bajo `evidences/blackouts/`
+y `evidences/testing/`; consultar el informe de este corte en
+`evidences/blackouts/backend-20260910/report.json`.
+
+## Integración frontend, 2026-09-10
+
+El corte frontend posterior implementa `/blackouts` y el proxy de mismo origen en la consola. Ver [validación frontend](../../services/event-management-console/validation-blackouts.md) y `evidences/blackouts/frontend-20260910/`. La certificación anterior sigue siendo evidencia de backend; el informe nuevo distingue escrituras reales desde navegador, fallo inyectado y fixture explícita del catálogo anterior.

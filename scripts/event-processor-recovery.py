@@ -10,7 +10,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = ['docker', 'compose', '-p', 'cacf-certification', '-f',
-           str(ROOT / 'infrastructure/docker-compose.cacf-test.yml'), 'exec', '-T', 'postgres']
+           str(ROOT / 'testing/environments/cacf.compose.yml'), 'exec', '-T', 'postgres']
 
 
 def call(args, *, data=None):

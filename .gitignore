@@ -101,7 +101,18 @@ __pycache__/
 # Generated local identity bootstrap credentials and realm import
 /.local/processor-identity/
 
-# Gateway credentials and generated test evidence
+# All new test executions and reports (never source-controlled)
+/evidences/
+
+# Private dashboard credentials, schema backups and deployment evidence
+/.local/oem-dashboards/
+
+/.local/console-catalog/
+
+# Portable Kafka candidates and their installation identities
+/.local/kafka/
+
 /.local/gateway-collection/
 /.local/gateway-rules/
-/evidences/
+
+/.local/ess-admin/
