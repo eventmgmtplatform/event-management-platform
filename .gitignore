@@ -97,3 +97,6 @@ services/event-management-console/.sn-ui-03.*
 /artifacts/service-administration/
 __pycache__/
 *.py[cod]
+
+# Generated local identity bootstrap credentials and realm import
+/.local/processor-identity/

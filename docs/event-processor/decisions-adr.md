@@ -47,3 +47,15 @@ La migración aditiva 010 permite escritores anteriores mediante defaults. Readi
 de la imagen nueva exige las columnas nuevas. El backup/restore probado cubre sólo
 el schema event_processor en bases aisladas; la recuperación completa de plataforma
 y los objetivos RPO/RTO siguen pendientes.
+
+## ADR-004 — priorización funcional, 2026-09-09
+
+Por solicitud expresa del usuario, la API REST se habilita sin autenticación/RBAC
+y la integración de identidad queda en Defect Prevention. Tenant y actor son
+contexto declarado; conservamos versionado, idempotencia y auditoría funcional.
+El proceso local de identidad queda detenido.
+
+Blackouts inmediatos/programados reutilizan el registro inmutable y el snapshot
+coherente por evento, con su propio schema y evaluación en la etapa Blackout.
+La API especializada se registra pendiente; no se crea otra autoridad de lifecycle.
+La recurrencia y selectores no implementados se rechazan al compilar.

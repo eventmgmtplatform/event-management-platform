@@ -86,7 +86,7 @@ public class RuleCompilerTest {
     }
     @Test void oneSnapshotPerEventAndSimulationUsesSameDomain() {
         var snapshot=new RuleSnapshot("tenant",List.of(compile(leaf("event.severity","EQ","3"))));
-        var calls=new AtomicInteger();var pipeline=EventProcessingPipeline.configured(tenant->{calls.incrementAndGet();return snapshot;});
+        var calls=new AtomicInteger();var pipeline=EventProcessingPipeline.configured(tenant->{calls.incrementAndGet();return snapshot;},java.time.Clock.fixed(Instant.EPOCH,java.time.ZoneOffset.UTC));
         var live=pipeline.process(event());assertEquals(1,calls.get());
         var simulation=pipeline.simulate(event());assertEquals(2,calls.get());
         assertEquals(live.stages(),simulation.stages());assertTrue(simulation.candidates().isEmpty());

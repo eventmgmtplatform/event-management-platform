@@ -14,9 +14,10 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 /** Fixed local schema followed by a bounded semantic compiler. Errors never echo input values. */
-public final class RuleCompiler {
+public final class RuleCompiler implements com.eventmanagement.processor.ports.out.RuleValidation {
     private final ObjectMapper mapper;
     private final JsonSchema schema;
+    private final JsonSchema blackoutSchema;
     public record Compiled(Rule rule, String canonicalJson) {}
     public RuleCompiler() {
         mapper=new ObjectMapper(JsonFactory.builder().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
@@ -25,13 +26,21 @@ public final class RuleCompiler {
         mapper.enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN);
         try(var input=RuleCompiler.class.getResourceAsStream("/contracts/rule-v1.schema.json")) {
             schema=JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(input));
+            try(var blackout=RuleCompiler.class.getResourceAsStream("/contracts/blackout-v1.schema.json")) {
+                blackoutSchema=JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012).getSchema(mapper.readTree(blackout));
+            }
         } catch(Exception failure) { throw new IllegalStateException("RULE_SCHEMA_UNAVAILABLE",failure); }
+    }
+    @Override public com.eventmanagement.processor.ports.out.RuleValidation.Validated validate(String json) {
+        var compiled=compile(json);
+        return new com.eventmanagement.processor.ports.out.RuleValidation.Validated(compiled.rule(),compiled.canonicalJson());
     }
     public Compiled compile(String json) {
         if(json==null || json.length()>65536) throw invalid("RULE_SIZE_LIMIT");
         try {
             JsonNode source=mapper.readTree(json);
             bound(source,0,new int[]{0});
+            if(Set.of("IMMEDIATE","SCHEDULED","RECURRING").contains(source.path("type").asText()))return blackout(source);
             if(!schema.validate(source).isEmpty()) throw invalid("RULE_SCHEMA_INVALID");
             String id=source.path("id").asText(); text(id,128);
             if(!id.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) throw invalid("INVALID_RULE_ID");
@@ -59,6 +68,35 @@ public final class RuleCompiler {
                     source.path("enabled").booleanValue(),checksum,condition,actions),canonical);
         } catch(IllegalArgumentException e) { throw e; }
         catch(Exception e) { throw invalid("RULE_INVALID"); }
+    }
+    private Compiled blackout(JsonNode source)throws Exception {
+        if(!blackoutSchema.validate(source).isEmpty())throw invalid("BLACKOUT_SCHEMA_INVALID");
+        String type=source.path("type").asText(),id=source.path("id").asText();
+        text(id,128);if(!id.matches("[A-Za-z0-9][A-Za-z0-9._-]*"))throw invalid("INVALID_RULE_ID");
+        if(!source.path("version").canConvertToInt() || !source.path("priority").canConvertToInt())throw invalid("INTEGER_RANGE");
+        if(type.equals("RECURRING"))throw invalid("RECURRENCE_NOT_IMPLEMENTED");
+        var schedule=source.path("schedule");
+        if(schedule.hasNonNull("recurrence"))throw invalid("UNEXPECTED_RECURRENCE");
+        String zone=schedule.path("timezone").asText();
+        if(!java.time.ZoneId.getAvailableZoneIds().contains(zone))throw invalid("IANA_TIMEZONE_REQUIRED");
+        // Requiring an explicit start also for immediate windows makes replay/activation independent of wall time.
+        Instant from=Instant.parse(schedule.path("validFrom").asText());
+        Instant to=schedule.hasNonNull("validTo")?Instant.parse(schedule.path("validTo").asText()):null;
+        var scope=new TreeMap<String,String>();
+        var selectors=source.path("scope");
+        selectors.fields().forEachRemaining(e->{
+            if(!Set.of("customerCode","node","nodeAlias","component","instanceId","monitoringSolution").contains(e.getKey()))
+                throw invalid("BLACKOUT_SELECTOR_NOT_IMPLEMENTED");
+            String value=e.getValue().asText();text(value,4096);scope.put(e.getKey(),value);
+        });
+        text(source.path("reason").asText(),2048);text(source.path("metadata").path("owner").asText(),128);
+        source.path("metadata").fieldNames().forEachRemaining(k->{if(!Set.of("owner","externalReference").contains(k))throw invalid("METADATA_NOT_SUPPORTED");});
+        if(source.path("metadata").hasNonNull("externalReference"))text(source.path("metadata").path("externalReference").asText(),512);
+        var blackout=new com.eventmanagement.processor.domain.rules.Blackout(type,scope,from,to,java.time.ZoneId.of(zone),source.path("reason").asText());
+        String canonical=mapper.writeValueAsString(sorted(source));
+        String checksum=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
+        return new Compiled(new Rule(id,source.path("version").intValue(),source.path("priority").intValue(),source.path("enabled").booleanValue(),
+                checksum,new Rule.Group(true,List.of()),List.of(Directive.SUPPRESS_INTEGRATIONS),blackout),canonical);
     }
     private void bound(JsonNode node,int depth,int[] count) {
         if(node==null || depth>32 || ++count[0]>1024)throw invalid("RULE_COMPLEXITY_LIMIT");

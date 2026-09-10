@@ -15,4 +15,11 @@ public class ProcessorWiring {
     com.eventmanagement.processor.adapters.rules.RuleCompiler compiler() {
         return new com.eventmanagement.processor.adapters.rules.RuleCompiler();
     }
+    @Produces @Singleton
+    com.eventmanagement.processor.application.AdminService adminService(
+            com.eventmanagement.processor.ports.out.RuleAdministration repository,
+            com.eventmanagement.processor.ports.out.RuleValidation validator,
+            com.eventmanagement.processor.ports.out.RuleSnapshots snapshots) {
+        return new com.eventmanagement.processor.application.AdminService(repository,validator,snapshots);
+    }
 }

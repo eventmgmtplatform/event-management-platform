@@ -32,3 +32,10 @@
 - Health PostgreSQL/Kafka; sin ejecución directa de proveedores.
 - 18 pruebas unitarias/integración aprobadas y certificación de replay/reinicio/DLQ.
 - Release v1.0.0 completo sigue PENDING; consultar implementation-status.md.
+
+## 2026-09-09 — REST funcional y blackouts
+
+- Administración versionada, concurrencia optimista, recibos idempotentes e historial transaccional.
+- Simulación sin escrituras y consulta de evidencia persistida.
+- Blackouts inmediatos/programados con scope exacto, ventana y reloj explícitos, integrados con PolicyEvaluation.
+- Identidad y RBAC diferidos por decisión del usuario; próximos motores en Defect Prevention.

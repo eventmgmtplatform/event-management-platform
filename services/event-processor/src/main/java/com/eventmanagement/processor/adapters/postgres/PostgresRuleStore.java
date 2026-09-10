@@ -9,7 +9,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 
-/** Internal administration only; caller supplies authenticated tenant/actor, never event payload identity. */
+/** Versioned administration; caller context is unverified while authentication is deferred. */
 @ApplicationScoped
 public class PostgresRuleStore implements RuleSnapshots {
     private final DataSource dataSource;
@@ -19,10 +19,14 @@ public class PostgresRuleStore implements RuleSnapshots {
         this.dataSource=dataSource; this.compiler=compiler;
     }
     public long createVersion(String tenant,String json,String actor,String reason) throws SQLException {
-        scope(tenant,actor,reason); var compiled=compiler.compile(json); var rule=compiled.rule();
         try(var c=dataSource.getConnection()) {
             c.setAutoCommit(false);
-            try {
+            try { long revision=createVersion(c,tenant,json,actor,reason,null);c.commit();return revision; }
+            catch(SQLException|RuntimeException error) {c.rollback();throw error;}
+        }
+    }
+    public long createVersion(Connection c,String tenant,String json,String actor,String reason,Long expectedRevision) throws SQLException {
+        scope(tenant,actor,reason);var compiled=compiler.compile(json);var rule=compiled.rule();
                 try(var s=c.prepareStatement("INSERT INTO event_processor.rule_definition(tenant,rule_id) VALUES (?,?) ON CONFLICT DO NOTHING")) {
                     s.setString(1,tenant);s.setString(2,rule.id());s.executeUpdate();
                 }
@@ -30,7 +34,11 @@ public class PostgresRuleStore implements RuleSnapshots {
                 try(var s=c.prepareStatement("SELECT latest_version,revision,status FROM event_processor.rule_definition WHERE tenant=? AND rule_id=? FOR UPDATE")) {
                     s.setString(1,tenant);s.setString(2,rule.id());try(var r=s.executeQuery()){r.next();latest=r.getInt(1);revision=r.getLong(2);status=r.getString(3);}
                 }
+                if(expectedRevision!=null && revision!=expectedRevision)throw new IllegalArgumentException("REVISION_CONFLICT");
                 if(status.equals("RETIRED"))throw new IllegalArgumentException("RULE_RETIRED");
+                if(rule.blackout()!=null && rule.blackout().scope().containsKey("customerCode") && !tenant.equals(rule.blackout().scope().get("customerCode")))
+                    throw new IllegalArgumentException("BLACKOUT_TENANT_MISMATCH");
+                if(latest>0 && (load(c,tenant,rule.id(),latest).blackout()==null)!=(rule.blackout()==null))throw new IllegalArgumentException("RULE_CAPABILITY_IMMUTABLE");
                 if(rule.version()!=latest+1)throw new IllegalArgumentException("NEXT_VERSION_REQUIRED");
                 try(var s=c.prepareStatement("INSERT INTO event_processor.rule_version(tenant,rule_id,version,checksum,definition,actor,reason) VALUES (?,?,?,?,?::jsonb,?,?)")) {
                     s.setString(1,tenant);s.setString(2,rule.id());s.setInt(3,rule.version());s.setString(4,rule.checksum());
@@ -40,15 +48,17 @@ public class PostgresRuleStore implements RuleSnapshots {
                     s.setInt(1,rule.version());s.setString(2,tenant);s.setString(3,rule.id());s.executeUpdate();
                 }
                 audit(c,tenant,rule.id(),revision+1,rule.version(),"CREATED",actor,reason);
-                c.commit();return revision+1;
-            } catch(SQLException|RuntimeException error) { c.rollback();throw error; }
-        }
+        return revision+1;
     }
     public long changeStatus(String tenant,String id,int version,Status status,long expectedRevision,String actor,String reason) throws SQLException {
-        scope(tenant,actor,reason); Objects.requireNonNull(status);
         try(var c=dataSource.getConnection()) {
             c.setAutoCommit(false);
-            try {
+            try { long revision=changeStatus(c,tenant,id,version,status,expectedRevision,actor,reason);c.commit();return revision; }
+            catch(SQLException|RuntimeException error) {c.rollback();throw error;}
+        }
+    }
+    public long changeStatus(Connection c,String tenant,String id,int version,Status status,long expectedRevision,String actor,String reason) throws SQLException {
+        scope(tenant,actor,reason);Objects.requireNonNull(status);
                 try(var lock=c.prepareStatement("SELECT pg_advisory_xact_lock(hashtextextended(?, 11))")) {
                     lock.setString(1,tenant);lock.execute();
                 }
@@ -75,9 +85,7 @@ public class PostgresRuleStore implements RuleSnapshots {
                     s.setString(2,status.name());s.setString(3,tenant);s.setString(4,id);s.executeUpdate();
                 }
                 audit(c,tenant,id,revision+1,version,status.name(),actor,reason);
-                c.commit();return revision+1;
-            } catch(SQLException|RuntimeException error) { c.rollback();throw error; }
-        }
+        return revision+1;
     }
     @Override public RuleSnapshot snapshot(String tenant) {
         if(tenant!=null && tenant.isBlank()) return new RuleSnapshot(tenant,List.of());

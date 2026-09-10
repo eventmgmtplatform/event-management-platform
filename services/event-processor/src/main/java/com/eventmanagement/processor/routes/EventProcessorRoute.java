@@ -18,6 +18,6 @@ public class EventProcessorRoute extends RouteBuilder {
         from("kafka:{{processor.kafka.input-topic}}?brokers={{processor.kafka.brokers}}"
                 +"&groupId={{processor.kafka.consumer-group}}&autoOffsetReset={{processor.kafka.auto-offset-reset}}"
                 +"&autoCommitEnable=false&allowManualCommit=true&breakOnFirstError=true")
-                .routeId("processor-events-raw").process(processor);
+                .routeId("processor-events-raw").autoStartup("{{processor.kafka.enabled}}").process(processor);
     }
 }

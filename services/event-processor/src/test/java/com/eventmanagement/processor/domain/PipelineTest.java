@@ -22,7 +22,7 @@ class PipelineTest {
         assertThrows(IllegalArgumentException.class,()->new EventProcessingPipeline(List.of()));
     }
     @Test void simulationUsesSameDecisionsAndStableReplayIdentity() {
-        var pipeline=EventProcessingPipeline.foundation(); var event=event(Event.Status.PROBLEM);
+        var pipeline=EventProcessingPipeline.configured(t->new com.eventmanagement.processor.domain.rules.RuleSnapshot(t,List.of()),java.time.Clock.fixed(Instant.EPOCH,java.time.ZoneOffset.UTC)); var event=event(Event.Status.PROBLEM);
         var live=pipeline.process(event);var simulation=pipeline.simulate(event);
         assertEquals(live.stages(),simulation.stages());assertEquals(live.processingId(),simulation.processingId());
         assertEquals(ProcessingContext.Mode.SIMULATION,simulation.mode());assertTrue(simulation.candidates().isEmpty());

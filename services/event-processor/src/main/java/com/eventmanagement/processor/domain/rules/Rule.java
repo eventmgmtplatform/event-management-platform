@@ -8,7 +8,10 @@ import java.util.regex.Pattern;
 
 /** Compiled values contain only immutable domain types. No JSON, reflection or provider IO. */
 public record Rule(String id, int version, int priority, boolean enabled, String checksum,
-                   Condition condition, List<StageResult.Directive> actions) {
+                   Condition condition, List<StageResult.Directive> actions, Blackout blackout) {
+    public Rule(String id,int version,int priority,boolean enabled,String checksum,Condition condition,List<StageResult.Directive> actions) {
+        this(id,version,priority,enabled,checksum,condition,actions,null);
+    }
     public Rule { actions = List.copyOf(actions); }
     public enum Operator { EQ, NE, GT, GTE, LT, LTE, IN, NOT_IN, CONTAINS, STARTS_WITH, ENDS_WITH, REGEX, EXISTS, NOT_EXISTS, BETWEEN }
     public enum Field {

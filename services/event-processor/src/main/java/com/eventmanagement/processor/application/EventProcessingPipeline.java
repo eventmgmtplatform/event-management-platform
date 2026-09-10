@@ -6,11 +6,16 @@ import java.util.*;
 
 public final class EventProcessingPipeline implements ProcessEventUseCase, SimulateEventUseCase {
     private final List<ProcessingStage> stages;
+    private final java.time.Clock clock;
     private final com.eventmanagement.processor.ports.out.RuleSnapshots snapshots;
     public EventProcessingPipeline(List<ProcessingStage> stages) {
         this(stages, tenant -> new com.eventmanagement.processor.domain.rules.RuleSnapshot(tenant, List.of()));
     }
     public EventProcessingPipeline(List<ProcessingStage> stages, com.eventmanagement.processor.ports.out.RuleSnapshots snapshots) {
+        this(stages,snapshots,java.time.Clock.systemUTC());
+    }
+    public EventProcessingPipeline(List<ProcessingStage> stages,com.eventmanagement.processor.ports.out.RuleSnapshots snapshots,java.time.Clock clock) {
+        this.clock=Objects.requireNonNull(clock);
         this.snapshots=Objects.requireNonNull(snapshots);
         this.stages = List.copyOf(stages);
         if (!this.stages.stream().map(ProcessingStage::stage).toList()
@@ -25,7 +30,7 @@ public final class EventProcessingPipeline implements ProcessEventUseCase, Simul
     }
     private ProcessingContext evaluate(Event event, ProcessingContext.Mode mode) {
         var context = ProcessingContext.begin(event,
-                StableIdentity.of("processing-v1", event.tenant(), event.eventId()), mode).withSnapshot(snapshots.snapshot(event.tenant()));
+                StableIdentity.of("processing-v1", event.tenant(), event.eventId()), mode).withSnapshot(snapshots.snapshot(event.tenant())).at(clock.instant());
         for (var stage : stages) {
             // Suppression never short-circuits recovery/state or hides later failures.
             StageResult result = context.directive() == StageResult.Directive.DEAD_LETTER && stage.stage() != StageResult.Stage.ProcessingAudit
@@ -40,6 +45,9 @@ public final class EventProcessingPipeline implements ProcessEventUseCase, Simul
         return configured(tenant -> new com.eventmanagement.processor.domain.rules.RuleSnapshot(tenant, List.of()));
     }
     public static EventProcessingPipeline configured(com.eventmanagement.processor.ports.out.RuleSnapshots snapshots) {
+        return configured(snapshots,java.time.Clock.systemUTC());
+    }
+    public static EventProcessingPipeline configured(com.eventmanagement.processor.ports.out.RuleSnapshots snapshots,java.time.Clock clock) {
         return new EventProcessingPipeline(Arrays.stream(StageResult.Stage.values())
                 .map(stage -> (ProcessingStage) new ProcessingStage() {
                     public StageResult.Stage stage() { return stage; }
@@ -48,11 +56,12 @@ public final class EventProcessingPipeline implements ProcessEventUseCase, Simul
                             case ContractValidation -> StageResult.success(stage, "GATEWAY_CONTRACT_VALIDATED");
                             case Normalization -> StageResult.success(stage, "COMPATIBLE_INTERNAL_VIEW");
                             case IdentityFingerprint -> StageResult.pending(stage, "GATEWAY_KEY_PRESERVED_FINGERPRINT_POLICY_PENDING");
+                            case Blackout -> context.ruleSnapshot().evaluateBlackouts(context.event(),context.evaluatedAt());
                             case PolicyEvaluation -> context.ruleSnapshot().evaluate(context.event());
                             case ProcessingAudit -> StageResult.success(stage, "ORDERED_EVIDENCE_PREPARED");
                             default -> StageResult.pending(stage, "FROZEN_ARTIFACT_OR_CAPABILITY_PENDING");
                         };
                     }
-                }).toList(), snapshots);
+                }).toList(), snapshots,clock);
     }
 }

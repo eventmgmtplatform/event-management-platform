@@ -13,6 +13,7 @@ import org.eclipse.microprofile.health.*;
 @ApplicationScoped
 public class ProcessorReadiness implements HealthCheck {
     @Inject DataSource dataSource;
+    @ConfigProperty(name="processor.admin.enabled") boolean adminEnabled;
     @ConfigProperty(name="processor.kafka.brokers") String brokers;
     @Override public HealthCheckResponse call() {
         try(var connection=dataSource.getConnection(); var statement=connection.createStatement()) {
@@ -21,6 +22,10 @@ public class ProcessorReadiness implements HealthCheck {
             statement.executeQuery("SELECT message_id, dispatch_sequence, attempts, next_attempt_at FROM event_processor.output_outbox LIMIT 0");
             statement.executeQuery("SELECT tenant,rule_id,active_version,revision FROM event_processor.rule_definition LIMIT 0");
             statement.executeQuery("SELECT checksum,definition FROM event_processor.rule_version LIMIT 0");
+            if(adminEnabled) {
+                statement.executeQuery("SELECT request_id,request_hash,response FROM event_processor.admin_request LIMIT 0");
+                statement.executeQuery("SELECT actor,outcome FROM event_processor.admin_audit LIMIT 0");
+            }
             try(var admin=AdminClient.create(Map.of("bootstrap.servers",brokers,
                     "request.timeout.ms","3000","default.api.timeout.ms","3000"))) {
                 admin.describeCluster().clusterId().get(3,java.util.concurrent.TimeUnit.SECONDS);

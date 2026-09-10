@@ -67,9 +67,12 @@ def main():
         migration = ROOT / 'infrastructure/postgres/init/011-processor-rule-registry.sql'
         report['migrationSha256'] = hashlib.sha256(migration.read_bytes()).hexdigest()
         sql(migration.read_text())
+        admin_migration = ROOT / 'infrastructure/postgres/init/012-processor-administration.sql'
+        sql(admin_migration.read_text())
+        report['adminMigrationSha256'] = hashlib.sha256(admin_migration.read_bytes()).hexdigest()
         assert sql("SELECT count(*) FROM information_schema.tables WHERE table_schema='event_processor' "
                    "AND table_name IN ('rule_definition','rule_version','rule_change')") == '3'
-        report['checks'].append('migration 011 applied and three configuration tables verified')
+        report['checks'].append('migrations 011/012 applied; configuration tables verified')
         report['activeRules'] = int(sql("SELECT count(*) FROM event_processor.rule_definition WHERE status='ENABLED'"))
         print('Migration applied; replacing only event-processor', flush=True)
         replacement_started = True
