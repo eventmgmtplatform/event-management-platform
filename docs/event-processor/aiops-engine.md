@@ -73,3 +73,19 @@ DP-EP-09: API real de Bridge, autenticación del proveedor, mapeo de solicitudes
 reintentos y política de errores reales, historial de consultas, integración opcional
 al pipeline y cualquier cambio de contratos quedan pendientes. No habilitar llamadas
 reales cambiando únicamente la URL: se requiere implementar y certificar el adaptador.
+
+## Aceptación por motor
+
+`python3 testing/certifications/processor-aiops-certification.py` comprueba CRUD,
+ETag, aislamiento por tenant, rechazo de duplicados/entradas inválidas, catálogo,
+auditoría de tres revisiones y ausencia de eventos/reglas/comandos generados por consultas.
+Consulta el WireMock desplegado y **reinicia el Processor** para verificar persistencia;
+planificar esa interrupción breve al reproducirla. No recrea contenedores ni volúmenes.
+Registra intercambios HTTP y hashes en `evidences/os-02-event-processor/aiops/`.
+La limpieza falla explícitamente si no puede dar de baja su configuración sintética.
+
+AiopsApiIT y AiopsMockClientTest usan PostgreSQL/HTTP aislados para verificar API,
+auditoría inmutable, 503 sanitizado, respuestas inválidas y timeout. Ejecutar con
+`-Dprocessor.test.jdbc.url=jdbc:postgresql://127.0.0.1:15439/cacf_test`; usar copia de
+compilación si el runtime monta target. El [prompt de frontend](frontend-handoffs/aiops.md)
+es la entrega de esta capa; la aceptación desde navegador sigue siendo independiente.

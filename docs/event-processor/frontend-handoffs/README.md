@@ -14,6 +14,7 @@ que sólo invoquen la API.
 | Correlación | [Prompt de integración](correlation.md) | PENDING: administración y simulación desde navegador |
 | Routing/comandos | [Prompt de integración](routing.md) | PENDING: administración y simulación desde navegador |
 | Policy Engine | [Prompt de integración](policy.md) | PENDING: administración y simulación desde navegador |
+| AIOps | [Prompt de integración](aiops.md) | PENDING: CRUD y consulta manual desde navegador |
 
 Los siguientes motores tendrán su documento después de revisar/cerrar su backend.
 No se presume que compartan el mismo contrato ni que sus vistas actuales permitan escritura.
