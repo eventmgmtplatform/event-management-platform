@@ -6,6 +6,11 @@ Runbooks, decisiones y contratos por frente; la historia individual de código p
 
 ## Unreleased — corte documental 2026-09-10
 
+- Corte documental actualizado con `06f046f`: la administración web, sus
+  contratos de integración, MockSecrets, GLPI, dashboards, temas, i18n,
+  validaciones y pruebas del frente WebGUI están publicados en
+  `feature/os-13-01-webgui-mgmt` y sincronizados con `origin`.
+
 - Manual Kafka: ubicación de configuración, Web UI Kafbat, CLI del producto,
   instalación desde cero y criterios de una futura versión certificada.
 

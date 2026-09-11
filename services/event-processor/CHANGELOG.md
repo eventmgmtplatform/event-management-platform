@@ -6,9 +6,16 @@ Sustituye enrichment-engine en septiembre. Evoluciona de pipeline durable y outb
 
 ## Unreleased — corte documental 2026-09-10
 
+- La administración del Processor y sus integraciones con la WebGUI quedaron
+  consolidada y publicada en `06f046f`: reglas/policies, blackouts,
+  inventory/enrichment, correlación, auto-suppression, routing, comandos por
+  grupo y AIOps local con persistencia PostgreSQL y mock explícito.
+
 - OS_11_01.IMP: perfil lifecycle tipado optativo sobre CREATE_TICKET; estado por tenant/ciclo y consumo de resultados con decisión/comando/outbox atómicos. Bloquea automatizaciones obsoletas, cierres de grupos activos y falsos éxitos. Migración aditiva 020 requerida antes del binario; rutas previas sin lifecycle conservan comportamiento. Reversión: deshabilitar perfiles nuevos y drenar/revisar ciclos, conservando tablas y offsets.
 
-- Testing centralizado y reportes fuera del código. El workspace incorpora StateRequestAdapter y su emisión en la unidad transaccional hacia ESS; trabajo local pendiente de commit, distinto del encadenamiento completo OS_09.
+- Testing centralizado y reportes fuera del código. El workspace incorpora
+  StateRequestAdapter y su emisión en la unidad transaccional hacia ESS; está
+  incluido en el corte publicado, distinto del encadenamiento completo OS_09.
 
 ## Historial confirmado en Git
 

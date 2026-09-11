@@ -6,7 +6,9 @@ Gobierno de ramas, convenciones de commit, publicación e índice del repositori
 
 ## Unreleased — corte documental 2026-09-10
 
-- Índice de componentes y política de changelogs; referencias a testing centralizado. Publicación/commits no realizados en esta tarea.
+- Índice de componentes, política de changelogs y referencias a testing
+  centralizado. La consolidación de la WebGUI se publicó como `06f046f` en
+  `feature/os-13-01-webgui-mgmt`; el branch local y `origin` están alineados.
 
 ## Historial confirmado en Git
 

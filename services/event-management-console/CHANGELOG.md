@@ -6,6 +6,14 @@ Frontend React/TypeScript/Vite incorporado en septiembre, con navegación y base
 
 ## Unreleased — corte documental 2026-09-10
 
+- Corte consolidado `06f046f`: quedaron integradas y publicadas las pantallas
+  de administración y plataforma (Dashboard general, Event Management,
+  Correlación, Routing, Policies, Inventory/Enrichment, Blackouts,
+  AutoSuppression, AIOps Extensions, ESS, Cliente, Secrets/MockSecrets y
+  Middleware), además de los plugins Ticketing, Notifications y CACF. Se
+  conservaron los contratos same-origin, persistencia PostgreSQL, ETag/revisión,
+  estados de error y las pruebas de navegador/Node asociadas.
+
 - Detalle de servicio: encender/apagar/reiniciar mediante el CLI existente, confirmación, seguimiento y actualización de salud; auditoría persistente e idempotencia.
 - Acceso y fila del dashboard ITSM actual en 8091, separado del contenedor legado de 8088.
 

@@ -6,6 +6,11 @@ Evolución aditiva de esquemas de estado, idempotencia/control del Worker, CACF 
 
 ## Unreleased — corte documental 2026-09-10
 
+- Corte consolidado `06f046f`: se publicaron las migraciones y ajustes de
+  configuración para GLPI, revisiones de integraciones, AIOps, correlación,
+  blackouts, reglas, ESS y dashboards. Las migraciones siguen siendo aditivas y
+  su aplicación efectiva depende del ambiente de despliegue.
+
 - 022: catálogo delivery_filter + delivery_filter_target, predicados tipados,
   vista de lectura, grants y modelo documentado en docs/dashboards/delivery-model.md.
 
@@ -13,7 +18,9 @@ Evolución aditiva de esquemas de estado, idempotencia/control del Worker, CACF 
 
 - Migración 018: vistas dashboard_read para Events/Ticketing/GNM/CACF y rol de lectura. Validada en PostgreSQL 17 aislado; no aplicada automáticamente al runtime existente.
 
-- Migraciones locales 016-ess-quarantine.sql y 017-ess-lifecycle.sql para cuarentena y lifecycle ESS; pendientes de commit. No inferir aplicación en un ambiente a partir de la existencia del archivo.
+- Migraciones locales 016-ess-quarantine.sql y 017-ess-lifecycle.sql para
+  cuarentena y lifecycle ESS están incluidas en el branch publicado. No inferir
+  aplicación en un ambiente a partir de la existencia del archivo.
 
 ## Historial confirmado en Git
 

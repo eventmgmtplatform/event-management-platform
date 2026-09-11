@@ -4,13 +4,22 @@
 
 ## Unreleased — 2026-09-10
 
+- `06f046f` consolidó la entrega publicada de la WebGUI de administración en
+  `feature/os-13-01-webgui-mgmt`: navegación colapsable, i18n ES/EN, temas
+  Actual/Kyndryl/IBM Carbon/LIVERPOOL, dashboards de plataforma y sistema,
+  plugins de Ticketing/Notifications/CACF, MockSecrets, GLPI, Middleware/Kafka,
+  Inventory/Enrichment, Blackouts (incluidos SCHEDULED y RECURRENT), Policies,
+  Correlación, Routing, AutoSuppression, AIOps Extensions, ESS y Cliente.
+  Incluye proxies same-origin, persistencia PostgreSQL, validaciones, fixtures y
+  pruebas de integración; la publicación quedó sincronizada con `origin`.
+
 - [Kafka administrable y reproducible](docs/kafka/README.md): CLI, documentación
   de Kafbat y paquete independiente con imágenes fijadas; certificación de producto pendiente.
 
 - OS_11_01.IMP: coordinación durable optativa fatal → ticket → GNM → CACF → recuperación y cierres confirmados. [Contrato y runbook](docs/event-processor/lifecycle-orchestration.md); migraciones aditivas 020/021. Alcances por componente en el índice.
 
 - Centralización de pruebas en testing, catálogo de casos y separación de evidencias.
-- Trabajo local de ESS/lifecycle, emisión de solicitudes de estado desde Processor y frontend administrativo; pendiente de commit al corte. Consultar los changelogs de los componentes para el alcance.
+- ESS/lifecycle, emisión de solicitudes de estado desde Processor y frontend administrativo quedaron incorporados en el commit consolidado; consultar los changelogs de los componentes para el alcance.
 - Changelogs por componente reconstruidos y política permanente de mantenimiento.
 - [OS_09_01.IMP](docs/workstreams/OS_09_01_IMP-orquestacion-happy-path.md): prompt para implementar el encadenamiento fatal → ticket → GNM → CACF → clear. Es trabajo especificado para otra tarea, no funcionalidad implementada.
 
