@@ -1,6 +1,9 @@
 # ============================================================
 # Event Management Platform
 
+# Wiki documental: repositorio independiente
+wiki-docs/
+
 # ------------------------------------------------------------
 # Secretos y configuración local
 .env
