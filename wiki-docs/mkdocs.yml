@@ -1,0 +1,95 @@
+site_name: Event Management OpenSource
+site_description: Documentación técnica de la plataforma Event Management OpenSource
+site_url: https://eventmgmtplatform.github.io/event-mgmt-docs/
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: es
+  font:
+    text: IBM Plex Sans
+    code: IBM Plex Mono
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+extra_css:
+  - assets/stylesheets/kyndryl.css
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Inicio: index.md
+  - Inicio rápido:
+      - Introducción: getting-started/index.md
+      - Desarrollo local: getting-started/local-development.md
+      - Primer evento: getting-started/first-event.md
+  - Conceptos:
+      - Modelo de dominio: concepts/domain-model.md
+      - Flujo de eventos: concepts/event-flow.md
+      - Glosario: concepts/glossary.md
+  - Arquitectura:
+      - Visión general: architecture/index.md
+      - Contenedores: architecture/containers.md
+      - Componentes: architecture/components.md
+      - Datos: architecture/data.md
+      - Seguridad: architecture/security.md
+      - Despliegue: architecture/deployment.md
+      - GCP: architecture/gcp.md
+  - Referencia:
+      - API: reference/api/index.md
+      - Eventos: reference/events/index.md
+      - Configuración: reference/configuration.md
+      - Terraform: reference/terraform.md
+  - Operación:
+      - Runbook local: operations/local-runbook.md
+      - Observabilidad: operations/observability.md
+      - Incidentes: operations/incidents.md
+      - Recuperación: operations/disaster-recovery.md
+  - Desarrollo:
+      - Contribución: development/contributing.md
+      - Estándares: development/standards.md
+      - Pruebas: development/testing.md
+      - Releases: development/releases.md
+  - Decisiones:
+      - Índice ADR: decisions/index.md
+      - Plantilla ADR: decisions/adr-template.md
+  - Proyecto:
+      - Estado: project/status.md
+      - WebGUI administrativa: project/webgui.md
+      - Roadmap: project/roadmap.md
+      - Deuda técnica: project/technical-debt.md
+      - Base de conocimiento: knowledge/index.md
+  - Plataforma integrada:
+      - Índice: platform/index.md
+      - Arquitectura: platform/architecture/README.md
+      - API: platform/api/README.md
+      - Desarrollo: platform/development/README.md
+      - Operaciones: platform/operations/README.md
+      - Releases: platform/releases/README.md
+      - Changelogs: platform/changelogs/README.md
+      - Event Processor: platform/event-processor/implementation-status.md
+      - Event State Service: platform/event-state-service/README.md
+      - Dashboards: platform/dashboards/architecture.md
+      - Kafka: platform/kafka/README.md
+      - CACF: platform/cacf/README.md
+      - Integraciones: platform/integrations/glpi.md
+      - Administración de servicios: platform/service-administration.md
+      - Gobierno Git: platform/git/README.md

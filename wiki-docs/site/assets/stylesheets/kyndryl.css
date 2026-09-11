@@ -1,0 +1,37 @@
+/* Event Management WebGUI / Kyndryl visual system. */
+:root {
+  --em-red: #ff462d; --em-red-dark: #b72c1a; --em-ink: #161616;
+  --em-gray-10: #f4f4f4; --em-gray-20: #e0e0e0; --em-gray-70: #525252;
+  --md-primary-fg-color: var(--em-ink); --md-primary-fg-color--light: #262626;
+  --md-primary-fg-color--dark: #000; --md-accent-fg-color: var(--em-red-dark);
+  --md-accent-fg-color--transparent: #ff462d1f; --md-default-bg-color: #fff;
+  --md-default-fg-color: var(--em-ink); --md-default-fg-color--light: var(--em-gray-70);
+  --md-default-fg-color--lighter: #6f6f6f; --md-default-fg-color--lightest: var(--em-gray-20);
+  --md-code-bg-color: var(--em-gray-10); --md-typeset-a-color: var(--em-red-dark);
+}
+html { font-size: 16px; }
+body, input { font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; }
+code, kbd, pre { font-family: "IBM Plex Mono", Consolas, monospace; }
+.md-typeset { font-size: .92rem; line-height: 1.55; }
+.md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4 { color: var(--em-ink); letter-spacing: 0; }
+.md-typeset h1 { font-size: 2.4rem; font-weight: 400; margin-bottom: 2rem; }
+.md-typeset h2 { border-bottom: 1px solid var(--em-gray-20); font-weight: 400; margin-top: 2.5rem; padding-bottom: .5rem; }
+.md-typeset h3 { font-weight: 600; }
+.md-header { background: var(--em-ink); border-bottom: 3px solid var(--em-red); box-shadow: none; }
+.md-tabs { background: var(--em-ink); }
+.md-header__topic .md-ellipsis { font-weight: 600; }
+.md-nav__link { border-left: 2px solid transparent; }
+.md-nav__link--active { border-left-color: var(--em-red); color: var(--em-red-dark); font-weight: 600; }
+.md-sidebar { border-right: 1px solid var(--em-gray-20); }
+.md-typeset a { text-decoration: none; }
+.md-typeset a:hover { color: var(--em-red); text-decoration: underline; }
+.md-typeset .md-button { border-radius: 0; border-color: var(--em-red); color: var(--em-red-dark); font-weight: 600; }
+.md-typeset .md-button:hover, .md-typeset .md-button--primary { background: var(--em-red); border-color: var(--em-red); color: var(--em-ink); }
+.md-typeset table:not([class]) { border: 0; border-radius: 0; box-shadow: none; }
+.md-typeset table:not([class]) th { background: var(--em-gray-20); border-bottom: 1px solid var(--em-ink); color: var(--em-ink); }
+.md-typeset table:not([class]) td { border-top: 1px solid var(--em-gray-20); }
+.md-typeset blockquote { border-left-color: var(--em-red); }
+.md-typeset .admonition, .md-typeset details { border-radius: 0; box-shadow: none; }
+.md-footer { background: var(--em-ink); }
+/* Fixed Kyndryl light presentation: no palette/theme selector. */
+.md-header__option, [data-md-component="palette"], label[for^="__palette"] { display: none !important; }
