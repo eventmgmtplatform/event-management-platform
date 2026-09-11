@@ -9,7 +9,7 @@ RUN npm run build
 FROM nginx:1.27-alpine AS runtime
 LABEL org.opencontainers.image.title="Event Management Console" \
       org.opencontainers.image.version="1.0.0" \
-      org.opencontainers.image.description="Global operations console for Event Management OpenSource"
+      org.opencontainers.image.description="Global operations console for OPEN EVENT MANAGEMENT"
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /workspace/dist /usr/share/nginx/html
 EXPOSE 8080

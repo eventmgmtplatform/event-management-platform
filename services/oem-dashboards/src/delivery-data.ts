@@ -1,5 +1,5 @@
-export const targets = ["gnm","snow","cacf","chatops","extensions"] as const;
-export const targetNames: Record<string,string> = {gnm:"GNM",snow:"SNOW · Ticketing",cacf:"CACF",chatops:"ChatOps",extensions:"Extensions"};
+export const targets = ["gnm","snow","glpi","cacf","chatops","extensions"] as const;
+export const targetNames: Record<string,string> = {gnm:"GNM",snow:"SNOW · Ticketing",glpi:"GLPI · Ticketing",cacf:"CACF",chatops:"ChatOps",extensions:"Extensions"};
 export type DeliveryQuery = {target:string; applid:string; customer:string; state:string; severity:string; q:string; page:number; limit:number};
 export type Target = {target:typeof targets[number]; behavior:"enable"|"force_off"|"overlay"; actionReference:string|null; assignmentGroup:string|null; delaySeconds:number|null; dependsOnTicketing:boolean};
 export type DeliveryRow = {id:string;name:string;description:string;customerCode:string;applid:string|null;state:number;weight:number;severities:number[]|null;criteria:Record<string,{operator:string;value:string|number|boolean}>;origin:string;legacyFilterId:string|null;updatedAt:string;targets:Target[]};

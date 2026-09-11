@@ -116,3 +116,4 @@ __pycache__/
 /.local/gateway-rules/
 
 /.local/ess-admin/
+/.local/e2e-tool/

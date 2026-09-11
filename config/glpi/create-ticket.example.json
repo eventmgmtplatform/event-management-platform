@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0",
+  "commandId": "glpi-example-001",
+  "eventId": "event-glpi-example-001",
+  "eventKey": "glpi-example:server01:cpu",
+  "tenant": "demo",
+  "integrationType": "GLPI",
+  "operation": "CREATE_TICKET",
+  "payload": {
+    "name": "CPU alta en server01",
+    "content": "Alerta recibida por la API pública de eventos",
+    "resource": "server01",
+    "severity": 4,
+    "type": 1,
+    "urgency": 4,
+    "impact": 4,
+    "entities_id": 0,
+    "itilcategories_id": 0
+  }
+}

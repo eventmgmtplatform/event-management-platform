@@ -1,6 +1,7 @@
 package com.eventmanagement.state;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -114,6 +115,10 @@ public class OpenSearchStateClient {
                 "cacf",
                 state.cacfStatus
         );
+
+        JsonNode glpi = state.integrations.get("glpi");
+        integrationStatus.put("glpi", glpi == null ? "NOT_REQUIRED" :
+                "RESOLVED_CONFIRMED".equals(glpi.path("ticketLifecycleState").asText()) ? "RESOLVED" : glpi.path("status").asText());
 
         document.set(
                 "integrations",

@@ -1,0 +1,42 @@
+/* A single adjustable navigation panel across all appearance themes. */
+.console-shell.navigation-adjustable{grid-template-columns:var(--sidebar-width) minmax(0,1fr)}
+.console-shell.navigation-closed{grid-template-columns:minmax(0,1fr)}
+.navigation-adjustable .sidebar{min-width:0;display:flex;flex-direction:column}
+.navigation-adjustable .sidebar nav{height:auto;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.navigation-adjustable .sidebar-footer{position:static;flex-shrink:0;margin:16px 8px 0;padding-top:14px}
+.navigation-adjustable .brand{padding-left:4px;padding-right:0;gap:8px;flex-shrink:0}
+.navigation-adjustable .brand-mark{flex-shrink:0}
+.navigation-adjustable .brand>div{min-width:0;flex:1}
+.navigation-adjustable .brand strong{font-size:13px}
+.navigation-adjustable .sidebar-close{flex-shrink:0;width:28px;height:28px;font-size:22px;display:grid;place-items:center}
+.navigation-adjustable .navigation-toggle{flex-shrink:0;display:grid;place-items:center;margin-right:12px}
+.navigation-adjustable .page-context{margin-right:auto}
+.sidebar-resize{position:absolute;inset:0 -5px 0 auto;width:10px;cursor:col-resize;touch-action:none;z-index:35;outline-offset:-3px}
+.sidebar-resize::after{content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;background:transparent;transition:background .15s}
+.sidebar-resize:hover::after,.sidebar-resize:focus-visible::after,.navigation-resizing .sidebar-resize::after{background:var(--accent)}
+.sidebar-resize:focus-visible{outline:2px solid var(--accent)}
+.navigation-resizing,.navigation-resizing *{cursor:col-resize!important;user-select:none!important}
+.navigation-toggle:focus-visible,.sidebar-close:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:900px){.console-shell.navigation-adjustable{grid-template-columns:minmax(0,1fr)}.navigation-adjustable .sidebar{width:min(88vw,var(--sidebar-width));height:100dvh}.navigation-adjustable .navigation-toggle{margin-right:0}.navigation-adjustable .topbar{gap:8px}}
+.navigation-adjustable .sidebar-preferences{display:grid;grid-template-columns:minmax(0,1fr) 52px;gap:6px;margin-top:8px}
+.navigation-adjustable .sidebar-preferences select{width:100%;min-width:0;min-height:28px;height:28px;padding:2px 5px;font-size:11px;line-height:1.2;color:var(--muted);background:var(--surface);border:1px solid var(--border-soft);border-radius:4px}
+.navigation-adjustable .sidebar-preferences select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.navigation-adjustable .sidebar-footer small{font-size:10px;margin:7px 0 0;line-height:1.4}
+.profile-control{position:relative;flex-shrink:0}
+.profile-control .avatar{width:36px;height:36px;padding:0;border:0;border-radius:50%;font-size:11px;font-weight:700;background:var(--surface-2);color:var(--text)}
+.profile-control .profile-dismiss{position:fixed;inset:0;width:100%;height:100%;background:transparent;border:0;border-radius:0;z-index:1;cursor:default}
+.profile-control .profile-panel{position:absolute;z-index:2;right:0;top:calc(100% + 12px);width:248px;max-width:calc(100vw - 32px);padding:16px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius,8px);box-shadow:0 8px 28px #0003;text-align:left}
+.profile-control .profile-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.profile-control .profile-heading strong{font-size:14px;color:var(--text)}
+.profile-control .profile-heading button{width:28px;height:28px;padding:0;background:var(--surface-2);color:var(--text);border:0;font-size:20px;cursor:pointer}
+.profile-panel p,.profile-panel small{font-size:11px;color:var(--muted);line-height:1.5}
+.profile-panel label{display:grid;gap:6px;font-size:12px;margin-bottom:12px}
+.profile-control .profile-panel select{width:100%;padding:7px 9px;min-height:34px;font-size:12px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:4px}
+.profile-control :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.navigation-adjustable .sidebar-preferences{grid-template-columns:minmax(0,1fr)}
+.navigation-adjustable .nav-group-toggle{display:flex;justify-content:space-between;align-items:center;width:100%;gap:8px;border:0;background:transparent;color:var(--subtle);padding:6px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:4px}
+.navigation-adjustable .nav-group-toggle:hover{background:var(--surface-2);color:var(--text)}
+.navigation-adjustable .nav-group-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.navigation-adjustable .nav-group-toggle>span:last-child{font-size:16px;line-height:1}
+.navigation-adjustable .nav-group-items{display:grid;gap:5px}
+.navigation-adjustable .nav-group-items[hidden],.navigation-adjustable #dashboard-navigation-items[hidden]{display:none}

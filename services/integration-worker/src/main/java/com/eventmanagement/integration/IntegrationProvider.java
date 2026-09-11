@@ -3,6 +3,7 @@ package com.eventmanagement.integration;
 public enum IntegrationProvider {
 
     SERVICENOW,
+    GLPI,
     GNM,
     CACF;
 

@@ -51,3 +51,18 @@ Added read-only ESS event list, exact lookup, detail/history and global quaranti
 ## 2026-09-10 — Manual Blackouts v1
 
 Connected the existing Blackouts screen to the versioned Processor write API via same-origin Nginx. Added explicit tenant selection, SCHEDULED/IMMEDIATE forms, separate save/activation, revision conflicts, persisted idempotent retry, terminal retirement, history and simulations. Browser acceptance and cleanup documented in validation-blackouts.md.
+
+Look and feel: selector now includes Actual, Kyndryl, IBM Carbon and LIVERPOOL, persisted per browser origin. Both interfaces deployed and visually checked on 2026-09-10.
+
+## 2026-09-10 — Administración del Processor
+
+- Inventory/Enrichment: edición tipada, versiones independientes, simulación y catálogo anterior de consulta.
+- AutoSuppression: registros locales, ventana finita, estado declarado, activación explícita e historial.
+- Correlación: reglas ATTRIBUTE/GROUP, lectura paginada del registro mixto, simulación de ciclos y evidencia real por processingId.
+- Reutilización del cliente same-origin, ETag, revisión optimista y reintentos idempotentes de Blackouts; traducciones ES/EN y temas existentes.
+
+## Routing frontend — 2026-09-10
+
+- Administración ROUTING base con ETag, versiones, historial y reintentos idempotentes.
+- Simulaciones activas/candidatas, deduplicación y resultados inmutables; Lifecycle en solo lectura.
+- Navegación y traducciones ES/EN; ver validation-routing.md.

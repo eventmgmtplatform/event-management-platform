@@ -24,7 +24,7 @@ def module(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('suite', choices=['list', 'unit', 'console', 'dashboards', 'dashboards-integration', 'harness', 'blackout', 'happy-path', 'cacf-remediated', 'certification'])
+    parser.add_argument('suite', choices=['list', 'unit', 'glpi', 'glpi-e2e', 'glpi-resolve-e2e', 'glpi-close-e2e', 'glpi-followup-e2e', 'console', 'dashboards', 'dashboards-integration', 'harness', 'blackout', 'happy-path', 'cacf-remediated', 'certification'])
     parser.add_argument('--service', choices=SERVICES)
     parser.add_argument('--name', choices=[p.stem for p in (ROOT/'testing/certifications').glob('*.py')])
     parser.add_argument('--runtime', choices=['os11','shared'], default='shared', help='Target for happy-path; os11 requires explicit laboratory recovery')
@@ -70,11 +70,23 @@ def main():
                 for service in ([args.service] if args.service else SERVICES):
                     commands.append((service, ['mvn', '-B', '-ntp', '-o', 'clean', 'test',
                         '-DfailIfNoTests=true', '-Dtesting.reportsDirectory='+str(output/service)], ROOT/'services'/service))
+            elif args.suite == 'glpi-resolve-e2e':
+                commands.append(('glpi-resolve-e2e', [sys.executable, str(ROOT / 'testing/e2e/glpi_resolve.py')], ROOT / 'testing/e2e'))
+            elif args.suite == 'glpi-close-e2e':
+                commands.append(('glpi-close-e2e', [sys.executable, str(ROOT / 'testing/e2e/glpi_close.py')], ROOT / 'testing/e2e'))
+            elif args.suite == 'glpi-followup-e2e':
+                commands.append(('glpi-followup-e2e', [sys.executable, str(ROOT / 'testing/e2e/glpi_followup.py')], ROOT / 'testing/e2e'))
+            elif args.suite == 'glpi-e2e':
+                commands.append(('glpi-create-e2e', [sys.executable, str(ROOT / 'testing/e2e/glpi_create.py')], ROOT / 'testing/e2e'))
+            elif args.suite == 'glpi':
+                commands.append(('glpi-api', [sys.executable, '-m', 'unittest', 'discover', '-s', 'testing/services/glpi-ticketing-api', '-v'], ROOT))
+                commands.append(('glpi-worker', ['mvn', '-o', 'test', '-Dtest=GlpiProcessorTest'], ROOT/'services/integration-worker'))
+                commands.append(('glpi-ui', ['node', '--test', str(ROOT/'testing/services/event-management-console/glpi-ticketing.test.mjs')], ROOT))
             elif args.suite == 'console':
                 commands.append(('console', ['node', '--test', str(ROOT/'testing/services/event-management-console/platform.test.mjs')], ROOT/'services/event-management-console'))
             elif args.suite == 'dashboards':
                 commands.append(('dashboard-contracts', [sys.executable, str(ROOT/'testing/services/oem-dashboards/test_dashboard.py'), 'ContractTests', '-v'], ROOT))
-                commands.append(('dashboard-ui', ['node', '--test', str(ROOT/'testing/services/oem-dashboards/data.test.mjs'), str(ROOT/'testing/services/oem-dashboards/delivery.test.mjs')], ROOT/'services/oem-dashboards'))
+                commands.append(('dashboard-ui', ['node', '--test', str(ROOT/'testing/services/oem-dashboards/data.test.mjs'), str(ROOT/'testing/services/oem-dashboards/delivery.test.mjs'), str(ROOT/'testing/services/oem-dashboards/uuid.test.mjs')], ROOT/'services/oem-dashboards'))
             elif args.suite == 'dashboards-integration':
                 commands.append(('dashboard-postgres', [sys.executable, str(ROOT/'testing/services/oem-dashboards/integration.py')], ROOT))
             elif args.suite == 'harness':

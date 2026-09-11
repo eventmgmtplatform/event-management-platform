@@ -12,7 +12,7 @@ que sólo invoquen la API.
 | Inventory/Enrichment | [Prompt de integración](inventory-enrichment.md) | PENDING: conexión de formularios y aceptación desde navegador |
 | Auto-suppression | [Prompt de integración](auto-suppression.md) | PENDING: formulario y aceptación desde navegador |
 | Correlación | [Prompt de integración](correlation.md) | PENDING: administración y simulación desde navegador |
-| Routing/comandos | [Prompt de integración](routing.md) | PENDING: administración y simulación desde navegador |
+| Routing/comandos | [Prompt de integración](routing.md) | Funcionalidad y aceptación de navegador documentadas en [validation-routing.md](../../../services/event-management-console/validation-routing.md); PENDING exportación de capturas a disco |
 | Policy Engine | [Prompt de integración](policy.md) | PENDING: administración y simulación desde navegador |
 | AIOps | [Prompt de integración](aiops.md) | PENDING: CRUD y consulta manual desde navegador |
 

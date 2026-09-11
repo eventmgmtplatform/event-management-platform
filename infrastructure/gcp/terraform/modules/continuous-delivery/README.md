@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This module establishes the Continuous Delivery foundation for Event Management OpenSource.
+This module establishes the Continuous Delivery foundation for OPEN EVENT MANAGEMENT.
 
 It creates the minimum Google Cloud identity and access required for a future delivery runtime to consume immutable container artifacts and operate against the normalized release contract introduced by OS_08_13.
 

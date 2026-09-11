@@ -2,6 +2,16 @@ import {createContext, useContext, useEffect, useState, type ReactNode} from "re
 
 export type Language = "es" | "en";
 export const english: Record<string,string> = {
+  "Eventos con integración GLPI": "Events with GLPI integration",
+  "Estado y referencias de tickets GLPI.": "GLPI ticket status and references.",
+  "Revisar resultados pendientes y fallidos": "Review pending and failed results",
+  "Verificar el ID nativo de GLPI": "Verify the native GLPI ID",
+  "Revisar comandos pendientes de reconciliación": "Review commands awaiting reconciliation",
+
+"Iniciar servicio":"Start service", "Detener servicio":"Stop service", "Reiniciar servicio":"Restart service", "Probar conexión":"Test connection", "Actualizar":"Refresh", "Buscar API":"Search APIs", "Nombre, servicio o ruta":"Name, service or route", "Comprobación del endpoint":"Endpoint check", "Salud del servicio":"Service health",
+
+"Perfil": "Profile", "Cerrar perfil": "Close profile", "Operador local": "Local operator", "Idioma": "Language", "Preferencias guardadas en este navegador.": "Preferences saved in this browser.", "Console local": "Local console", "Abrir menú": "Open menu", "Cerrar menú": "Close menu", "Ajustar ancho del menú": "Resize navigation menu", "Arrastra para ajustar. Flechas para cambiar ancho; doble clic para restablecer.": "Drag to resize. Use arrow keys to adjust width; double-click to reset.",
+"Tema":"Theme", "Actual":"Current",
 "Administración":"Administration", "Operación y administración":"Operations and administration", "Disponibilidad HTTP y control de los servicios que alojan las APIs.":"HTTP availability and control of API hosting services.", "Testing comprueba el endpoint de salud. Stop, start y reboot afectan al servicio completo y a todas sus APIs.":"Testing checks the health endpoint. Stop, start and reboot affect the entire service and all its APIs.", "Las APIs sin control local sólo permiten testing.":"APIs without local control only support testing.", "Hay una operación en curso.":"An operation is in progress.", "Servicio":"Service", "Consumidores":"Consumers", "Verificación":"Verification", "Acciones":"Actions", "running":"Running", "succeeded":"Succeeded", "failed":"Failed", "interrupted":"Interrupted",
 "Eventos originales recibidos, antes de normalizar o publicar en Kafka.":"Original events received, before normalization or publication to Kafka.", "Hoy e histórico usan la zona America/Mexico_City. La captura comienza con este despliegue.":"Today and history use America/Mexico_City time. Capture starts with this deployment.", "Periodo":"Period", "Hoy":"Today", "Histórico":"History", "Desde":"From", "Hasta":"Through", "Recepción":"Received", "Original":"Original", "Ver original":"View original", "Descargar original":"Download original",
 

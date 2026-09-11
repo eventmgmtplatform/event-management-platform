@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Repeatable operational flow for publishing Event Management OpenSource work without leaking generated material or losing local work.
+Repeatable operational flow for publishing OPEN EVENT MANAGEMENT work without leaking generated material or losing local work.
 
 ## Phase A — Discovery
 

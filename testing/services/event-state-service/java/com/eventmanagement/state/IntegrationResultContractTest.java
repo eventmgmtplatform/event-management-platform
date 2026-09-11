@@ -17,6 +17,10 @@ class IntegrationResultContractTest {
         result.remove("externalId");
         IntegrationResultContract.validate(result);
     }
+    @Test void acceptsNativeGlpiIdentity() throws Exception {
+        var result=fixture().put("integrationType","GLPI").put("externalId","42");
+        IntegrationResultContract.validate(result);
+    }
     @Test void rejectsMissingIdentityAndWrongJsonTypes() throws Exception {
         for (String field : new String[]{"resultId", "eventId", "eventKey", "tenant", "integrationType", "status"}) {
             var result = fixture(); result.remove(field);

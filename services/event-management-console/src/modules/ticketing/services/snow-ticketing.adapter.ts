@@ -9,7 +9,7 @@ export function parseIncident(value: unknown): Ticket {
   if (!fields.every(key => typeof r[key] === "string")) throw new Error("Respuesta de ServiceNow inválida.");
   const state = Object.entries(snowStates).find(([, code]) => code === r.state)?.[0] as Status | undefined;
   if (!state || !Object.hasOwn(priorities, String(r.priority)) || !/^console-INC\d+$/.test(String(r.sys_id)) || !/^INC\d+$/.test(String(r.number))) throw new Error("Respuesta de ServiceNow inválida.");
-  return { id: String(r.number), sysId: String(r.sys_id), status: state, priority: priorities[String(r.priority)], customer: String(r.u_customer), resource: String(r.cmdb_ci), tower: String(r.u_tower), summary: String(r.short_description), description: String(r.description), updated: String(r.sys_updated_on), closeCode: String(r.close_code), closeNotes: String(r.close_notes) };
+  return { provider: "SERVICENOW", id: String(r.number), sysId: String(r.sys_id), status: state, priority: priorities[String(r.priority)], customer: String(r.u_customer), resource: String(r.cmdb_ci), tower: String(r.u_tower), summary: String(r.short_description), description: String(r.description), updated: String(r.sys_updated_on), closeCode: String(r.close_code), closeNotes: String(r.close_notes) };
 }
 async function request(path: string, init: RequestInit) {
   const response = await fetch(path, { ...init, cache: "no-store", headers: { "Content-Type": "application/json", Accept: "application/json" } });

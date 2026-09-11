@@ -12,45 +12,67 @@ body{line-height:1.45}
 @media(max-width:1000px){.topbar .data-mode{display:none}}@media(max-width:650px){.topbar{height:auto;min-height:64px;padding:10px 16px;flex-wrap:wrap}.topbar-actions{margin-left:auto}.theme-control>span{display:none}.topbar .environment,.topbar .avatar{display:none}.content{padding:14px 16px 28px}.page h1{font-size:24px}.catalog-table-wrap{max-height:none}.catalog-toolbar form{min-width:0}.catalog-summary{flex-wrap:wrap}.catalog-summary span{margin-left:0}.catalog-criterion{grid-template-columns:1fr 1fr}.catalog-dialog footer{bottom:-16px}}
 /* Kyndryl palette: warm red accent, warm neutral surfaces and high-contrast ink.
    Dark ink on the bright brand red preserves readable button contrast. */
-:root[data-theme=kyndryl]{color-scheme:light;--bg:#f2f1ee;--sidebar:#ffffff;--surface:#ffffff;--surface-2:#f0efec;--surface-3:#e8e6e1;--border:#b8b6b1;--border-soft:#dedcd6;--text:#161616;--muted:#525252;--subtle:#636363;--accent:#b72c1a;--accent-strong:#9c2113;--brand-red:#ff462d;--success:#176b3b;--warning:#805500;--danger:#b42318;--shadow:0 8px 24px #16161612;--radius:2px;font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif}
-[data-theme=kyndryl] body{background:var(--bg)}
-[data-theme=kyndryl] .sidebar{background:var(--sidebar);border-right:1px solid var(--border-soft)}
-[data-theme=kyndryl] .brand-mark{background:var(--brand-red);color:#161616;border-radius:0;box-shadow:none}
-[data-theme=kyndryl] .brand{border-bottom:1px solid var(--border-soft);margin-bottom:20px}
-[data-theme=kyndryl] .topbar{background:#161616;color:#fff;backdrop-filter:none;border-color:#393939}
-[data-theme=kyndryl] .topbar .eyebrow{color:#c6c6c6}
-[data-theme=kyndryl] .topbar .theme-control{color:#e0e0e0}
-[data-theme=kyndryl] .topbar select,[data-theme=kyndryl] .topbar .icon-button{background:#262626;color:#f4f4f4;border-color:#6f6f6f;border-radius:0}
-[data-theme=kyndryl] .topbar .environment,[data-theme=kyndryl] .topbar .data-mode{color:#e0e0e0;border-color:#525252;border-radius:0}
-[data-theme=kyndryl] .topbar .avatar{background:#393939;color:#fff}
-[data-theme=kyndryl] .topbar :focus-visible{outline-color:#fff}
-[data-theme=kyndryl] .nav-item{border-radius:0}
-[data-theme=kyndryl] .nav-item.active{background:#fff0ec;box-shadow:inset 3px 0 var(--brand-red);color:#161616;font-weight:600}
-[data-theme=kyndryl] .nav-item:hover{background:#f0efec;color:#161616}
-[data-theme=kyndryl] .status-dot{box-shadow:none}
-[data-theme=kyndryl] .hero-card,[data-theme=kyndryl] .module-card,[data-theme=kyndryl] .notice{background:var(--surface);box-shadow:none;border-radius:2px}
-[data-theme=kyndryl] .admin-panel,[data-theme=kyndryl] .admin-metrics article,[data-theme=kyndryl] .source-grid>article,[data-theme=kyndryl] .catalog-table-wrap,[data-theme=kyndryl] .ticket-kpis>button,[data-theme=kyndryl] .ticket-filters{border-radius:2px}
-[data-theme=kyndryl] .page button,[data-theme=kyndryl] .page input,[data-theme=kyndryl] .page select,[data-theme=kyndryl] .page textarea,[data-theme=kyndryl] .admin-button{border-radius:0}
-[data-theme=kyndryl] .page input:not([type=checkbox]),[data-theme=kyndryl] .page select,[data-theme=kyndryl] .page textarea{background:var(--surface-2);border-color:transparent;border-bottom-color:#8d8d8d;color:var(--text)}
-[data-theme=kyndryl] input::placeholder,[data-theme=kyndryl] textarea::placeholder{color:#636363;opacity:1}
-[data-theme=kyndryl] .catalog-page .catalog-primary,[data-theme=kyndryl] .admin-button.primary{background:var(--brand-red);color:#161616;border-color:var(--brand-red);font-weight:600}
-[data-theme=kyndryl] .catalog-primary:hover,[data-theme=kyndryl] .admin-button.primary:hover{background:#ff604a}
-[data-theme=kyndryl] .catalog-columns,[data-theme=kyndryl] .catalog-dialog,[data-theme=kyndryl] .catalog-dialog footer,[data-theme=kyndryl] .ticket-drawer{background:var(--surface);color:var(--text)}
-[data-theme=kyndryl] .catalog-dialog,[data-theme=kyndryl] .admin-dialog,[data-theme=kyndryl] .ticket-dialog{border-radius:2px;box-shadow:0 16px 48px #16161633}
-[data-theme=kyndryl] .catalog-destination{background:var(--surface-2);border-color:var(--border-soft);border-radius:0}
-[data-theme=kyndryl] .catalog-table-wrap th,[data-theme=kyndryl] .admin-table th,[data-theme=kyndryl] .table-wrap th{background:#e8e6e1;color:#393939}
-[data-theme=kyndryl] .catalog-table-wrap td{background:var(--surface)}
-[data-theme=kyndryl] .catalog-table-wrap tr:hover td,[data-theme=kyndryl] .admin-table tr:hover td,[data-theme=kyndryl] .table-wrap tbody tr:hover{background:#f0efec}
-[data-theme=kyndryl] .catalog-tags>span{background:#e8e6e1;color:#393939;border-radius:2px}
-[data-theme=kyndryl] .ticket-kpis>button.selected{background:#fff0ec;border-color:var(--brand-red);box-shadow:inset 0 3px var(--brand-red)}
-[data-theme=kyndryl] .catalog-error,[data-theme=kyndryl] .ticket-alert{background:#fff1f1;color:var(--danger);border-color:#da1e28;border-radius:0}
-[data-theme=kyndryl] .catalog-page .catalog-danger{color:var(--danger);border-color:var(--danger)}
-[data-theme=kyndryl] .admin-alert{background:#fff8e6;color:var(--warning);border-color:#c79b32}
-[data-theme=kyndryl] .toast{background:#defbe6;color:var(--success)}
-[data-theme=kyndryl] .ticket-notice{background:#defbe6}
-[data-theme=kyndryl] .admin-tool>.admin-status.healthy{color:var(--success)}
-[data-theme=kyndryl] .admin-tool>.admin-status.stopped,[data-theme=kyndryl] .admin-tool>.admin-status.error{color:var(--danger)}
+:root[data-theme=kyndryl]{color-scheme:light;--bg:#f2f1ee;--sidebar:#ffffff;--surface:#ffffff;--surface-2:#f0efec;--surface-3:#e8e6e1;--border:#b8b6b1;--border-soft:#dedcd6;--text:#161616;--muted:#525252;--subtle:#636363;--accent:#b72c1a;--accent-strong:#9c2113;--brand-red:#ff462d;--selection:#fff0ec;--brand-hover:#ff604a;--success:#176b3b;--warning:#805500;--danger:#b42318;--shadow:0 8px 24px #16161612;--radius:2px;font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) body{background:var(--bg)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .sidebar{background:var(--sidebar);border-right:1px solid var(--border-soft)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .brand-mark{background:var(--brand-red);color:#161616;border-radius:0;box-shadow:none}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .brand{border-bottom:1px solid var(--border-soft);margin-bottom:20px}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .topbar{background:#161616;color:#fff;backdrop-filter:none;border-color:#393939}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .topbar .eyebrow{color:#c6c6c6}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .topbar .theme-control{color:#e0e0e0}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .topbar select,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .topbar .icon-button{background:#262626;color:#f4f4f4;border-color:#6f6f6f;border-radius:0}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .topbar .environment,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .topbar .data-mode{color:#e0e0e0;border-color:#525252;border-radius:0}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .topbar .avatar{background:#393939;color:#fff}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .topbar :focus-visible{outline-color:#fff}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .nav-item{border-radius:0}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .nav-item.active{background:var(--selection);box-shadow:inset 3px 0 var(--brand-red);color:#161616;font-weight:600}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .nav-item:hover{background:var(--surface-2);color:#161616}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .status-dot{box-shadow:none}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .hero-card,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .module-card,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .notice{background:var(--surface);box-shadow:none;border-radius:2px}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-panel,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-metrics article,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .source-grid>article,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-table-wrap,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .ticket-kpis>button,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .ticket-filters{border-radius:2px}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .page button,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .page input,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .page select,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .page textarea,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-button{border-radius:0}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .page input:not([type=checkbox]),:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .page select,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .page textarea{background:var(--surface-2);border-color:transparent;border-bottom-color:#8d8d8d;color:var(--text)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) input::placeholder,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) textarea::placeholder{color:#636363;opacity:1}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-page .catalog-primary,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-button.primary{background:var(--brand-red);color:#161616;border-color:var(--brand-red);font-weight:600}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-primary:hover,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-button.primary:hover{background:var(--brand-hover)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-columns,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-dialog,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-dialog footer,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .ticket-drawer{background:var(--surface);color:var(--text)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-dialog,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-dialog,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .ticket-dialog{border-radius:2px;box-shadow:0 16px 48px #16161633}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-destination{background:var(--surface-2);border-color:var(--border-soft);border-radius:0}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-table-wrap th,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-table th,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .table-wrap th{background:var(--surface-3);color:#393939}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-table-wrap td{background:var(--surface)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-table-wrap tr:hover td,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-table tr:hover td,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .table-wrap tbody tr:hover{background:var(--surface-2)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-tags>span{background:var(--surface-3);color:#393939;border-radius:2px}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .ticket-kpis>button.selected{background:var(--selection);border-color:var(--brand-red);box-shadow:inset 0 3px var(--brand-red)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-error,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .ticket-alert{background:#fff1f1;color:var(--danger);border-color:#da1e28;border-radius:0}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .catalog-page .catalog-danger{color:var(--danger);border-color:var(--danger)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-alert{background:#fff8e6;color:var(--warning);border-color:#c79b32}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .toast{background:#defbe6;color:var(--success)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .ticket-notice{background:#defbe6}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-tool>.admin-status.healthy{color:var(--success)}
+:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-tool>.admin-status.stopped,:is([data-theme=kyndryl],[data-theme=carbon],[data-theme=liverpool]) .admin-tool>.admin-status.error{color:var(--danger)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 /* Contain absolutely positioned accessible labels within the table scroller. */
 .catalog-table-wrap{position:relative}
 .catalog-tags .admin-sr{padding:0;width:1px;height:1px;white-space:nowrap}
+
+/* IBM Carbon Gray 10 roles and Liverpool retail-inspired palette.
+   Appearance layer over existing React components, not @carbon/react widgets. */
+:root[data-theme=carbon]{color-scheme:light;--bg:#f4f4f4;--sidebar:#ffffff;--surface:#ffffff;--surface-2:#f4f4f4;--surface-3:#e0e0e0;--border:#8d8d8d;--border-soft:#e0e0e0;--text:#161616;--muted:#525252;--subtle:#6f6f6f;--accent:#0f62fe;--accent-strong:#0043ce;--brand-red:#0f62fe;--brand-hover:#0353e9;--selection:#e0e0e0;--success:#0e6027;--warning:#8e6a00;--danger:#da1e28;--shadow:none;--radius:0;font-family:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif}
+:root[data-theme=liverpool]{color-scheme:light;--bg:#f7f7f7;--sidebar:#ffffff;--surface:#ffffff;--surface-2:#f5f5f5;--surface-3:#eeeeee;--border:#a1a1a1;--border-soft:#e2e2e2;--text:#242424;--muted:#616161;--subtle:#666666;--accent:#b00077;--accent-strong:#910062;--brand-red:#e10098;--brand-hover:#c00082;--selection:#fce8f5;--success:#176b3b;--warning:#805500;--danger:#b42318;--shadow:0 4px 16px #2424240d;--radius:6px;font-family:"Montserrat","Helvetica Neue",Arial,sans-serif}
+:is([data-theme=carbon],[data-theme=liverpool]) .brand-mark,
+:is([data-theme=carbon],[data-theme=liverpool]) .brand>span{color:#fff}
+:is([data-theme=carbon],[data-theme=liverpool]) .catalog-page .catalog-primary,
+:is([data-theme=carbon],[data-theme=liverpool]) .admin-button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+:is([data-theme=carbon],[data-theme=liverpool]) .catalog-primary:hover,
+:is([data-theme=carbon],[data-theme=liverpool]) .admin-button.primary:hover{background:var(--accent-strong);border-color:var(--accent-strong)}
+[data-theme=carbon] .page h1,[data-theme=carbon] h1{font-weight:400;letter-spacing:0}
+[data-theme=carbon] :is(.hero-card,.module-card,.admin-panel,.admin-metrics article,.catalog-table-wrap,.filters,.total,.distribution,.records,.checklist,dialog){border-radius:0;box-shadow:none}
+[data-theme=liverpool] :is(.topbar,.workspace>header){background:#e10098;border-color:#c00082;color:#fff}
+[data-theme=liverpool] :is(.topbar,.workspace>header) :is(.eyebrow,.theme-control,.page-context strong,.environment,.data-mode){color:#fff}
+[data-theme=liverpool] :is(.topbar,.workspace>header) select{background:#fff;color:#242424;border-color:#fff;border-radius:4px}
+[data-theme=liverpool] .topbar :is(.avatar,.icon-button){background:#910062;color:#fff}
+[data-theme=liverpool] :is(.nav-item,.sidebar nav a){border-radius:4px}
+[data-theme=liverpool] :is(.hero-card,.module-card,.admin-panel,.admin-metrics article,.catalog-table-wrap,.filters,.total,.distribution,.records,.checklist,dialog){border-radius:6px}
+[data-theme=liverpool] :is(.page,main) :is(button,input,select,textarea){border-radius:4px}
+:is([data-theme=carbon],[data-theme=liverpool]) :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:is([data-theme=carbon],[data-theme=liverpool]) button:disabled{cursor:not-allowed}

@@ -14,13 +14,50 @@ from psycopg.types.json import Jsonb
 
 CUSTOMER_FIELDS = ('customer_code','customer','bamid','gnmorgid','snow_company_id','snow_assignment_group','gnm_assignment_group','cacf_assignment_group','chatops_team','aiops_extension','timezone','enabled')
 FILTER_FIELDS = ('name','description','customer_code','applid','filter_state','filter_weight','severities','criteria')
-TARGETS = ('gnm','snow','cacf','chatops','extensions')
+TARGETS = ('gnm','snow','glpi','cacf','chatops','extensions')
 CRITERIA = ('IBMManaged','ResourceId','Service','SubAccount','Subsystem','Application','InstanceId','SubComponent','Component','ComponentType','ResourceUsage','OSType','MsgId','AlertKey','AlertGroup','ResourceType','EventType','MonitoringSolution','Location','SourceType','OutsideServiceHours')
 TABLES = {'customers': ('customer_configuration','customer_code'), 'filters': ('delivery_filter','filter_id')}
 
 class Invalid(Exception): pass
 class Conflict(Exception): pass
 class Missing(Exception): pass
+
+def integration_metadata(row):
+    return {'id': str(row['integration_id']), 'tenant': row['tenant'], 'environment': row['environment'],
+            'name': row['integration_name'], 'type': row['integration_type'], 'baseUrl': row['base_url'],
+            'authenticationType': row['authentication_type'], 'credentialReference': row['credential_reference'],
+            'configuration': row['configuration'], 'enabled': row['enabled'], 'revision': row['revision'],
+            'updatedAt': row['updated_at'].isoformat()}
+
+def integration_validate(data):
+    required=('tenant','environment','name','baseUrl','authenticationType','credentialReference','configuration','enabled')
+    if not isinstance(data,dict) or any(k not in data for k in required): raise Invalid('required_integration_fields')
+    for key,limit in (('tenant',100),('environment',100),('name',150),('baseUrl',1000),('authenticationType',50),('credentialReference',500)):
+        if not isinstance(data[key],str) or not data[key].strip() or len(data[key])>limit: raise Invalid('invalid_integration_field')
+    if data.get('type')!='NOTIFICATIONS_GNM': raise Invalid('invalid_integration_type')
+    if not isinstance(data['configuration'],dict) or len(json.dumps(data['configuration']))>16000: raise Invalid('invalid_configuration')
+    if type(data['enabled']) is not bool: raise Invalid('invalid_enabled')
+    cfg=data['configuration']
+    if not isinstance(cfg.get('organizationId'),str) or not cfg['organizationId'].strip() or len(cfg['organizationId'])>255: raise Invalid('organization_required')
+    if not isinstance(cfg.get('incidentsPath'),str) or not cfg['incidentsPath'].startswith('/') or len(cfg['incidentsPath'])>255: raise Invalid('invalid_incidents_path')
+
+def integration_row(conn,key):
+    return conn.execute('SELECT * FROM event_management.integration_configuration WHERE integration_id=%s',(key,)).fetchone()
+
+def integration_write(conn,key,data,method):
+    integration_validate(data); existing=integration_row(conn,key) if key else None
+    if method=='PUT':
+        if not existing: raise Missing()
+        if str(data.get('revision'))!=str(existing['revision']): raise Conflict('stale_integration')
+        conn.execute('''UPDATE event_management.integration_configuration SET tenant=%s,environment=%s,integration_name=%s,
+          integration_type='NOTIFICATIONS_GNM',base_url=%s,authentication_type=%s,credential_reference=%s,configuration=%s,enabled=%s,
+          revision=revision+1,updated_at=clock_timestamp() WHERE integration_id=%s''',(data['tenant'],data['environment'],data['name'],data['baseUrl'],data['authenticationType'],data['credentialReference'],Jsonb(data['configuration']),data['enabled'],key))
+    else:
+        key=uuid.uuid4();conn.execute('''INSERT INTO event_management.integration_configuration
+          (integration_id,tenant,environment,integration_name,integration_type,base_url,authentication_type,credential_reference,configuration,enabled,revision)
+          VALUES (%s,%s,%s,%s,'NOTIFICATIONS_GNM',%s,%s,%s,%s,%s,1)''',(key,data['tenant'],data['environment'],data['name'],data['baseUrl'],data['authenticationType'],data['credentialReference'],Jsonb(data['configuration']),data['enabled']))
+    row=integration_row(conn,key);conn.execute('INSERT INTO event_management.console_catalog_audit(entity,entity_id,action,before_data,after_data) VALUES (%s,%s,%s,%s,%s)',('integration_notifications',str(key),method,Jsonb(None),Jsonb(integration_metadata(row))))
+    return integration_metadata(row)
 
 def connect():
     return psycopg.connect(host=os.getenv('PGHOST','postgres'), dbname=os.environ['PGDATABASE'], user='console_catalog_login', password=Path('/run/secrets/catalog_password').read_text().strip(), connect_timeout=3, options='-c statement_timeout=5000', row_factory=dict_row)
@@ -130,6 +167,25 @@ class Handler(BaseHTTPRequestHandler):
             if self.command=='GET' and parsed.path.startswith('/api/catalog/views/'):
                 with connect() as conn: result=views.snapshot(conn,parsed.path.rsplit('/',1)[-1])
                 return self.respond(200,result) if result is not None else self.respond(404,{'error':'not_found'})
+            if parsed.path == '/api/catalog/integrations/notifications' or parsed.path.startswith('/api/catalog/integrations/notifications/'):
+                route_parts=parsed.path.strip('/').split('/')
+                key=unquote(route_parts[-1]) if len(route_parts)==5 else None
+                if self.command=='GET':
+                    with connect() as conn:
+                        if key:
+                            row=integration_row(conn,key)
+                            if not row: raise Missing()
+                            return self.respond(200,{'item':integration_metadata(row)})
+                        tenant=parse_qs(parsed.query).get('tenant',[''])[0]
+                        if not tenant: raise Invalid('tenant_required')
+                        rows=conn.execute("SELECT * FROM event_management.integration_configuration WHERE tenant=%s AND integration_type='NOTIFICATIONS_GNM' ORDER BY environment,integration_name LIMIT 501",(tenant,)).fetchall()
+                        return self.respond(200,{'items':[integration_metadata(r) for r in rows[:500]],'truncated':len(rows)>500})
+                if self.headers.get('X-Console-Action')!='1' or self.headers.get('Content-Type','').split(';')[0]!='application/json': return self.respond(403,{'error':'forbidden'})
+                size=int(self.headers.get('Content-Length','0'))
+                if not 0<size<=65536: raise Invalid('invalid_payload')
+                data=json.loads(self.rfile.read(size))
+                with connect() as conn: item=integration_write(conn,key,data,self.command)
+                return self.respond(201 if self.command=='POST' else 200,{'item':item})
             parts=parsed.path.strip('/').split('/')
             if len(parts) not in (3,4) or parts[:2]!=['api','catalog'] or parts[2] not in TABLES: return self.respond(404,{'error':'not_found'})
             kind=parts[2]; key=unquote(parts[3]) if len(parts)==4 else None

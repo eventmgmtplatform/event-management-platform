@@ -48,7 +48,7 @@ public class CacfRuntime {
     }
     private void publish() throws Exception {
         for(int i=0;i<100;i++)if(!repository.publishOne((type,payload)->{
-            String destination=type.startsWith("SERVICENOW_")?commands:topic;
+            String destination=(type.startsWith("SERVICENOW_") || type.startsWith("GLPI_"))?commands:topic;
             producer.sendBodyAndHeader("kafka:"+destination+"?brokers="+brokers+"&requestRequiredAcks=all",payload.toString(),KafkaConstants.KEY,payload.path("eventKey").asText());
         }))break;
     }

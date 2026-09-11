@@ -39,6 +39,16 @@
             <choice>
 
                 <when>
+                    <simple>${exchangeProperty.integrationProvider} == 'GLPI'</simple>
+                    <process ref="glpiCommandProcessor"/>
+                    <process ref="integrationCommandClaimProcessor"/>
+                    <choice>
+                        <when><simple>${exchangeProperty.integrationIdempotencyDecision} == 'IN_PROGRESS'</simple><stop/></when>
+                        <when><simple>${exchangeProperty.integrationIdempotencyDecision} == 'REPLAY'</simple></when>
+                        <otherwise><process ref="glpiExecutionProcessor"/></otherwise>
+                    </choice>
+                </when>
+                <when>
                     <simple>${exchangeProperty.integrationProvider} == 'CACF'</simple>
                     <!-- CACF has its own durable-admission consumer group on this topic. -->
                     <stop/>

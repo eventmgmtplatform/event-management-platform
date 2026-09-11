@@ -9,7 +9,7 @@ Starting checkpoint: `fc51edcaa23a3181c031c0f233f46a58beb4f4b3`
 
 ## Purpose
 
-This directory is the permanent Git governance baseline for Event Management OpenSource. It defines how workstreams are created, inspected, staged, committed, published, certified, indexed and maintained without depending on chat history.
+This directory is the permanent Git governance baseline for OPEN EVENT MANAGEMENT. It defines how workstreams are created, inspected, staged, committed, published, certified, indexed and maintained without depending on chat history.
 
 The initial recovery objective was completed on 2026-09-07: all useful local work was captured, generated evidence was excluded, all nominal workstream branches were published, every local branch obtained an upstream, and every local branch tip became reachable from `origin`.
 

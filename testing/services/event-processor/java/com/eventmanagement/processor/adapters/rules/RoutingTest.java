@@ -30,6 +30,14 @@ public class RoutingTest {
         var existing=EventProcessingPipeline.configured(t->snapshot).usingCorrelation(new SimulatedCorrelation()).usingCommands(id->true).simulate(event("event","key",0));
         assertTrue(existing.candidates().isEmpty());assertTrue(existing.routing().decisions().stream().allMatch(d->d.reason().equals("EXISTING_SEMANTIC_COMMAND")));
     }
+    @Test void glpiAndServiceNowUseDistinctCommandIdentities() {
+        var snapshot=new RuleSnapshot("tenant",List.of(compile(CorrelationTest.definition("a",4)),
+            compile(definition("snow-route","a")),compile(definition("glpi-route","a").replace("SERVICENOW","GLPI"))));
+        var context=EventProcessingPipeline.configured(t->snapshot).simulate(event("event","key",0));
+        assertEquals(2,context.candidates().size());
+        assertEquals(2,context.candidates().stream().map(c->c.commandId()).distinct().count());
+        assertEquals(Set.of("SERVICENOW","GLPI"),context.candidates().stream().map(c->c.integrationType()).collect(java.util.stream.Collectors.toSet()));
+    }
     @Test void suppressionPreventsCommandsButPreservesCorrelation() {
         var snapshot=new RuleSnapshot("tenant",List.of(compile(CorrelationTest.definition("a",4)),compile(definition("route","a")),compile(SuppressionTest.definition("change","APPROVED"))));
         var context=EventProcessingPipeline.configured(t->snapshot,Clock.fixed(Instant.parse("2026-09-09T10:00:00Z"),ZoneOffset.UTC)).simulate(event("event","key",0));

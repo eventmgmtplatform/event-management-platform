@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
-DOMAINS = ("events", "ticketing", "gnm", "cacf", "delivery", "data-collection")
+DOMAINS = ("events", "ticketing", "glpi", "gnm", "cacf", "delivery", "data-collection")
 MODES = ("postgresql", "internal-api")
 CONFIG_PATH = Path(os.getenv("OEM_DASHBOARD_CONFIG", "/tmp/oem-dashboards/config.json"))
 

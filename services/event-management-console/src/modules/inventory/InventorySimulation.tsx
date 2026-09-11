@@ -1,0 +1,34 @@
+import {createUuid} from '../../shared/utils/uuid';
+import {useEffect,useRef,useState} from 'react';
+import {useI18n} from '../../shared/i18n/I18nProvider';
+import {api,instant} from '../blackouts/blackouts.api';
+import {InventoryError} from './InventoryPage';
+import {candidateSet,selectors,type CatalogRow,type Definition} from './inventory.model';
+type Result={directive:string;configurationSource:string;snapshotChecksum:string;stages:{stage:string;status:string;match:string;reason:string;directive:string}[];enrichment:{status:string;facts:Record<string,unknown>;lookups:Record<string,unknown>[];provenance:Record<string,unknown>[];conflicts:Record<string,unknown>[];degraded:boolean}};
+function EvidenceTable({title,rows}:{title:string;rows:Record<string,unknown>[]}){const {t}=useI18n();const columns=[...new Set(rows.flatMap(row=>Object.keys(row)))];return <section><h4>{title} ({rows.length})</h4>{rows.length?<div className="catalog-table-wrap"><table aria-label={title}><thead><tr>{columns.map(k=><th key={k}>{k}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{columns.map(k=><td key={k}>{row[k]===null?'—':typeof row[k]==='object'?JSON.stringify(row[k]):String(row[k]??'—')}</td>)}</tr>)}</tbody></table></div>:<p>{t('Sin registros')}</p>}</section>;}
+export function InventorySimulation({tenant,rows,draft,registryRevision}:{tenant:string;rows:CatalogRow[];draft:Definition|null;registryRevision:number}){
+ const {t}=useI18n();const [mode,setMode]=useState('ACTIVE'),[selected,setSelected]=useState<string[]>([]),[includeDraft,setIncludeDraft]=useState(false),[node,setNode]=useState('router-1'),[at,setAt]=useState(''),[action,setAction]=useState('OPEN'),[scope,setScope]=useState<Record<string,string>>({}),[error,setError]=useState<unknown>(),[busy,setBusy]=useState(false),[result,setResult]=useState<{data:Result;node:string;at:string;revision:number}>();
+ const request=useRef<AbortController>();
+ useEffect(()=>()=>request.current?.abort(),[]);
+ async function run(){if(request.current)return;const abort=new AbortController();request.current=abort;setBusy(true);setError(undefined);try{
+  const time=instant(at);const event={schemaVersion:'1.1',eventId:createUuid(),eventKey:node,tenant:{code:tenant},resource:{name:node,...(scope.nodeAlias?{address:scope.nodeAlias}:{}),...(scope.component?{component:scope.component}:{})},...(scope.instanceId?{condition:{instanceId:scope.instanceId}}:{}),...(scope.monitoringSolution?{source:{system:scope.monitoringSolution}}:{}),summary:'Inventory/enrichment simulation',lifecycleAction:action,effectiveSeverity:3,timestamps:{receivedAt:time}};
+  if(mode==='CANDIDATE'&&includeDraft&&!draft)throw new Error('No hay un borrador disponible para esta simulación.');
+  const body={event,evaluatedAt:time,...(mode==='CANDIDATE'?{candidateRules:candidateSet(rows,selected,includeDraft?draft:null,tenant)}:{})};
+  const response=await api<Result>(tenant,'/simulations',body,undefined,abort.signal);
+  if(!abort.signal.aborted)setResult({data:response.data,node,at:time,revision:registryRevision});
+ }catch(e){if(!abort.signal.aborted){setError(e);setResult(undefined);}}finally{if(!abort.signal.aborted)setBusy(false);request.current=undefined;}}
+ const stage=result?.data.stages.find(s=>s.stage==='ContextEnrichment');
+ return <section className="blackout-simulation" aria-label={t('Simulación de enrichment')}><h2>{t('Simulación de enrichment')}</h2>
+  <p>{t('La simulación no modifica eventos ni integraciones. FOUND es un estado de lookup, no el resultado global.')}</p>
+  <fieldset disabled={busy}><legend>{t('Snapshot de consulta')}</legend><label>{t('Modo de simulación')}<select value={mode} onChange={e=>setMode(e.target.value)}><option value="ACTIVE">{t('Reglas activas')}</option><option value="CANDIDATE">{t('Conjunto candidato')}</option></select></label>
+  {mode==='CANDIDATE'&&<><p className="inventory-warning">{t('Este conjunto reemplaza todo el snapshot activo. Incluye el plan y los registros INVENTORY que quieres probar.')}</p><div className="inventory-candidates">{rows.map(row=><label className="inventory-check" key={row.id}><input type="checkbox" aria-label={`${t('Candidato')} ${row.id}`} checked={selected.includes(row.id)} onChange={e=>setSelected(ids=>e.target.checked?[...ids,row.id]:ids.filter(id=>id!==row.id))}/>{row.id} · {row.configuration.type} · v{row.configuration.version} · {row.active_version===row.configuration.version?t('Versión activa'):t('Última guardada')}</label>)}</div><label className="inventory-check"><input type="checkbox" checked={includeDraft} disabled={!draft} onChange={e=>setIncludeDraft(e.target.checked)}/>{t('Incluir borrador abierto')}{draft?` · ${draft.id||'—'} · v${draft.version}`:''}</label><p>{t('El borrador reemplaza la versión seleccionada del mismo ID. Cada escritura se confirma por separado.')}</p></>}
+  <div className="blackout-fields"><label>{t('Recurso de prueba')}<input value={node} onChange={e=>setNode(e.target.value)}/></label><label>{t('Instante de evaluación ISO')}<input value={at} placeholder="2026-09-10T18:30:00Z" onChange={e=>setAt(e.target.value)}/></label><label>lifecycleAction<select value={action} onChange={e=>setAction(e.target.value)}><option>OPEN</option><option>CLOSE</option></select></label>{selectors.filter(k=>k!=='node').map(k=><label key={k}>{k}<input value={scope[k]??''} onChange={e=>setScope({...scope,[k]:e.target.value})}/></label>)}</div>
+  <button disabled={!node.trim()||!at} onClick={run}>{t('Simular enrichment')}</button></fieldset><InventoryError error={error}/>{busy&&<p role="status">{t('Simulando…')}</p>}
+  {result&&<section className="inventory-result" aria-label={t('Resultado de enrichment')}><h3>{t('Resultado de enrichment')}</h3><p>{result.data.configurationSource} · Tenant: {tenant} · {result.node} · {result.at}</p>{result.revision!==registryRevision&&<p className="inventory-warning">{t('La configuración cambió después de esta consulta. Vuelve a simular para evaluar el nuevo estado.')}</p>}
+   <div role="status"><strong>enrichment.status: {result.data.enrichment.status}</strong> · directive: {result.data.directive} · degraded: {String(result.data.enrichment.degraded)}<p>ContextEnrichment: {stage?.status} · {stage?.match} · {stage?.reason}</p></div><p className="inventory-checksum">snapshotChecksum: {result.data.snapshotChecksum}</p>
+   <EvidenceTable title="facts" rows={Object.entries(result.data.enrichment.facts).map(([field,value])=>({field,value,type:typeof value}))}/>
+   <EvidenceTable title="lookups" rows={result.data.enrichment.lookups}/><EvidenceTable title="provenance" rows={result.data.enrichment.provenance}/><EvidenceTable title="conflicts" rows={result.data.enrichment.conflicts}/>
+   <details><summary>{t('Etapas y evidencia')}</summary><pre>{JSON.stringify(result.data,null,2)}</pre></details>
+  </section>}
+ </section>;
+}

@@ -19,3 +19,18 @@ class ApiTests(unittest.TestCase):
     def test_unreachable_is_not_healthy(self):
         with patch('urllib.request.OpenerDirector.open',side_effect=OSError()):
             result=apis.probe(apis.REGISTRY[0]);self.assertEqual(result['status'],'UNREACHABLE');self.assertIsNone(result['httpStatus'])
+    def test_capabilities_unique_and_shared_health_deduplicated(self):
+        self.assertEqual(len(apis.REGISTRY),len({e[0] for e in apis.REGISTRY}))
+        self.assertIn('state-history',{e[0] for e in apis.REGISTRY})
+        with patch('apis.probe',side_effect=lambda e:apis.describe(e,{'status':'UP'})) as probe:
+            data=apis.snapshot()
+            self.assertEqual(len(data['apis']),len(apis.REGISTRY))
+            self.assertEqual(probe.call_count,len({e[2] for e in apis.REGISTRY}))
+            history=next(r for r in data['apis'] if r['id']=='state-history')
+            self.assertEqual(history['probeScope'],'service')
+            self.assertEqual(history['service'],'event-state-service')
+    def test_capability_action_controls_owner(self):
+        with patch('apis.control.submit',return_value={}) as submit:
+            apis.action({'id':'a','apiId':'gateway-simulation','action':'stop'})
+            submit.assert_called_once_with({'id':'a','service':'event-gateway','action':'stop'})
+        with self.assertRaises(ValueError):apis.action({'id':'a','apiId':'gateway','action':[]})

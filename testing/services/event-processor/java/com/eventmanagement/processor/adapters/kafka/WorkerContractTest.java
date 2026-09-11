@@ -51,4 +51,10 @@ class WorkerContractTest {
         assertThrows(IllegalArgumentException.class,()->adapter.encode(event("tenant"),"p","c","t","SERVICENOW","CLOSE_TICKET",mapper.createObjectNode(),Instant.EPOCH));
         assertThrows(IllegalArgumentException.class,()->adapter.encode(event("tenant"),"p","","t","GNM","SEND_NOTIFICATION",mapper.createObjectNode(),Instant.EPOCH));
     }
+    @Test void glpiAutomationResultUsesCanonicalProviderOperation() {
+        var command=adapter.encode(event("tenant"),"p","c","t","GLPI","APPLY_AUTOMATION_RESULT",mapper.createObjectNode().put("ticketId",42).put("content","result"),Instant.EPOCH);
+        assertEquals("GLPI",command.path("integrationType").asText());
+        assertEquals("APPLY_AUTOMATION_RESULT",command.path("operation").asText());
+        assertEquals(42,command.path("payload").path("ticketId").asInt());
+    }
 }

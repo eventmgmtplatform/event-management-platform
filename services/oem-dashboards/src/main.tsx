@@ -1,13 +1,16 @@
+import {NavigationFrame} from "./NavigationFrame";
 import React, {useEffect, useState} from "react";
 import {createRoot} from "react-dom/client";
 import {BrowserRouter, Navigate, NavLink, Route, Routes, useParams} from "react-router-dom";
 import {domains, getSnapshot, type Domain, type Query, type Snapshot} from "./data";
-import {I18nProvider, LanguageSelector, useI18n} from "./i18n";
+import {I18nProvider, useI18n} from "./i18n";
 import {DataCollectionPage} from "./DataCollectionPage";
 import {ApiManagementPage} from "./ApiManagementPage";
 import {DeliveryPage} from "./DeliveryPage";
 import "./tokens.css";
 import "./styles.css";
+import "./appearance.css";
+import {ThemeProvider} from "./ThemeProvider";
 
 const initial: Query = {tenant: "", status: "", q: "", page: 1, limit: 25};
 
@@ -65,6 +68,6 @@ function DomainRoute() {
 }
 function App() {
   const {t} = useI18n();
-  return <BrowserRouter><a className="skip" href="#content">{t("Ir al contenido")}</a><div className="shell"><aside className="sidebar"><div className="brand"><span>O</span><div><strong>OEM</strong><small>Dashboards</small></div></div><span className="nav-label">{t("Centro de operaciones")}</span><nav aria-label="Dashboards">{Object.entries(domains).map(([id,info],index)=><NavLink key={id} to={`/dashboards/${id}`}><span className="nav-number">0{index+1}</span>{info.title}</NavLink>)}<NavLink to="/dashboards/delivery"><span className="nav-number">05</span>Delivery</NavLink><NavLink to="/dashboards/data-collection"><span className="nav-number">06</span>Data Collection</NavLink><NavLink to="/dashboards/api-management"><span className="nav-number">07</span>API Management</NavLink></nav><footer><strong>{t("Consulta operativa")}</strong><small>Event Management Platform</small></footer></aside><div className="workspace"><header><span>{t("Dashboards operativos")}</span><LanguageSelector/><span className="badge">{t("Operación y administración")}</span></header><Routes><Route path="/" element={<Navigate to="/dashboards/events" replace/>}/><Route path="/dashboards/:domain" element={<DomainRoute/>}/><Route path="*" element={<Navigate to="/dashboards/events" replace/>}/></Routes></div></div></BrowserRouter>;
+  return <BrowserRouter><a className="skip" href="#content">{t("Ir al contenido")}</a><NavigationFrame><Routes><Route path="/" element={<Navigate to="/dashboards/events" replace/>}/><Route path="/dashboards/:domain" element={<DomainRoute/>}/><Route path="*" element={<Navigate to="/dashboards/events" replace/>}/></Routes></NavigationFrame></BrowserRouter>;
 }
-createRoot(document.getElementById("root")!).render(<React.StrictMode><I18nProvider><App/></I18nProvider></React.StrictMode>);
+createRoot(document.getElementById("root")!).render(<React.StrictMode><I18nProvider><ThemeProvider><App/></ThemeProvider></I18nProvider></React.StrictMode>);

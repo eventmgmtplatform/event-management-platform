@@ -21,7 +21,7 @@ module "continuous_delivery" {
 
   service_account_id              = "continuous-delivery-executor"
   service_account_display_name    = "Continuous Delivery Executor"
-  service_account_description     = "Validates and executes controlled release delivery operations for Event Management OpenSource."
+  service_account_description     = "Validates and executes controlled release delivery operations for OPEN EVENT MANAGEMENT."
   service_account_deletion_policy = "PREVENT"
 
   services = {

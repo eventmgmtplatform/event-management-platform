@@ -26,7 +26,7 @@ public final class IntegrationResultContract {
                 result.path("eventKey").asText().toUpperCase(Locale.ROOT))) {
             throw new RejectedIntegrationResult("INVALID_EVENT_IDENTITY");
         }
-        if (!Set.of("SERVICENOW", "GNM", "CACF").contains(
+        if (!Set.of("SERVICENOW", "GLPI", "GNM", "CACF").contains(
                 result.path("integrationType").asText().toUpperCase(Locale.ROOT))) {
             throw new RejectedIntegrationResult("UNSUPPORTED_INTEGRATION_TYPE");
         }

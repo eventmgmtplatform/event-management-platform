@@ -1,4 +1,4 @@
-# Kafka de Event Management OpenSource
+# Kafka de OPEN EVENT MANAGEMENT
 
 Administración del bus local y preparación reproducible de un candidato de producto.
 El paquete conserva el broker KRaft de un nodo y los nueve topics actuales. **No es

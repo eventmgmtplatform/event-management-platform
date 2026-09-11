@@ -25,3 +25,11 @@
 - Kyndryl palette source: https://www.kyndryl.com/us/en (public clientlib-site stylesheet).
 - Apache Kafka logo asset: https://kafka.apache.org/images/apache-kafka.png. Apache Kafka and its logo are trademarks of the Apache Software Foundation; used to identify the Kafka administration module. Navigation includes a small vector rendering of the mark. No external asset request is required at runtime.
 - Mobile 390 × 844: theme/language selectors, collapsed navigation open/close and table scrolling verified; viewport reset afterwards. Positioned accessible labels are contained in the table scroller.
+
+## 2026-09-10 — IBM Carbon and LIVERPOOL themes
+
+Added `carbon` and `liverpool` to the persistent theme selector in both localhost:8090 and localhost:8091, retaining Current and Kyndryl. Carbon uses Gray 10/white surfaces, Blue 60 #0f62fe and square controls. Liverpool uses #e10098 magenta from its public site CSS, with darker text/action accents for contrast. These are CSS appearance themes over existing React components, not an installation of @carbon/react or a replacement of the applications. Font stacks include brand fonts with local system fallbacks; no external font request is introduced.
+
+References: https://carbondesignsystem.com/elements/color/overview/ and https://www.liverpool.com.mx/tienda/home (CSS pink-500 token #e10098).
+
+Validation: both TypeScript/Vite builds passed; shared console container healthy after deployment. Browser verified both new themes on console Blackouts and operational Events dashboard; inspected navigation, tables, buttons and chart colors. Reload retained selections on both origins. English and Spanish selectors work. Preferences are stored separately for each port, as before.

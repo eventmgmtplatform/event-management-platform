@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import "../ess/ess.css";
 import { ServiceActions } from "./ServiceActions";
 import { SourceConnections } from "./SourceConnections";
@@ -9,6 +9,7 @@ import "./administration.css";
 
 export function AdministrationPage() {
   const { t, locale } = useI18n();
+  const [params,setParams]=useSearchParams();
   const [demo, setDemo] = useState(false);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState("");
@@ -35,7 +36,8 @@ export function AdministrationPage() {
     const interval = window.setInterval(() => setRevision(v => v + 1), 30000);
     return () => window.clearInterval(interval);
   }, [demo]);
-  useEffect(() => { if (selected) dialog.current?.showModal(); }, [selected]);
+  useEffect(() => { setSelected(params.get("service")); }, [params]);
+  useEffect(() => { if (selected && snapshot?.services.some(s=>s.id===selected) && !dialog.current?.open) dialog.current?.showModal(); }, [selected,snapshot]);
   const services = snapshot?.services ?? referenceServices;
   const filtered = services.filter(s => (status === "all" || s.status === status) && (category === "all" || s.category === category) && `${s.name} ${s.id}`.toLocaleLowerCase().includes(query.toLocaleLowerCase()));
   const detail = services.find(s => s.id === selected);
@@ -43,7 +45,7 @@ export function AdministrationPage() {
   const categories = [...new Set(services.map(s => s.category))];
   const overall = !snapshot ? "Sin telemetría" : !services.length ? "Sin servicios" : count("degraded") || count("stopped") || count("error") ? "Requiere atención" : count("unknown") ? "Verificación pendiente" : "Servicios saludables";
   const reasons: Record<string, string> = { healthy: "Healthcheck correcto", unhealthy: "Healthcheck fallido", stopped: "Contenedor detenido", exit_error: "Terminó con error", completed: "Tarea finalizada correctamente", no_healthcheck: "Sin healthcheck configurado", starting: "Iniciando verificación de salud", restarting: "Contenedor reiniciando", paused: "Contenedor pausado", dead: "Contenedor no recuperable", removing: "Contenedor en eliminación", missing: "El contenedor no existe", docker_unavailable: "Docker no disponible", unverified: "Sin verificar" };
-  function closeDetail() { dialog.current?.close(); setSelected(null); }
+  function closeDetail() { dialog.current?.close(); setSelected(null); if(params.has("service")){const next=new URLSearchParams(params);next.delete("service");setParams(next,{replace:true});} }
   return <section className="page administration">
     <div className="page-heading"><div><span className="eyebrow">{t("Control de plataforma")}</span><h1>{t("Administración")}</h1><p>{t("Visibilidad de los servicios y sus conexiones, en un solo lugar.")}</p></div><button className="admin-button primary" disabled={loading} onClick={() => setRevision(v => v + 1)}>{t(loading ? "Consultando…" : "↻ Actualizar")}</button></div>
     <div className="ess-access"><div><h2>{t("Estado de eventos · ESS")}</h2><p>{t("Consulta estados e historial por tenant y el resumen global de cuarentena.")}</p></div><Link className="admin-button" to="/administration/ess">{t("Abrir administración ESS")} ↗</Link></div>
@@ -60,7 +62,7 @@ export function AdministrationPage() {
       {id:"opensearch-dashboards",name:"OpenSearch Dashboards",description:"Observabilidad del producto · APIs y configuración",port:5601},
       {id:"open-webui",name:"Open WebUI",description:"Interfaz de asistentes y modelos",port:3000},
       {id:"itsm-ticketing-dashboard",name:"ITSM Dashboard legacy",description:"Consola anterior de tickets",port:8088}
-    ].map(tool=>{const service=!demo&&snapshot?.services.find(x=>x.id===tool.id);const state=service?service.status:"unknown";return <a className="admin-tool" key={tool.id} href={`http://${window.location.hostname}:${tool.port}${tool.id === "opensearch-dashboards" ? "/app/dashboards#/view/product-observability" : ""}`} target="_blank" rel="noreferrer"><div><strong>{tool.name}</strong><small>{t(tool.description)} · localhost:{tool.port}</small></div><span className={`admin-status ${state}`}>{t(states[state])}</span><span aria-hidden="true">↗</span></a>;})}<h3>{t("Vistas de ITSM · puerto 8091")}</h3><div className="admin-dashboard-links">{[["events","Eventos"],["ticketing","Ticketing"],["gnm","GNM"],["cacf","CACF"],["delivery","Delivery"]].map(([path,label])=><a className="admin-button" key={path} href={`http://localhost:8091/dashboards/${path}`} target="_blank" rel="noreferrer">{t(label)} ↗</a>)}</div></section></div>
+    ].map(tool=>{const service=!demo&&snapshot?.services.find(x=>x.id===tool.id);const state=service?service.status:"unknown";return <a className="admin-tool" key={tool.id} href={`http://${window.location.hostname}:${tool.port}${tool.id === "opensearch-dashboards" ? "/app/dashboards#/view/product-observability" : ""}`} target="_blank" rel="noreferrer"><div><strong>{tool.name}</strong><small>{t(tool.description)} · {window.location.hostname}:{tool.port}</small></div><span className={`admin-status ${state}`}>{t(states[state])}</span><span aria-hidden="true">↗</span></a>;})}<h3>{t("Vistas de ITSM · puerto 8091")}</h3><div className="admin-dashboard-links">{[["events","Eventos"],["ticketing","Ticketing"],["gnm","GNM"],["cacf","CACF"],["delivery","Delivery"]].map(([path,label])=><a className="admin-button" key={path} href={`http://${window.location.hostname}:8091/dashboards/${path}`} target="_blank" rel="noreferrer">{t(label)} ↗</a>)}</div></section></div>
     <SourceConnections/>
     <dialog ref={dialog} className="admin-dialog" onCancel={closeDetail} onClose={() => setSelected(null)} aria-labelledby="service-title">{detail && <><div className="admin-panel-heading"><span className="eyebrow">{t("Detalle de servicio")}</span><button className="admin-button" onClick={closeDetail} aria-label={t("Cerrar detalle")}>{t("Cerrar ×")}</button></div><h2 id="service-title">{detail.name}</h2><p>{t(referenceServices.find(s => s.id === detail.id)?.description ?? detail.name)}</p><span className={`admin-status ${detail.status}`}>{t(states[detail.status])}</span><dl className="admin-config"><div><dt>{t("Diagnóstico")}</dt><dd>{t(reasons[detail.reason ?? "unverified"] ?? "Sin verificar")}</dd></div><div><dt>{t("Contenedor")}</dt><dd>{detail.container ?? "—"}</dd></div><div><dt>{t("Reinicios")}</dt><dd>{detail.restartCount ?? "—"}</dd></div><div><dt>{t("Identificador")}</dt><dd>{detail.id}</dd></div><div><dt>{t("Categoría")}</dt><dd>{t(detail.category)}</dd></div><div><dt>{t("Versión")}</dt><dd>{detail.version ?? t("Sin verificar")}</dd></div><div><dt>{t("Puerto")}</dt><dd>{detail.port ?? t("Sin verificar")}</dd></div><div><dt>{t("Fuente")}</dt><dd>{t(demo ? "Datos simulados" : snapshot ? "API interna" : "Inventario de referencia")}</dd></div></dl><ServiceActions key={detail.id} service={demo ? {...detail, actions: []} : detail} onComplete={() => setRevision(v => v + 1)}/></>}</dialog>
   </section>;

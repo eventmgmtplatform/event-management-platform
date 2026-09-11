@@ -219,21 +219,26 @@ public class AutomationRepository {
     }
 
     private void ticketCommand(Connection c,ObjectNode e,JsonNode result) throws Exception {
-        String ticket=e.path("itsm_ticket_number").asText("");
-        if(ticket.isBlank() || (result!=null && result.path("outcome").asText().equals("UNKNOWN")))return;
+        JsonNode ticketData=e.path("request").path("ticket");
+        String provider=ticketData.path("provider").asText("SERVICENOW").toUpperCase(java.util.Locale.ROOT);
+        String ticket=e.path("itsm_ticket_number").asText(ticketData.path("number").asText(""));
+        String glpiId=ticketData.path("id").asText(ticketData.path("sysId").asText(""));
+        if(("GLPI".equals(provider)?glpiId.isBlank():ticket.isBlank()) || (result!=null && result.path("outcome").asText().equals("UNKNOWN")))return;
         UUID id=UUID.fromString(e.path("execution_id").asText());
         String phase=result==null?"HOLDING":"RESULT";
         ObjectNode command=mapper.createObjectNode();
         command.put("commandId",id+"-"+phase.toLowerCase(java.util.Locale.ROOT));
         command.put("eventId",e.path("event_id").asText());command.put("eventKey",e.path("event_key").asText());
-        command.put("tenant",e.path("customer_code").asText());command.put("integrationType","SERVICENOW");command.put("operation","APPLY_AUTOMATION_RESULT");
-        ObjectNode payload=command.putObject("payload");payload.put("ticketNumber",ticket);
+        command.put("tenant",e.path("customer_code").asText());command.put("integrationType",provider);command.put("operation","APPLY_AUTOMATION_RESULT");
+        ObjectNode payload=command.putObject("payload");
+        if("GLPI".equals(provider))payload.put("ticketId",Long.parseLong(glpiId)); else payload.put("ticketNumber",ticket);
         payload.put("action",result==null?"REASSIGN":result.path("ticketAction").path("action").asText());
         payload.put("assignmentGroup",e.path("request").path("ticket").path(result==null?"holdingAssignmentGroup":"originalAssignmentGroup").asText());
-        payload.put("workNote",result==null?"CACF/NEXT: ticket assigned to automation holding group. executionId="+id
+        String workNote=result==null?"CACF/NEXT: ticket assigned to automation holding group. executionId="+id
             :"CACF/NEXT automation result: outcome="+result.path("outcome").asText()+"; executionId="+id+"; providerExecutionId="+e.path("provider_execution_id").asText("")
-                +(result.path("outcome").asText().equals("REMEDIATED")?". Resolution requires the configured ticket policy.":". Ticket assigned to human support group by CACF/NEXT automation workflow."));
-        outbox(c,id,"SERVICENOW_"+phase,command);
+                +(result.path("outcome").asText().equals("REMEDIATED")?". Resolution requires the configured ticket policy.":". Ticket assigned to human support group by CACF/NEXT automation workflow.");
+        payload.put("content",workNote); payload.put("workNote",workNote);
+        outbox(c,id,provider+"_"+phase,command);
     }
 
     private void outbox(Connection c,UUID id,String type,JsonNode payload) throws Exception {

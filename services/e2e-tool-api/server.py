@@ -7,15 +7,22 @@ import re
 import subprocess
 import sys
 import threading
+import time
 import uuid
+import datetime as dt
+import urllib.error
+import urllib.parse
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 STORE = ROOT / 'evidences/testing/openwebui'
-COMMAND = [sys.executable, str(ROOT / 'testing/run.py'), 'happy-path']
-SCOPE = 'UC-001: laboratorio os11-lifecycle; proveedores mock; no certifica proveedores reales ni UI de navegador'
+COMMAND = [sys.executable, str(ROOT / 'testing/run.py'), 'happy-path', '--runtime', 'shared']
+SCOPE = 'UC-001: runtime compartido (shared), tenant sintético y proveedores mock; no certifica proveedores reales ni UI de navegador'
+PROCESSOR_URL = os.environ.get('E2E_PROCESSOR_URL', 'http://127.0.0.1:8082')
+TOOL_MODE = os.environ.get('E2E_TOOL_MODE', 'all')
 
 
 def result_from_log(log, code):
@@ -29,6 +36,57 @@ def result_from_log(log, code):
     passed = code == 0 and report.get('status') == 'PASS' and report.get('caseId') == 'UC-001'
     return {'status': 'PASS' if passed else 'FAIL', 'exitCode': code,
             'reportPath': str(path), 'report': report}
+
+
+def register_blackout(customer_code, server, duration_minutes=60, reason='Blackout registrado desde OpenWebUI'):
+    """Create and read back one customer/server blackout through Processor."""
+    if not isinstance(customer_code, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,63}', customer_code):
+        raise ValueError('customerCode inválido')
+    if not isinstance(server, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._:-]{0,127}', server):
+        raise ValueError('server inválido')
+    if duration_minutes != 60:
+        raise ValueError('durationMinutes debe ser exactamente 60')
+    if not isinstance(reason, str) or not reason.strip() or len(reason) > 2048:
+        raise ValueError('reason inválido')
+    now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+    rule_id = 'owui-' + uuid.uuid4().hex[:24]
+    rule = {'id': rule_id, 'version': 1, 'type': 'SCHEDULED', 'enabled': True,
+            'scope': {'customerCode': customer_code, 'node': server},
+            'schedule': {'timezone': 'UTC', 'validFrom': now.isoformat().replace('+00:00', 'Z'),
+                         'validTo': (now + dt.timedelta(minutes=60)).isoformat().replace('+00:00', 'Z')},
+            'priority': 10, 'reason': reason.strip(), 'metadata': {'owner': 'openwebui'}}
+    headers = {'Content-Type': 'application/json', 'X-Tenant-Id': customer_code,
+               'X-Actor-Id': 'openwebui', 'If-Match': '"0"', 'Idempotency-Key': uuid.uuid4().hex}
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    request = urllib.request.Request(PROCESSOR_URL + '/api/v1/rules', data=json.dumps({'rule': rule, 'reason': reason.strip()}).encode(), headers=headers, method='POST')
+    try:
+        with opener.open(request, timeout=15) as response:
+            if response.status not in (200, 201):
+                raise ValueError('Processor rechazó el blackout')
+            receipt = json.load(response)
+        revision = receipt.get('revision')
+        if not isinstance(revision, int):
+            raise ValueError('Processor no devolvió la revisión del blackout')
+        enable_request = urllib.request.Request(
+            PROCESSOR_URL + '/api/v1/rules/' + urllib.parse.quote(rule_id, safe='') + '/enable',
+            data=json.dumps({'version': 1, 'reason': reason.strip()}).encode(),
+            headers={'Content-Type': 'application/json', 'X-Tenant-Id': customer_code,
+                     'X-Actor-Id': 'openwebui', 'If-Match': f'"{revision}"',
+                     'Idempotency-Key': uuid.uuid4().hex}, method='POST')
+        with opener.open(enable_request, timeout=15) as response:
+            if response.status not in (200, 201):
+                raise ValueError('Processor no pudo activar el blackout')
+            activation = json.load(response)
+        read_request = urllib.request.Request(PROCESSOR_URL + '/api/v1/rules/' + urllib.parse.quote(rule_id, safe=''), headers={'X-Tenant-Id': customer_code, 'X-Actor-Id': 'openwebui'})
+        with opener.open(read_request, timeout=15) as response:
+            registered = json.load(response)
+        return {'status': 'REGISTERED', 'customerCode': customer_code, 'server': server,
+                'durationMinutes': duration_minutes, 'ruleId': rule_id,
+                'receipt': receipt, 'activation': activation, 'registered': registered}
+    except urllib.error.HTTPError as error:
+        raise ValueError(f'Processor rechazó el blackout (HTTP {error.code})') from error
+    except (urllib.error.URLError, TimeoutError) as error:
+        raise ValueError('Processor no está disponible; no se pudo confirmar el registro') from error
 
 
 class Runs:
@@ -70,6 +128,14 @@ class Runs:
             threading.Thread(target=self.execute, args=(run_id,), daemon=False).start()
             return self.get(run_id)
 
+    def wait(self, run_id, seconds=20):
+        deadline = time.monotonic() + seconds
+        while True:
+            data = self.get(run_id)
+            if data['status'] != 'RUNNING' or time.monotonic() >= deadline:
+                return data
+            time.sleep(0.2)
+
     def execute(self, run_id):
         data = self.get(run_id)
         log_path = self.directory / (run_id + '.log')
@@ -90,18 +156,27 @@ class Runs:
 def schema():
     response = {'description': 'Estado real, alcance y evidencia del runner',
                 'content': {'application/json': {'schema': {'type': 'object', 'additionalProperties': True}}}}
-    return {'openapi': '3.0.3', 'info': {'title': 'Validación E2E Event Management', 'version': '1.0.0'},
-            'security': [{'bearerAuth': []}],
-            'components': {'securitySchemes': {'bearerAuth': {'type': 'http', 'scheme': 'bearer'}}},
-            'paths': {
+    paths = {}
+    if TOOL_MODE != 'blackout':
+        paths.update({
                 '/runs': {'post': {'operationId': 'ejecutar_validacion_e2e',
-                    'summary': 'Ejecuta la prueba de validación E2E UC-001 en laboratorio aislado',
+                    'summary': 'Ejecuta la prueba de validación E2E UC-001 en runtime shared con mocks',
                     'description': 'Ejecuta el caso completo cuando el usuario lo solicite. Devuelve runId. RUNNING no significa aprobado. Consulta consultar_validacion_e2e hasta estado terminal. No reintentes automáticamente un fallo.',
                     'responses': {'200': response}}},
                 '/runs/{run_id}': {'get': {'operationId': 'consultar_validacion_e2e',
                     'summary': 'Consulta resultado y evidencias de una ejecución E2E',
                     'parameters': [{'name': 'run_id', 'in': 'path', 'required': True, 'schema': {'type': 'string', 'pattern': '^[0-9a-f]{32}$'}}],
-                    'responses': {'200': response, '404': {'description': 'Ejecución inexistente'}}}}}}
+                    'responses': {'200': response, '404': {'description': 'Ejecución inexistente'}}}}})
+    if TOOL_MODE in ('all', 'blackout'):
+        paths['/blackouts'] = {'post': {'operationId': 'registrar_blackout',
+            'summary': 'Registra un blackout de 60 minutos por customer y servidor',
+            'description': 'Crea una ventana SCHEDULED activa desde ahora durante exactamente 60 minutos, con alcance exacto customerCode + node. Lee el registro de vuelta antes de devolverlo.',
+            'requestBody': {'required': True, 'content': {'application/json': {'schema': {'type': 'object', 'additionalProperties': False, 'required': ['customerCode', 'server'], 'properties': {'customerCode': {'type': 'string'}, 'server': {'type': 'string'}, 'durationMinutes': {'type': 'integer', 'enum': [60], 'default': 60}, 'reason': {'type': 'string', 'maxLength': 2048}}}}}},
+            'responses': {'200': response, '400': {'description': 'Solicitud inválida'}}}}
+    return {'openapi': '3.0.3', 'info': {'title': 'Validación E2E Event Management', 'version': '1.0.0'},
+            'security': [{'bearerAuth': []}],
+            'components': {'securitySchemes': {'bearerAuth': {'type': 'http', 'scheme': 'bearer'}}},
+            'paths': paths}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -129,9 +204,11 @@ class Handler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path == '/openapi.json':
             return self.reply(200, schema())
+        if TOOL_MODE == 'blackout':
+            return self.reply(404, {'error': 'Not found'})
         if path.startswith('/runs/'):
             try:
-                return self.reply(200, self.server.runs.get(path[6:]))
+                return self.reply(200, self.server.runs.wait(path[6:]))
             except FileNotFoundError:
                 pass
         self.reply(404, {'error': 'Not found'})
@@ -139,7 +216,20 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.authorized():
             return
-        if self.path != '/runs':
+        path = urlsplit(self.path).path
+        if path == '/blackouts':
+            length = self.headers.get('Content-Length', '0')
+            if self.headers.get('Transfer-Encoding') or not length.isdigit() or not 1 <= int(length) <= 4096:
+                return self.reply(400, {'error': 'Solicitud inválida'})
+            try:
+                payload = json.loads(self.rfile.read(int(length)))
+                if not isinstance(payload, dict) or set(payload) - {'customerCode', 'server', 'durationMinutes', 'reason'}:
+                    raise ValueError('Campos no permitidos')
+                result = register_blackout(payload.get('customerCode'), payload.get('server'), payload.get('durationMinutes', 60), payload.get('reason', 'Blackout registrado desde OpenWebUI'))
+                return self.reply(200, result)
+            except (ValueError, json.JSONDecodeError) as error:
+                return self.reply(400, {'error': str(error)})
+        if path != '/runs' or TOOL_MODE == 'blackout':
             return self.reply(404, {'error': 'Not found'})
         # No tool arguments: reject extra payloads, including arbitrary commands.
         length = self.headers.get('Content-Length', '0')
@@ -147,17 +237,24 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(400, {'error': 'Esta herramienta no acepta parámetros'})
         if self.rfile.read(int(length)) not in (b'', b'{}'):
             return self.reply(400, {'error': 'Esta herramienta no acepta parámetros'})
-        self.reply(200, self.server.runs.start())
+        data = self.server.runs.start()
+        if data['status'] == 'RUNNING':
+            data = self.server.runs.wait(data['runId'])
+        self.reply(200, data)
+
+
+class ReusableHTTPServer(ThreadingHTTPServer):
+    allow_reuse_address = True
 
 
 def main():
     token = os.environ.get('E2E_TOOL_TOKEN', '')
     if len(token) < 32:
         raise SystemExit('E2E_TOOL_TOKEN debe contener al menos 32 caracteres')
-    server = ThreadingHTTPServer((os.environ.get('E2E_TOOL_HOST', '127.0.0.1'),
+    server = ReusableHTTPServer((os.environ.get('E2E_TOOL_HOST', '127.0.0.1'),
                                  int(os.environ.get('E2E_TOOL_PORT', '8095'))), Handler)
     server.token = token
-    server.runs = Runs()
+    server.runs = Runs() if TOOL_MODE != 'blackout' else None
     server.serve_forever()
 
 

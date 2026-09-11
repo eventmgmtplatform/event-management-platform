@@ -83,12 +83,13 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
                 if(plan!=null)break;
                 if(source.path("type").asText().equals("ROUTING")) {
                     var parameters=action.path("parameters");
-                    if(!action.path("type").asText().equals("CREATE_TICKET") || !action.path("target").asText().equals("SERVICENOW")
+                    if(!action.path("type").asText().equals("CREATE_TICKET") || !Set.of("SERVICENOW","GLPI").contains(action.path("target").asText())
                             || !parameters.isObject() || (parameters.size()!=2 && parameters.size()!=3) || !parameters.path("configuration").asText().equals("default"))throw invalid("ROUTING_OPERATION_NOT_IMPLEMENTED");
                     String correlationId=parameters.path("correlationRuleId").asText();
                     if(!correlationId.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,127}"))throw invalid("CORRELATION_RULE_REFERENCE_REQUIRED");
                     var lifecycle=new java.util.HashMap<String,String>();
                     if(parameters.size()==3) {
+                        if("GLPI".equals(action.path("target").asText()))throw invalid("GLPI_LIFECYCLE_PROFILE_NOT_SUPPORTED");
                         var settings=parameters.path("lifecycle");
                         var fields=Set.of("notificationGroup","originalAssignmentGroup","holdingAssignmentGroup","resolvedState","closeCode");
                         if(!settings.isObject() || settings.size()!=fields.size())throw invalid("INVALID_LIFECYCLE_PROFILE");
@@ -98,7 +99,7 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
                             lifecycle.put(field,value.asText());
                         }
                     }
-                    routes.add(new com.eventmanagement.processor.domain.routing.RoutingAction("SERVICENOW","CREATE_TICKET","default",correlationId,lifecycle));continue;
+                    routes.add(new com.eventmanagement.processor.domain.routing.RoutingAction(action.path("target").asText(),"CREATE_TICKET","default",correlationId,lifecycle));continue;
                 }
                 if(action.has("target") || (action.has("parameters") && !action.path("parameters").isEmpty())) throw invalid("ACTION_PARAMETERS_NOT_SUPPORTED");
                 Directive directive;
@@ -185,9 +186,10 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
         String type=source.path("type").asText(),id=source.path("id").asText();
         text(id,128);if(!id.matches("[A-Za-z0-9][A-Za-z0-9._-]*"))throw invalid("INVALID_RULE_ID");
         if(!source.path("version").canConvertToInt() || !source.path("priority").canConvertToInt())throw invalid("INTEGER_RANGE");
-        if(type.equals("RECURRING"))throw invalid("RECURRENCE_NOT_IMPLEMENTED");
         var schedule=source.path("schedule");
-        if(schedule.hasNonNull("recurrence"))throw invalid("UNEXPECTED_RECURRENCE");
+        String recurrence=schedule.path("recurrence").asText(null);
+        if(type.equals("RECURRING")){if(recurrence==null||!recurrence.matches("FREQ=(DAILY|WEEKLY)(;INTERVAL=[1-9][0-9]*)?(;BYDAY=(MO|TU|WE|TH|FR|SA|SU)(,(MO|TU|WE|TH|FR|SA|SU))*)?"))throw invalid("INVALID_RECURRENCE");}
+        else if(recurrence!=null)throw invalid("UNEXPECTED_RECURRENCE");
         String zone=schedule.path("timezone").asText();
         if(!java.time.ZoneId.getAvailableZoneIds().contains(zone))throw invalid("IANA_TIMEZONE_REQUIRED");
         // Requiring an explicit start also for immediate windows makes replay/activation independent of wall time.
@@ -203,7 +205,7 @@ public final class RuleCompiler implements com.eventmanagement.processor.ports.o
         text(source.path("reason").asText(),2048);text(source.path("metadata").path("owner").asText(),128);
         source.path("metadata").fieldNames().forEachRemaining(k->{if(!Set.of("owner","externalReference").contains(k))throw invalid("METADATA_NOT_SUPPORTED");});
         if(source.path("metadata").hasNonNull("externalReference"))text(source.path("metadata").path("externalReference").asText(),512);
-        var blackout=new com.eventmanagement.processor.domain.rules.Blackout(type,scope,from,to,java.time.ZoneId.of(zone),source.path("reason").asText());
+        var blackout=new com.eventmanagement.processor.domain.rules.Blackout(type,scope,from,to,java.time.ZoneId.of(zone),source.path("reason").asText(),recurrence);
         String canonical=mapper.writeValueAsString(sorted(source));
         String checksum=HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(canonical.getBytes(StandardCharsets.UTF_8)));
         return new Compiled(new Rule(id,source.path("version").intValue(),source.path("priority").intValue(),source.path("enabled").booleanValue(),

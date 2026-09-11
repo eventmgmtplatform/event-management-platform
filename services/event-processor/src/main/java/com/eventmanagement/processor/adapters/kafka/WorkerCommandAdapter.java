@@ -14,6 +14,7 @@ import java.util.*;
  */
 public final class WorkerCommandAdapter {
     private static final Map<String,Set<String>> OPERATIONS=Map.of(
+            "GLPI",Set.of("CREATE_TICKET","RESOLVE_TICKET","CLOSE_TICKET","APPLY_AUTOMATION_RESULT"),
             "SERVICENOW",Set.of("CREATE_TICKET","RESOLVE_TICKET"),
             "GNM",Set.of("SEND_NOTIFICATION","CLOSE_NOTIFICATION"),
             "CACF",Set.of("AUTOMATION_REQUESTED"));

@@ -120,10 +120,26 @@ public class EventStateRepository {
             if(!terminal) {
                 state.integrations.put(providerKey,result.deepCopy());
                 applyIntegrationResult(state, integrationType, integrationStatus, externalId);
-                if("RESOLVED_CONFIRMED".equals(result.path("ticketLifecycleState").asText()))state.servicenowStatus="RESOLVED";
+                if("SERVICENOW".equals(integrationType) && "RESOLVED_CONFIRMED".equals(result.path("ticketLifecycleState").asText()))state.servicenowStatus="RESOLVED";
                 if("CLOSED_CONFIRMED".equals(result.path("providerNotificationIdentity").path("lifecycleState").asText()))state.gnmStatus="CLOSED";
                 else if("OPEN_CONFIRMED".equals(result.path("providerNotificationIdentity").path("lifecycleState").asText()))state.gnmStatus="OPEN";
                 if("CACF".equals(integrationType) && result.has("outcome"))state.cacfStatus=result.path("outcome").asText();
+            }
+            if ("GLPI".equals(integrationType) && !terminal) {
+                try (PreparedStatement statement = connection.prepareStatement("""
+                        INSERT INTO event_management.glpi_integration_state
+                            (tenant,event_key,event_id,status,ticket_id,result,updated_at)
+                        VALUES (?,?,?,?,?,?::jsonb,now())
+                        ON CONFLICT (tenant,event_key) DO UPDATE SET
+                            event_id=EXCLUDED.event_id,status=EXCLUDED.status,
+                            ticket_id=COALESCE(EXCLUDED.ticket_id,glpi_integration_state.ticket_id),
+                            result=EXCLUDED.result,updated_at=EXCLUDED.updated_at
+                        """)) {
+                    statement.setString(1,tenant); statement.setString(2,eventKey); statement.setString(3,eventId);
+                    String lifecycle=result.path("ticketLifecycleState").asText();
+                    statement.setString(4,"CLOSED_CONFIRMED".equals(lifecycle) ? "CLOSED" : "RESOLVED_CONFIRMED".equals(lifecycle) ? "RESOLVED" : integrationStatus);
+                    statement.setString(5,externalId); statement.setString(6,result.toString()); statement.executeUpdate();
+                }
             }
             upsert(connection, state, result);
             LOG.infov("Estado consolidado: eventKey={0}, integration={1}, version={2}",
@@ -414,6 +430,8 @@ public class EventStateRepository {
     ) {
 
         switch (integrationType) {
+
+            case "GLPI" -> { /* Stored independently in integrations.glpi. */ }
 
             case "SERVICENOW" -> {
                 state.servicenowStatus = integrationStatus;

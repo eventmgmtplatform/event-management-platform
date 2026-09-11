@@ -60,6 +60,8 @@ START_ORDER=(
     product-observability
     itsm-ticketing-dashboard
     servicenow-console-mock
+    glpi-ticketing-api
+    glpi-mock
     frontend-management-api
     console-catalog-api
     event-management-console
@@ -70,6 +72,8 @@ STOP_ORDER=(
     frontend-management-api
     console-catalog-api
     servicenow-console-mock
+    glpi-ticketing-api
+    glpi-mock
     itsm-ticketing-dashboard
     kafka-ui
     opensearch-dashboards

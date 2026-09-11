@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timezone
 from dashboard import DashboardError
 
-TARGETS = ('gnm','snow','cacf','chatops','extensions')
+TARGETS = ('gnm','snow','glpi','cacf','chatops','extensions')
 
 
 def parse_delivery_query(params):

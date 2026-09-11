@@ -19,3 +19,11 @@ Se reutiliza `control.py`: lista cerrada de servicios y acciones, argumentos sin
 El POST exige JSON, cabecera `X-Console-Action: 1`, origen coincidente cuando se proporciona y cuerpo máximo 1024 bytes. El Nginx reenvía Host para conservar esta comprobación en 8091. Se conserva el modelo de acceso del hosting local existente; el módulo no añade autenticación de usuarios. No expone credenciales, salida de comandos ni inspecciones Docker completas.
 
 Pruebas: `python3 -m unittest discover -s services/frontend-management-api/tests -v`. El smoke HTTP `scripts/dashboards/verify-collection.py` verifica testing/stop/start/reboot contra `servicenow-console-mock` y deja el servicio iniciado; registra evidencia privada bajo `.local/oem-dashboards`.
+
+## Inventario ampliado y controles compactos
+
+El registro incluye capacidades específicas del Gateway (reglas, validación, simulación), Processor (ciclo de reglas, validación, simulaciones, explain, AIOps, enrichment), ESS (eventos, detalle, histórico, cuarentena y fachada WebUI), catálogos de clientes/filtros y todas sus vistas de producto, los seis endpoints de dashboards y configuración, CACF (automatización, callbacks, métricas), diagnóstico GNM y administración.
+
+Cada fila distingue `probeScope=endpoint` (GET real de una consulta pública y no mutante) de `probeScope=service` (salud del servicio propietario para rutas protegidas o mutantes). Las rutas agrupadas describen la capacidad; una respuesta de salud no certifica las credenciales ni la ejecución de cada método. Una misma URL de salud se consulta una sola vez por actualización y se reutiliza para sus capacidades. Los controles de cualquier capacidad siguen afectando al servicio propietario completo. NEXT ya pertenece al runtime administrado y expone las acciones de ciclo.
+
+Los botones de acción sólo muestran SVG de 16 px, con área interactiva de 34 px, foco visible, título y nombre accesible traducidos: iniciar, detener, reiniciar y probar conexión. Se añadieron búsqueda por API/ruta/consumidor, filtro de servicio y filtro de estado; los contadores globales se mantienen y el resultado indica filas visibles/total. El estado UP usa color de éxito; DOWN e inaccesible usan color de error.

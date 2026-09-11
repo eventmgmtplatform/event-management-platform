@@ -32,6 +32,9 @@ services:
       KAFKA_CONSUMER_SESSION_TIMEOUT_MS: 10000
       KAFKA_CONSUMER_HEARTBEAT_INTERVAL_MS: 3000
 
+      GLPI_BASE_URL: ${GLPI_BASE_URL:-http://glpi-mock:8080/apirest.php}
+      GLPI_APP_TOKEN: ${GLPI_APP_TOKEN:-local-app}
+      GLPI_USER_TOKEN: ${GLPI_USER_TOKEN:-local-user}
       SERVICENOW_BASE_URL: http://servicenow-mock:8080
       SERVICENOW_CREATE_TICKET_PATH: /api/now/table/incident
       SERVICENOW_LOOKUP_TICKET_PATH: /api/now/table/incident
@@ -652,6 +655,40 @@ services:
   # ==========================================================
   # EVENT MANAGEMENT CONSOLE
   # ==========================================================
+  glpi-mock:
+    build: ../testing/mocks/glpi
+    image: event-management/glpi-mock:0.1.0
+    container_name: event-glpi-mock
+    ports:
+      - "8185:8080"
+    restart: unless-stopped
+    read_only: true
+    volumes:
+      - glpi-data:/data
+    networks:
+      - event-management-net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+
+  glpi-ticketing-api:
+    build: ../services/glpi-ticketing-api
+    image: event-management/glpi-ticketing-api:0.1.0
+    container_name: event-glpi-ticketing-api
+    ports:
+      - "8096:8095"
+    restart: unless-stopped
+    read_only: true
+    environment:
+      GLPI_BASE_URL: ${GLPI_BASE_URL:-http://glpi-mock:8080/apirest.php}
+      GLPI_APP_TOKEN: ${GLPI_APP_TOKEN:-local-app}
+      GLPI_USER_TOKEN: ${GLPI_USER_TOKEN:-local-user}
+    networks:
+      - event-management-net
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+
   servicenow-console-mock:
     build: ../testing/mocks/servicenow-console
     image: event-management/servicenow-console-mock:0.1.0
@@ -725,8 +762,8 @@ services:
     restart: unless-stopped
 
     ports:
-      - "127.0.0.1:8090:8080"
-      - "127.0.0.1:8091:8091"
+      - "0.0.0.0:8090:8080"
+      - "0.0.0.0:8091:8091"
 
     healthcheck:
       test:
@@ -752,6 +789,8 @@ volumes:
   console-control-data:
     name: event-management-console-control-data
 
+  glpi-data:
+    name: event-management-glpi-data
   console-snow-data:
     name: event-management-console-snow-data
 

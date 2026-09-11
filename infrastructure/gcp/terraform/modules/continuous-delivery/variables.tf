@@ -61,7 +61,7 @@ variable "service_account_display_name" {
 variable "service_account_description" {
   description = "Descripción de la cuenta de servicio."
   type        = string
-  default     = "Executes validated release delivery operations for Event Management OpenSource."
+  default     = "Executes validated release delivery operations for OPEN EVENT MANAGEMENT."
 }
 
 variable "service_account_deletion_policy" {

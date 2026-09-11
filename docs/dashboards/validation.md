@@ -71,3 +71,13 @@ resultados de ejecución productiva de legacy.
 Modelos y límites: [Data Collection](data-collection.md), [API Management](api-management.md). El diario conserva sólo originales capturados desde el despliegue; las pruebas históricas utilizan exclusivamente PostgreSQL temporal.
 
 Verificación final HTTP completada a las 15:53 UTC: 13/13 APIs UP; Data Collection PostgreSQL con 29 recepciones del día (25 PUBLISHED y 4 REJECTED), histórico vacío por inicio reciente de captura. Se verificaron testing, stop → UNREACHABLE, start → UP y reboot → succeeded/UP sobre `servicenow-console-mock`. Reinicio confirmado por la operación `00932ff0-e0f8-4934-925e-b559e1ecc002`, exitCode 0. Solicitud de control sin cabeceras requeridas: HTTP 403. Evidencia privada en `.local/oem-dashboards/collection-validation.json`; reproducción de reboot en `scripts/dashboards/verify-api-reboot.py`.
+
+## Ampliación de API Management — 2026-09-10
+
+52 entradas por servicio/capacidad; las 52 verificaciones HTTP mostraron UP al terminar (cada fila indica si se comprobó el endpoint o la salud de su servicio). 18 pruebas del backend aprobadas, TypeScript y Vite aprobados. Navegador: iconos sin texto visible con nombres accesibles, búsqueda y filtro de servicio, prueba de conexión de `gateway-rules` con HTTP 200 y fecha actualizada. Mantiene los temas existentes y el Nginx compartido. Métricas CACF requiere token y usa comprobación de salud, sin confundir HTTP 401 con caída del servicio.
+
+## Subdominio HTTP — 2026-09-10
+
+Corregida la generación de UUID en API Management y los controles/simulaciones de Console: `crypto.randomUUID()` requiere contexto seguro y no está disponible en el subdominio HTTP del laboratorio, aunque funcione en localhost. El helper usa randomUUID cuando existe y genera UUID v4 con `getRandomValues` en HTTP, conservando aleatoriedad criptográfica e idempotencia; no modifica restricciones de origen, CORS ni validaciones del backend.
+
+Prueba de regresión `testing/services/oem-dashboards/uuid.test.mjs`: implementación nativa, ausencia de randomUUID, formato/version/variante UUID y rechazo sin Web Crypto, para ambas aplicaciones. TypeScript y builds de las dos SPAs aprobados. Desplegado en el Nginx compartido. Verificación desde `http://oem-lab.liverpool.com.mx:8091/dashboards/api-management`: 52/52 verificaciones UP y botón Probar conexión del Gateway completado con HTTP 200 y hora actualizada, sin error de UUID.

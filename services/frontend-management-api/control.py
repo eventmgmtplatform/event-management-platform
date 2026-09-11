@@ -18,7 +18,7 @@ ACTIONS = {'start', 'stop', 'restart'}
 SERVICES = {'kafka', 'postgres', 'opensearch', 'event-gateway', 'event-processor',
             'integration-worker', 'event-state-service', 'event-management-console',
             'itsm-ticketing-dashboard', 'kafka-ui', 'opensearch-dashboards',
-            'servicenow-mock', 'gnm-mock', 'aiops-mock', 'servicenow-console-mock', 'console-catalog-api'}
+            'next-mock', 'servicenow-mock', 'gnm-mock', 'aiops-mock', 'servicenow-console-mock', 'glpi-mock', 'glpi-ticketing-api', 'console-catalog-api'}
 
 def now(): return datetime.datetime.now(datetime.timezone.utc).isoformat()
 def connect():

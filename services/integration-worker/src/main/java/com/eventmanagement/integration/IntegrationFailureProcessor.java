@@ -191,7 +191,7 @@ public class IntegrationFailureProcessor implements Processor {
 
         error.put(
                 "code",
-                classification.code()
+                "GLPI".equals(integrationType) ? classification.code().replace("SERVICENOW_", "GLPI_") : classification.code()
         );
 
         error.put(

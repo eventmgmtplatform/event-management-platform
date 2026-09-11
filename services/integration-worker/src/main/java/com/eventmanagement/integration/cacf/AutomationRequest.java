@@ -22,6 +22,12 @@ public record AutomationRequest(UUID executionId, String commandId, String event
         JsonNode ticket = payload.path("ticket");
         text(ticket, "originalAssignmentGroup", 255);
         text(ticket, "holdingAssignmentGroup", 255);
+        String ticketProvider=ticket.path("provider").asText("SERVICENOW").toUpperCase(java.util.Locale.ROOT);
+        if(!java.util.Set.of("SERVICENOW","GLPI").contains(ticketProvider)) throw new IllegalArgumentException("Unsupported ticket provider");
+        if("GLPI".equals(ticketProvider)) {
+            JsonNode nativeId=ticket.has("id")?ticket.get("id"):ticket.get("sysId");
+            if(nativeId==null || !nativeId.isIntegralNumber() || !nativeId.canConvertToLong() || nativeId.asLong()<1) throw new IllegalArgumentException("GLPI ticket id required");
+        }
         if (!"NEXT".equals(text(payload.path("automation"), "provider", 32))) throw new IllegalArgumentException("Unsupported automation provider");
         JsonNode timeout = payload.path("automation").get("resultTimeoutSeconds");
         if (timeout != null && (!timeout.isIntegralNumber() || !timeout.canConvertToInt())) throw new IllegalArgumentException("Invalid result timeout");

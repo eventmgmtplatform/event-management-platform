@@ -36,6 +36,8 @@ El endpoint está conectado mediante Nginx a `frontend-management-api`, dentro d
 
 La consola existente está instalada en `http://localhost:8090/administration`. La fuente predeterminada es la API real, y no hay fallback automático a demostración.
 
+Compose publica el puerto 8090 en todas las interfaces IPv4 (`0.0.0.0:8090:8080`) para permitir acceso desde la red local. El dashboard está disponible en `http://192.168.0.78:8090/dashboard` mientras esa sea la IP del servidor; localhost continúa funcionando.
+
 ## Idiomas
 
 Selector Español / English en el encabezado. Traduce el shell de navegación y todo el módulo Administración / Inventario, incluidos filtros, estados, diagnósticos, detalle, errores y fechas. Guarda la preferencia en `console.language` y actualiza el atributo HTML `lang`. Español es el idioma inicial. La base React Context está en `src/shared/i18n`; el catálogo inglés es `en.json`, con español como texto fuente. Las pantallas de otros dominios mantienen su contenido previo y se incorporarán al catálogo al trabajar en esos módulos.
@@ -95,3 +97,25 @@ Administration → Estado de eventos · ESS (`/administration/ess`) reads the ru
 ## Manual Blackouts v1
 
 `/blackouts` now supports manual creation/versioning, validation, activation, deactivation, retirement, history and simulation through the existing Processor API. Select a tenant before writing. Legacy catalog rows remain read-only. See [validation-blackouts.md](validation-blackouts.md) for browser acceptance evidence and limitations.
+
+Look and feel: selector now includes Actual, Kyndryl, IBM Carbon and LIVERPOOL, persisted per browser origin. Both interfaces deployed and visually checked on 2026-09-10.
+
+Inventory Services administra INVENTORY y ENRICHMENT mediante el registro versionado del Processor. Incluye catálogo anterior separado de solo consulta, simulación activa/candidata y hechos tipados. AutoSuppression administra SUPPRESSION manual, con estado declarado local separado de activación. Véanse `validation-inventory-enrichment.md` y `validation-auto-suppression.md`.
+
+Correlación administra ATTRIBUTE/GROUP por tenant mediante `/api/processor/v1/rules`, recorriendo todas las páginas mixtas y consultando definiciones con concurrencia máxima de cuatro. Ofrece versiones, historial, simulación de 1..64 eventos en estado vacío por petición y consulta de `/explain/{processingId}`. No administra grupos persistidos ni crea tickets.
+
+### Acceso por red local a herramientas especializadas
+
+Los enlaces y las etiquetas usan el hostname del navegador, incluyendo las cinco vistas de ITSM y Administrar Kafka. Puertos: ITSM Dashboard 8091, Kafka UI 8085, OpenSearch Dashboards 5601, Open WebUI 3000 e ITSM legacy 8088. Los puertos 8090 y 8091 se publican en todas las interfaces IPv4. Open WebUI se administra en `/home/lgalindo/AI-Lab/containers/open-webui/compose.yaml`, con `0.0.0.0:3000:8080`. ITSM legacy conserva el puerto externo mediante redirecciones relativas.
+
+## Policy Engine, AIOps y navegación
+
+Policies: administración versionada, condiciones tipadas y simulación activa/candidata; ver [validación](validation-policy.md). AIOps Extensions: CRUD independiente y consulta manual INTERNAL_MOCK, con ETag, tenant y reconciliación; ver [validación](validation-aiops.md). Menú ajustable/contraíble, tema al pie e idioma en perfil OP, también en dashboards 8091; ver [navegación](validation-navigation.md).
+
+Routing y comandos base disponible en `/routing`: registro versionado, condiciones tipadas, selección de correlación, simulación de secuencias y auditoría de intenciones inmutables. [Aceptación de navegador y límites](validation-routing.md).
+
+Plugins incluye Notifications (`/notifications`, GNM · Notifications) y CACF (`/cacf`, CACF · Automations). Ambas consultan la API existente de dashboards mediante proxy same-origin de solo lectura, con búsqueda, cliente, estado, refresh, paginación y detalle. No disparan acciones en proveedores.
+
+Dashboard general: Plugins, Arquitectura con salud real cada 30 segundos y Sistema/Plataforma en dos columnas. Las tarjetas de servicio abren directamente el detalle de administración. Véase [validación](validation-home.md).
+
+Sistema/Secrets utiliza MockSecrets local de desarrollo, con valores sintéticos cifrados y metadata de referencia. Véase `../mock-secrets/README.md` y `../../docs/architecture/system-integration-progress.md` para alcance terminado y siguientes bloques.

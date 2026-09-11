@@ -32,6 +32,13 @@ class NextAdapterTest {
         String xml=new String(callback("result","RESOLVE"),StandardCharsets.UTF_8).replace("</RequesterID>","</RequesterID><RequesterID>other</RequesterID>");
         assertThrows(IllegalArgumentException.class,()->NextAdapter.parse(xml.getBytes(StandardCharsets.UTF_8),10000));
     }
+    @Test void acceptsGlpiNativeTicketIdentity() throws Exception {
+        var mapper=new ObjectMapper(); var request=mapper.readTree(getClass().getResourceAsStream("/cacf/request.json"));
+        ((com.fasterxml.jackson.databind.node.ObjectNode)request.path("ticket")).put("provider","GLPI").put("id",42);
+        var parsed=AutomationRequest.parse(request,null,null,600);
+        assertEquals("GLPI",parsed.payload().path("ticket").path("provider").asText());
+        assertEquals(42,parsed.payload().path("ticket").path("id").asInt());
+    }
     static byte[] callback(String transaction,String status) {
         return ("<ServiceIncident xmlns='"+NextAdapter.NS+"'><RequesterID>LOCAL:1:local</RequesterID><ProviderID>provider-1</ProviderID><Transaction><TransactionName>"+transaction+"</TransactionName></Transaction><WorkflowStatus>"+status+"</WorkflowStatus></ServiceIncident>").getBytes(StandardCharsets.UTF_8);
     }

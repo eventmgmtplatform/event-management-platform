@@ -15,6 +15,13 @@ spec.loader.exec_module(api)
 
 
 class ToolTests(unittest.TestCase):
+    def test_blackout_requires_customer_server_and_exact_sixty_minutes(self):
+        for customer, server in [('bad:customer', 'srv-01'), ('CUST-01', 'bad server')]:
+            with self.assertRaises(ValueError):
+                api.register_blackout(customer, server, 60)
+        with self.assertRaises(ValueError):
+            api.register_blackout('CUST-01', 'srv-01', 30)
+
     def test_only_verified_uc001_can_pass(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -36,10 +43,12 @@ class ToolTests(unittest.TestCase):
             with patch.object(threading.Thread, 'start'):
                 first = runs.start()
                 self.assertEqual(runs.start()['runId'], first['runId'])
+                self.assertEqual(runs.wait(first['runId'], seconds=0)['status'], 'RUNNING')
             runs.lease.close()
             restored = api.Runs(Path(directory))
             try:
                 self.assertEqual(restored.get(first['runId'])['status'], 'INTERRUPTED')
+                self.assertEqual(restored.wait(first['runId'])['status'], 'INTERRUPTED')
                 self.assertEqual(restored.start()['status'], 'BLOCKED')
                 with self.assertRaises(FileNotFoundError):
                     restored.get('../../secret')

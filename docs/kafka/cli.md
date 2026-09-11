@@ -1,4 +1,4 @@
-# CLI de Kafka aplicada a Event Management OpenSource
+# CLI de Kafka aplicada a OPEN EVENT MANAGEMENT
 
 Ejecutar desde la raíz del checkout. `bash scripts/emctl` funciona aunque no esté
 instalado un comando global. También se puede usar `python3 scripts/kafka-admin.py`.

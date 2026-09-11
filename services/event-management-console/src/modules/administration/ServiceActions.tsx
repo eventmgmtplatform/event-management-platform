@@ -1,3 +1,4 @@
+import {createUuid} from '../../shared/utils/uuid';
 import { useEffect, useState } from "react";
 import { useI18n } from "../../shared/i18n/I18nProvider";
 import type { PlatformService } from "./platform";
@@ -38,7 +39,7 @@ export function ServiceActions({ service, onComplete }: { service: PlatformServi
   }, [operationId, service.id]);
   async function execute() {
     if (!pending || busy) return;
-    const id = crypto.randomUUID();
+    const id = createUuid();
     setSending(true); setError(""); setOperation(undefined);
     const controller = new AbortController(); const timer = window.setTimeout(() => controller.abort(), 8000);
     try {

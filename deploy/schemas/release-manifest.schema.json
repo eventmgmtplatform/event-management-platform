@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://eventmanagementopensource.local/schemas/release-manifest.schema.json",
   "title": "Event Management Release Manifest",
-  "description": "Runtime-independent release contract for Event Management OpenSource.",
+  "description": "Runtime-independent release contract for OPEN EVENT MANAGEMENT.",
   "type": "object",
   "additionalProperties": false,
   "required": [

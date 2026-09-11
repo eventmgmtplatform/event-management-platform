@@ -13,7 +13,7 @@ ADR-001 confirmado por el usuario el 2026-09-09. No es certificación de release
 | 04 | DSL tipada POLICY, validación y administración REST versionada | PENDING: capacidades especializadas y administración pública autorizada |
 | 05 | EnrichmentResult tipado, InventoryPort/local versionado, procedencia/conflictos y evaluación policy | PENDING: fuentes externas, SearchPort y catálogo ampliado |
 | 06 | eventKey anterior e identidad de replay conservadas; no nueva autoridad lifecycle | PENDING: StatePort/atomicidad y política de identidad/occurrences |
-| 07 | Blackouts y auto-suppression local versionados, reloj, scope/estado y evidencia por match | PENDING: recurrencia, selectores adicionales y sincronización externa |
+| 07 | Blackouts y auto-suppression local versionados, reloj, scope/estado, recurrencia básica y evidencia por match | PENDING: pruebas DST exhaustivas, selectores adicionales y sincronización externa |
 | 08 | ATTRIBUTE/GROUP durable, ciclos acotados, concurrencia/rollback y simulación secuencial | PENDING: otras estrategias/relaciones y escalamiento |
 | 09 | Routing tipado y CREATE_TICKET por grupo, ledger inmutable/outbox atómico | PENDING: otras operaciones, perfiles y ciclos sin correlación; no hay rutas de cliente activas |
 | 11 | REST de reglas, simulación y explain; alias legado conservado | PENDING: APIs especializadas; identidad/RBAC diferidos |

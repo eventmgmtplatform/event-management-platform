@@ -30,9 +30,14 @@ CATALOG = [
     ('open-webui', 'Open WebUI', 'Interfaces', 'open-webui'),
     ('frontend-management-api', 'Frontend Management API', 'Core', 'frontend-management-api'),
     ('servicenow-console-mock', 'ServiceNow Console Mock', 'Integraciones', 'event-servicenow-console-mock'),
+    ('glpi-mock', 'GLPI Mock', 'Integraciones', 'event-glpi-mock'),
+    ('glpi-ticketing-api', 'GLPI Ticketing API', 'Integraciones', 'event-glpi-ticketing-api'),
     ('servicenow-mock', 'ServiceNow Mock', 'Integraciones', 'event-servicenow-mock'),
     ('gnm-mock', 'GNM Mock', 'Integraciones', 'event-gnm-mock'),
     ('aiops-mock', 'AIOps Mock', 'Integraciones', 'event-aiops-mock'),
+    ('next-mock', 'NEXT Mock · CACF', 'Integraciones', 'event-next-mock'),
+    ('oem-dashboards-api', 'Dashboards API', 'Core', 'event-management-oem-dashboards-api-1'),
+    ('product-observability', 'Product Observability', 'Interfaces', 'event-product-observability'),
     ('kafka-init', 'Kafka Init', 'Tareas', 'event-kafka-init'),
 ]
 
@@ -125,8 +130,14 @@ def source_connections():
             snow_health = 'healthy' if response.status == 200 else 'error'
     except (OSError, ValueError):
         snow_health = 'error'
+    try:
+        with urllib.request.urlopen('http://glpi-ticketing-api:8095/ready', timeout=6) as response:
+            glpi_health = 'healthy' if response.status == 200 else 'error'
+    except (OSError, ValueError):
+        glpi_health = 'error'
     return {'sources': [
         {'id': 'runtime', 'health': docker_health, 'endpoint': '/api/administration/platform', 'target': 'Docker local'},
+        {'id': 'glpi', 'health': glpi_health, 'endpoint': '/api/glpi/tickets', 'target': 'glpi-ticketing-api'},
         {'id': 'tickets', 'health': snow_health, 'endpoint': '/api/now/table/incident', 'target': 'servicenow-console-mock'},
     ]}
 

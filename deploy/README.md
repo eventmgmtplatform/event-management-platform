@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `deploy` directory contains the runtime-independent release contract for **Event Management OpenSource**.
+The `deploy` directory contains the runtime-independent release contract for **OPEN EVENT MANAGEMENT**.
 
 Its objective is to define **what** is going to be deployed, not **how** it will be deployed.
 
